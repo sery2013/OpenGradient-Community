@@ -838,13 +838,13 @@ function setLanguage(lang) {
 
     // --- ОБНОВЛЕНИЕ ТЕКСТА В .welcome-section ---
     const h1 = document.getElementById('welcome-title');
-    if (h1) h1.textContent = lang === 'en' ? 'WELCOME OPENGRADIENTS!' : 'ДОБРО ПОЖАЛОВАТЬ, РИТУАЛИСТЫ!';
+    if (h1) h1.textContent = lang === 'en' ? 'WELCOME OPENGRADIENTS!' : 'ДОБРО ПОЖАЛОВАТЬ, Опенградиенты!';
 
     const welcomeP1 = document.getElementById('welcome-desc-1');
-    if (welcomeP1) welcomeP1.innerHTML = lang === 'en' ? 'This leaderboard is generated based on all posts in the <a href="https://x.com/i/communities/1978779669693362400" target="_blank">OpenGradient Community</a>.' : 'Этот список лидеров генерируется на основе всех постов в <a href="https://x.com/i/communities/1896991026272723220" target="_blank">сообществе Ritual</a>.';
+    if (welcomeP1) welcomeP1.innerHTML = lang === 'en' ? 'This leaderboard is generated based on all posts in the <a href="https://x.com/i/communities/1978779669693362400" target="_blank">OpenGradient Community</a>.' : 'Этот список лидеров генерируется на основе всех постов в <a href="https://x.com/i/communities/1978779669693362400" target="_blank">сообществе Опенградиент</a>.';
 
     const welcomeP2 = document.getElementById('welcome-desc-2');
-    if (welcomeP2) welcomeP2.innerHTML = lang === 'en' ? 'If your posts are not published through <a href="https://x.com/i/communities/1978779669693362400" target="_blank">OpenGradient Community</a>, they will not be visible on the leaderboard.' : 'Если ваши посты опубликованы не через <a href="https://x.com/i/communities/1896991026272723220" target="_blank">сообщество Ritual</a>, они не будут видны в списке лидеров.';
+    if (welcomeP2) welcomeP2.innerHTML = lang === 'en' ? 'If your posts are not published through <a href="https://x.com/i/communities/1978779669693362400" target="_blank">OpenGradient Community</a>, they will not be visible on the leaderboard.' : 'Если ваши посты опубликованы не через <a href="https://x.com/i/communities/1978779669693362400" target="_blank">сообщество Опенградиент</a>, они не будут видны в списке лидеров.';
 
     const welcomeP3 = document.getElementById('welcome-desc-3');
     if (welcomeP3) welcomeP3.textContent = lang === 'en' ? 'By clicking on any participant, you can view their works directly on the website.' : 'Нажав на любого участника, вы можете просмотреть его работы непосредственно на веб-сайте.';
@@ -1139,5 +1139,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Для базового эффекта пересчёт не обязателен.
     });
 });
+
 
 
