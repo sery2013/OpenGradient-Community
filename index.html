@@ -328,41 +328,49 @@
 
 
 
-
-
-
 <style>
-/* Гарантируем, что градиент занимает ВЕСЬ экран */
+/* === НАСТРОЙКИ ФОНА === */
 html, body {
-    background: linear-gradient(135deg, #416262 0%, #416262 100%) !important;
+    /* 1. Цвет-подстраховка (если картинка не загрузится) */
+    background-color: #080c14 !important;
+    
+    /* 2. Картинка + Темная маска поверх неё (чтобы текст читался) */
+    /* Замените ССЫЛКА_НА_ВАШУ_КАРТИНКУ на реальный URL */
+    background-image: linear-gradient(rgba(8, 12, 20, 0.85), rgba(8, 12, 20, 0.85)), url('https://github.com/sery2013/Ritual-Community/blob/main/%E2%80%94Pngtree%E2%80%94turquoise%20beautiful%20background%20with%20lights_1243717.jpg?raw=true');
+    
+    /* 3. Растягивание на весь экран */
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
     background-attachment: fixed !important;
-    min-height: 100%; /* Важно: растягивает фон на всю высоту */
+    
+    /* 4. Гарантия, что фон будет на всю высоту (убирает полосу внизу) */
+    min-height: 100%;
     margin: 0;
     padding: 0;
 }
 
-/* Убираем фон у основного контейнера */
+/* Убираем фон у контейнера, чтобы просвечивал основной фон */
 .container {
     background-color: transparent !important;
-    min-height: 100vh; /* Растягивает контейнер на высоту экрана */
+    min-height: 100vh;
 }
 
-/* Принудительно убираем фон у футера и нижних блоков, если они есть */
-footer, .combined-bottom-block, .pagination, #tweets-container {
-    background: transparent !important;
-}
-
-/* Скрываем старый элемент фона, если он вдруг остался в HTML */
+/* Скрываем старый элемент фона, если он остался */
 .background {
     display: none !important;
 }
 </style>
 
 
+
+
+
     
  
 </body>
 </html>
+
 
 
 
