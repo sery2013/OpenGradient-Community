@@ -332,15 +332,30 @@
 
 
 <style>
-  body, html {
-    background-color: #416262 !important;
-    background-image: none !important;
-    background: #416262 !important;
-  }
-  
-  .container {
+/* Гарантируем, что градиент занимает ВЕСЬ экран */
+html, body {
+    background: linear-gradient(135deg, #080c14 0%, #0a1018 100%) !important;
+    background-attachment: fixed !important;
+    min-height: 100%; /* Важно: растягивает фон на всю высоту */
+    margin: 0;
+    padding: 0;
+}
+
+/* Убираем фон у основного контейнера */
+.container {
     background-color: transparent !important;
-  }
+    min-height: 100vh; /* Растягивает контейнер на высоту экрана */
+}
+
+/* Принудительно убираем фон у футера и нижних блоков, если они есть */
+footer, .combined-bottom-block, .pagination, #tweets-container {
+    background: transparent !important;
+}
+
+/* Скрываем старый элемент фона, если он вдруг остался в HTML */
+.background {
+    display: none !important;
+}
 </style>
 
 
@@ -348,6 +363,7 @@
  
 </body>
 </html>
+
 
 
 
