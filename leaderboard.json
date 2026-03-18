@@ -3,143 +3,319 @@
     "SheTalksCrypto",
     {
       "posts": 4,
-      "likes": 230,
-      "retweets": 8,
+      "likes": 224,
+      "retweets": 7,
       "comments": 95,
       "quotes": 6,
-      "views": 10812
+      "views": 10973
+    }
+  ],
+  [
+    "arts_renzo",
+    {
+      "posts": 13,
+      "likes": 114,
+      "retweets": 0,
+      "comments": 21,
+      "quotes": 1,
+      "views": 1631
+    }
+  ],
+  [
+    "edward_evm",
+    {
+      "posts": 11,
+      "likes": 540,
+      "retweets": 3,
+      "comments": 172,
+      "quotes": 4,
+      "views": 7990
+    }
+  ],
+  [
+    "samstar7908",
+    {
+      "posts": 19,
+      "likes": 23,
+      "retweets": 0,
+      "comments": 4,
+      "quotes": 2,
+      "views": 711
+    }
+  ],
+  [
+    "toanleo91",
+    {
+      "posts": 7,
+      "likes": 12,
+      "retweets": 1,
+      "comments": 5,
+      "quotes": 0,
+      "views": 407
+    }
+  ],
+  [
+    "omni3387",
+    {
+      "posts": 17,
+      "likes": 28,
+      "retweets": 0,
+      "comments": 2,
+      "quotes": 9,
+      "views": 1120
+    }
+  ],
+  [
+    "realbillyuzi",
+    {
+      "posts": 10,
+      "likes": 157,
+      "retweets": 2,
+      "comments": 66,
+      "quotes": 1,
+      "views": 3064
+    }
+  ],
+  [
+    "Growchain1",
+    {
+      "posts": 74,
+      "likes": 486,
+      "retweets": 87,
+      "comments": 213,
+      "quotes": 50,
+      "views": 18600
+    }
+  ],
+  [
+    "Beta03A",
+    {
+      "posts": 3,
+      "likes": 27,
+      "retweets": 3,
+      "comments": 0,
+      "quotes": 0,
+      "views": 130
+    }
+  ],
+  [
+    "Bili_6_",
+    {
+      "posts": 8,
+      "likes": 174,
+      "retweets": 0,
+      "comments": 100,
+      "quotes": 1,
+      "views": 3496
+    }
+  ],
+  [
+    "OG_Cryptooo",
+    {
+      "posts": 6,
+      "likes": 123,
+      "retweets": 5,
+      "comments": 17,
+      "quotes": 1,
+      "views": 2637
+    }
+  ],
+  [
+    "santotheplug1_",
+    {
+      "posts": 5,
+      "likes": 123,
+      "retweets": 9,
+      "comments": 61,
+      "quotes": 1,
+      "views": 4527
+    }
+  ],
+  [
+    "Souzi3l",
+    {
+      "posts": 3,
+      "likes": 13,
+      "retweets": 0,
+      "comments": 3,
+      "quotes": 0,
+      "views": 123
+    }
+  ],
+  [
+    "visiononyou",
+    {
+      "posts": 9,
+      "likes": 39,
+      "retweets": 3,
+      "comments": 13,
+      "quotes": 0,
+      "views": 869
+    }
+  ],
+  [
+    "rakib_hosen01",
+    {
+      "posts": 3,
+      "likes": 29,
+      "retweets": 2,
+      "comments": 16,
+      "quotes": 2,
+      "views": 791
+    }
+  ],
+  [
+    "Sigma03s",
+    {
+      "posts": 3,
+      "likes": 36,
+      "retweets": 3,
+      "comments": 4,
+      "quotes": 2,
+      "views": 398
+    }
+  ],
+  [
+    "kurinova98249",
+    {
+      "posts": 1,
+      "likes": 87,
+      "retweets": 2,
+      "comments": 15,
+      "quotes": 0,
+      "views": 1190
+    }
+  ],
+  [
+    "rashkeji",
+    {
+      "posts": 8,
+      "likes": 152,
+      "retweets": 11,
+      "comments": 131,
+      "quotes": 4,
+      "views": 4812
+    }
+  ],
+  [
+    "cryptomontage02",
+    {
+      "posts": 4,
+      "likes": 36,
+      "retweets": 0,
+      "comments": 30,
+      "quotes": 0,
+      "views": 441
+    }
+  ],
+  [
+    "jennyoliver57",
+    {
+      "posts": 1,
+      "likes": 11,
+      "retweets": 1,
+      "comments": 5,
+      "quotes": 0,
+      "views": 174
+    }
+  ],
+  [
+    "Percy_szn",
+    {
+      "posts": 38,
+      "likes": 78,
+      "retweets": 7,
+      "comments": 56,
+      "quotes": 2,
+      "views": 2180
+    }
+  ],
+  [
+    "_CrowleyAlex_",
+    {
+      "posts": 5,
+      "likes": 381,
+      "retweets": 8,
+      "comments": 75,
+      "quotes": 0,
+      "views": 3144
+    }
+  ],
+  [
+    "mayankkz_",
+    {
+      "posts": 3,
+      "likes": 14,
+      "retweets": 3,
+      "comments": 1,
+      "quotes": 0,
+      "views": 394
+    }
+  ],
+  [
+    "ama_poundz",
+    {
+      "posts": 3,
+      "likes": 4,
+      "retweets": 0,
+      "comments": 0,
+      "quotes": 0,
+      "views": 93
+    }
+  ],
+  [
+    "0xGcsojib",
+    {
+      "posts": 1,
+      "likes": 2,
+      "retweets": 0,
+      "comments": 0,
+      "quotes": 0,
+      "views": 35
     }
   ],
   [
     "FrostBipolar",
     {
       "posts": 3,
-      "likes": 4,
+      "likes": 5,
       "retweets": 0,
       "comments": 2,
       "quotes": 0,
-      "views": 107
-    }
-  ],
-  [
-    "Growchain1",
-    {
-      "posts": 66,
-      "likes": 436,
-      "retweets": 79,
-      "comments": 199,
-      "quotes": 41,
-      "views": 16670
-    }
-  ],
-  [
-    "santotheplug1_",
-    {
-      "posts": 1,
-      "likes": 16,
-      "retweets": 3,
-      "comments": 7,
-      "quotes": 0,
-      "views": 185
-    }
-  ],
-  [
-    "mayankkz_",
-    {
-      "posts": 1,
-      "likes": 3,
-      "retweets": 1,
-      "comments": 0,
-      "quotes": 0,
-      "views": 30
-    }
-  ],
-  [
-    "Bili_6_",
-    {
-      "posts": 4,
-      "likes": 86,
-      "retweets": 0,
-      "comments": 50,
-      "quotes": 1,
-      "views": 2163
-    }
-  ],
-  [
-    "omni3387",
-    {
-      "posts": 9,
-      "likes": 18,
-      "retweets": 0,
-      "comments": 2,
-      "quotes": 8,
-      "views": 679
-    }
-  ],
-  [
-    "NFT6336",
-    {
-      "posts": 6,
-      "likes": 42,
-      "retweets": 0,
-      "comments": 4,
-      "quotes": 1,
-      "views": 550
-    }
-  ],
-  [
-    "Percy_szn",
-    {
-      "posts": 34,
-      "likes": 64,
-      "retweets": 5,
-      "comments": 51,
-      "quotes": 2,
-      "views": 1922
-    }
-  ],
-  [
-    "samstar7908",
-    {
-      "posts": 8,
-      "likes": 11,
-      "retweets": 0,
-      "comments": 0,
-      "quotes": 2,
-      "views": 320
+      "views": 110
     }
   ],
   [
     "stellar_t1",
     {
       "posts": 7,
-      "likes": 41,
+      "likes": 50,
       "retweets": 0,
       "comments": 20,
       "quotes": 0,
-      "views": 689
+      "views": 735
     }
   ],
   [
     "heyfrens1",
     {
       "posts": 3,
-      "likes": 1,
+      "likes": 2,
       "retweets": 1,
       "comments": 1,
       "quotes": 0,
-      "views": 51
+      "views": 60
     }
   ],
   [
     "0xpsy_",
     {
       "posts": 2,
-      "likes": 1,
+      "likes": 2,
       "retweets": 1,
       "comments": 0,
       "quotes": 1,
-      "views": 37
+      "views": 48
     }
   ],
   [
@@ -150,7 +326,7 @@
       "retweets": 0,
       "comments": 4,
       "quotes": 0,
-      "views": 39
+      "views": 40
     }
   ],
   [
@@ -168,11 +344,11 @@
     "may8215351",
     {
       "posts": 8,
-      "likes": 76,
+      "likes": 77,
       "retweets": 0,
       "comments": 11,
       "quotes": 1,
-      "views": 1986
+      "views": 2032
     }
   ],
   [
@@ -183,51 +359,29 @@
       "retweets": 0,
       "comments": 5,
       "quotes": 0,
-      "views": 267
+      "views": 280
     }
   ],
   [
     "rtorty_",
     {
       "posts": 32,
-      "likes": 572,
+      "likes": 534,
       "retweets": 0,
       "comments": 95,
       "quotes": 1,
-      "views": 11909
+      "views": 11987
     }
   ],
   [
     "IlyPolikutin",
     {
       "posts": 6,
-      "likes": 61,
+      "likes": 60,
       "retweets": 0,
       "comments": 17,
       "quotes": 0,
-      "views": 424
-    }
-  ],
-  [
-    "rashkeji",
-    {
-      "posts": 6,
-      "likes": 110,
-      "retweets": 8,
-      "comments": 100,
-      "quotes": 3,
-      "views": 3476
-    }
-  ],
-  [
-    "edward_evm",
-    {
-      "posts": 9,
-      "likes": 479,
-      "retweets": 4,
-      "comments": 156,
-      "quotes": 4,
-      "views": 6874
+      "views": 435
     }
   ],
   [
@@ -238,7 +392,7 @@
       "retweets": 0,
       "comments": 7,
       "quotes": 0,
-      "views": 212
+      "views": 222
     }
   ],
   [
@@ -249,29 +403,7 @@
       "retweets": 2,
       "comments": 3,
       "quotes": 0,
-      "views": 253
-    }
-  ],
-  [
-    "yarikpysar",
-    {
-      "posts": 2,
-      "likes": 14,
-      "retweets": 0,
-      "comments": 3,
-      "quotes": 0,
-      "views": 260
-    }
-  ],
-  [
-    "visiononyou",
-    {
-      "posts": 3,
-      "likes": 28,
-      "retweets": 3,
-      "comments": 10,
-      "quotes": 0,
-      "views": 694
+      "views": 317
     }
   ],
   [
@@ -282,7 +414,7 @@
       "retweets": 0,
       "comments": 1,
       "quotes": 0,
-      "views": 45
+      "views": 47
     }
   ],
   [
@@ -293,7 +425,7 @@
       "retweets": 0,
       "comments": 16,
       "quotes": 0,
-      "views": 588
+      "views": 623
     }
   ],
   [
@@ -304,18 +436,18 @@
       "retweets": 0,
       "comments": 6,
       "quotes": 0,
-      "views": 690
+      "views": 712
     }
   ],
   [
     "Sorax_Crypto",
     {
       "posts": 4,
-      "likes": 5,
+      "likes": 6,
       "retweets": 0,
-      "comments": 1,
+      "comments": 2,
       "quotes": 0,
-      "views": 136
+      "views": 147
     }
   ],
   [
@@ -326,7 +458,7 @@
       "retweets": 0,
       "comments": 3,
       "quotes": 0,
-      "views": 200
+      "views": 220
     }
   ],
   [
@@ -337,18 +469,7 @@
       "retweets": 4,
       "comments": 0,
       "quotes": 2,
-      "views": 296
-    }
-  ],
-  [
-    "ama_poundz",
-    {
-      "posts": 2,
-      "likes": 2,
-      "retweets": 0,
-      "comments": 0,
-      "quotes": 0,
-      "views": 68
+      "views": 302
     }
   ],
   [
@@ -359,7 +480,7 @@
       "retweets": 5,
       "comments": 38,
       "quotes": 2,
-      "views": 1773
+      "views": 1876
     }
   ],
   [
@@ -370,7 +491,7 @@
       "retweets": 0,
       "comments": 1,
       "quotes": 0,
-      "views": 217
+      "views": 222
     }
   ],
   [
@@ -381,7 +502,7 @@
       "retweets": 0,
       "comments": 3,
       "quotes": 0,
-      "views": 90
+      "views": 94
     }
   ],
   [
@@ -392,40 +513,40 @@
       "retweets": 0,
       "comments": 1,
       "quotes": 0,
-      "views": 44
+      "views": 45
     }
   ],
   [
     "Pashoke1",
     {
       "posts": 2,
-      "likes": 149,
+      "likes": 148,
       "retweets": 0,
       "comments": 64,
       "quotes": 0,
-      "views": 1991
+      "views": 1992
     }
   ],
   [
     "Outlandish555",
     {
       "posts": 69,
-      "likes": 1404,
+      "likes": 1395,
       "retweets": 85,
       "comments": 1011,
       "quotes": 41,
-      "views": 37128
+      "views": 37210
     }
   ],
   [
     "ItsMark013",
     {
       "posts": 6,
-      "likes": 249,
+      "likes": 247,
       "retweets": 1,
       "comments": 81,
       "quotes": 0,
-      "views": 2012
+      "views": 2036
     }
   ],
   [
@@ -436,7 +557,7 @@
       "retweets": 0,
       "comments": 3,
       "quotes": 0,
-      "views": 209
+      "views": 215
     }
   ],
   [
@@ -448,28 +569,6 @@
       "comments": 12,
       "quotes": 5,
       "views": 564
-    }
-  ],
-  [
-    "Sigma03s",
-    {
-      "posts": 2,
-      "likes": 25,
-      "retweets": 2,
-      "comments": 1,
-      "quotes": 2,
-      "views": 229
-    }
-  ],
-  [
-    "Beta03A",
-    {
-      "posts": 1,
-      "likes": 7,
-      "retweets": 1,
-      "comments": 0,
-      "quotes": 0,
-      "views": 53
     }
   ],
   [
@@ -491,7 +590,7 @@
       "retweets": 0,
       "comments": 1,
       "quotes": 0,
-      "views": 186
+      "views": 194
     }
   ],
   [
@@ -502,7 +601,7 @@
       "retweets": 0,
       "comments": 3,
       "quotes": 0,
-      "views": 255
+      "views": 288
     }
   ],
   [
@@ -513,7 +612,7 @@
       "retweets": 0,
       "comments": 6,
       "quotes": 1,
-      "views": 741
+      "views": 753
     }
   ],
   [
@@ -524,7 +623,7 @@
       "retweets": 0,
       "comments": 5,
       "quotes": 0,
-      "views": 305
+      "views": 308
     }
   ],
   [
@@ -535,18 +634,18 @@
       "retweets": 0,
       "comments": 2,
       "quotes": 0,
-      "views": 162
+      "views": 163
     }
   ],
   [
     "AbdoWeb3_",
     {
       "posts": 7,
-      "likes": 125,
+      "likes": 124,
       "retweets": 1,
       "comments": 30,
       "quotes": 0,
-      "views": 1262
+      "views": 1264
     }
   ],
   [
@@ -557,62 +656,29 @@
       "retweets": 0,
       "comments": 6,
       "quotes": 0,
-      "views": 275
-    }
-  ],
-  [
-    "_CrowleyAlex_",
-    {
-      "posts": 4,
-      "likes": 308,
-      "retweets": 7,
-      "comments": 67,
-      "quotes": 0,
-      "views": 2476
+      "views": 279
     }
   ],
   [
     "mikeonchain1",
     {
       "posts": 11,
-      "likes": 33,
+      "likes": 32,
       "retweets": 0,
       "comments": 8,
       "quotes": 3,
-      "views": 939
-    }
-  ],
-  [
-    "rakib_hosen01",
-    {
-      "posts": 2,
-      "likes": 16,
-      "retweets": 1,
-      "comments": 8,
-      "quotes": 2,
-      "views": 635
+      "views": 941
     }
   ],
   [
     "kaye_moni",
     {
       "posts": 1,
-      "likes": 49,
+      "likes": 48,
       "retweets": 0,
       "comments": 11,
       "quotes": 0,
       "views": 292
-    }
-  ],
-  [
-    "OG_Cryptooo",
-    {
-      "posts": 3,
-      "likes": 49,
-      "retweets": 5,
-      "comments": 10,
-      "quotes": 1,
-      "views": 1892
     }
   ],
   [
@@ -629,34 +695,34 @@
   [
     "Xiaolaobanh",
     {
-      "posts": 35,
-      "likes": 398,
+      "posts": 36,
+      "likes": 394,
       "retweets": 0,
-      "comments": 237,
+      "comments": 243,
       "quotes": 7,
-      "views": 4941
+      "views": 5024
     }
   ],
   [
     "truongd28615354",
     {
       "posts": 21,
-      "likes": 176,
+      "likes": 171,
       "retweets": 1,
       "comments": 101,
       "quotes": 1,
-      "views": 2389
+      "views": 2395
     }
   ],
   [
     "Leonis237",
     {
       "posts": 18,
-      "likes": 724,
+      "likes": 722,
       "retweets": 6,
       "comments": 915,
       "quotes": 1,
-      "views": 10858
+      "views": 10859
     }
   ],
   [
@@ -671,17 +737,6 @@
     }
   ],
   [
-    "cryptomontage02",
-    {
-      "posts": 3,
-      "likes": 28,
-      "retweets": 0,
-      "comments": 25,
-      "quotes": 0,
-      "views": 412
-    }
-  ],
-  [
     "vibe_0x",
     {
       "posts": 8,
@@ -689,25 +744,25 @@
       "retweets": 3,
       "comments": 20,
       "quotes": 4,
-      "views": 1406
+      "views": 1426
     }
   ],
   [
     "Alex_devvv",
     {
       "posts": 2,
-      "likes": 37,
+      "likes": 39,
       "retweets": 3,
       "comments": 8,
       "quotes": 0,
-      "views": 670
+      "views": 679
     }
   ],
   [
     "Nonsokozen",
     {
       "posts": 1,
-      "likes": 31,
+      "likes": 29,
       "retweets": 0,
       "comments": 26,
       "quotes": 0,
@@ -718,7 +773,7 @@
     "oetayvs",
     {
       "posts": 7,
-      "likes": 241,
+      "likes": 234,
       "retweets": 0,
       "comments": 119,
       "quotes": 0,
@@ -729,22 +784,22 @@
     "ashishknows",
     {
       "posts": 13,
-      "likes": 132,
+      "likes": 127,
       "retweets": 12,
       "comments": 79,
       "quotes": 9,
-      "views": 5296
+      "views": 5302
     }
   ],
   [
     "josephweb3",
     {
       "posts": 1,
-      "likes": 98,
+      "likes": 84,
       "retweets": 1,
       "comments": 29,
       "quotes": 1,
-      "views": 3390
+      "views": 3399
     }
   ],
   [
@@ -762,11 +817,11 @@
     "MumeenNFT",
     {
       "posts": 8,
-      "likes": 118,
-      "retweets": 29,
+      "likes": 117,
+      "retweets": 28,
       "comments": 115,
       "quotes": 0,
-      "views": 926
+      "views": 927
     }
   ],
   [
@@ -777,7 +832,7 @@
       "retweets": 2,
       "comments": 56,
       "quotes": 1,
-      "views": 1830
+      "views": 1831
     }
   ],
   [
@@ -795,7 +850,7 @@
     "0xBentolfrank",
     {
       "posts": 25,
-      "likes": 290,
+      "likes": 282,
       "retweets": 8,
       "comments": 296,
       "quotes": 0,
@@ -803,47 +858,36 @@
     }
   ],
   [
-    "toanleo91",
-    {
-      "posts": 6,
-      "likes": 11,
-      "retweets": 1,
-      "comments": 5,
-      "quotes": 0,
-      "views": 390
-    }
-  ],
-  [
     "deecypherrr",
     {
       "posts": 24,
-      "likes": 73,
+      "likes": 72,
       "retweets": 9,
       "comments": 34,
       "quotes": 8,
-      "views": 2123
+      "views": 2127
     }
   ],
   [
     "pelenko",
     {
       "posts": 1,
-      "likes": 112,
+      "likes": 110,
       "retweets": 0,
       "comments": 113,
       "quotes": 0,
-      "views": 4023
+      "views": 4033
     }
   ],
   [
     "Crypto__Coop",
     {
       "posts": 1,
-      "likes": 44,
+      "likes": 43,
       "retweets": 0,
       "comments": 44,
       "quotes": 0,
-      "views": 6053
+      "views": 6054
     }
   ],
   [
@@ -861,7 +905,7 @@
     "Abkr__ibrahim",
     {
       "posts": 11,
-      "likes": 250,
+      "likes": 247,
       "retweets": 16,
       "comments": 231,
       "quotes": 2,
@@ -894,29 +938,29 @@
     "sevak199",
     {
       "posts": 11,
-      "likes": 408,
+      "likes": 403,
       "retweets": 0,
       "comments": 295,
       "quotes": 11,
-      "views": 50363
+      "views": 50383
     }
   ],
   [
     "Shahzaib0x",
     {
       "posts": 25,
-      "likes": 1848,
-      "retweets": 56,
+      "likes": 1833,
+      "retweets": 59,
       "comments": 1616,
       "quotes": 16,
-      "views": 26151
+      "views": 26163
     }
   ],
   [
     "cryptowithORO",
     {
       "posts": 1,
-      "likes": 54,
+      "likes": 51,
       "retweets": 1,
       "comments": 38,
       "quotes": 0,
@@ -938,11 +982,11 @@
     "Ashikul58783897",
     {
       "posts": 8,
-      "likes": 45,
+      "likes": 43,
       "retweets": 1,
       "comments": 21,
       "quotes": 0,
-      "views": 838
+      "views": 839
     }
   ],
   [
@@ -982,7 +1026,7 @@
     "cuti_info",
     {
       "posts": 11,
-      "likes": 110,
+      "likes": 109,
       "retweets": 3,
       "comments": 107,
       "quotes": 1,
@@ -993,7 +1037,7 @@
     "MRPRAISE_G7",
     {
       "posts": 1,
-      "likes": 15,
+      "likes": 14,
       "retweets": 0,
       "comments": 11,
       "quotes": 1,
@@ -1001,25 +1045,14 @@
     }
   ],
   [
-    "MonoNJew",
-    {
-      "posts": 6,
-      "likes": 59,
-      "retweets": 0,
-      "comments": 45,
-      "quotes": 1,
-      "views": 1328
-    }
-  ],
-  [
     "Uc_ViBe",
     {
       "posts": 13,
-      "likes": 200,
+      "likes": 199,
       "retweets": 6,
       "comments": 198,
       "quotes": 4,
-      "views": 5201
+      "views": 5203
     }
   ],
   [
@@ -1041,40 +1074,29 @@
       "retweets": 0,
       "comments": 4,
       "quotes": 0,
-      "views": 77
+      "views": 81
     }
   ],
   [
     "swappenny",
     {
       "posts": 6,
-      "likes": 701,
+      "likes": 693,
       "retweets": 15,
       "comments": 646,
       "quotes": 6,
-      "views": 18403
+      "views": 18406
     }
   ],
   [
     "yapper_guru",
     {
       "posts": 15,
-      "likes": 241,
+      "likes": 240,
       "retweets": 3,
       "comments": 245,
       "quotes": 10,
       "views": 4642
-    }
-  ],
-  [
-    "realbillyuzi",
-    {
-      "posts": 7,
-      "likes": 96,
-      "retweets": 2,
-      "comments": 32,
-      "quotes": 0,
-      "views": 1615
     }
   ],
   [
@@ -1085,18 +1107,7 @@
       "retweets": 16,
       "comments": 32,
       "quotes": 5,
-      "views": 1793
-    }
-  ],
-  [
-    "arts_renzo",
-    {
-      "posts": 7,
-      "likes": 75,
-      "retweets": 0,
-      "comments": 13,
-      "quotes": 0,
-      "views": 1122
+      "views": 1795
     }
   ],
   [
@@ -1107,18 +1118,18 @@
       "retweets": 0,
       "comments": 1,
       "quotes": 0,
-      "views": 79
+      "views": 80
     }
   ],
   [
     "olaoluwakiiton",
     {
       "posts": 31,
-      "likes": 790,
+      "likes": 786,
       "retweets": 68,
       "comments": 899,
       "quotes": 2,
-      "views": 7415
+      "views": 7416
     }
   ],
   [
@@ -1136,11 +1147,11 @@
     "SurvivorArc",
     {
       "posts": 4,
-      "likes": 108,
+      "likes": 106,
       "retweets": 26,
       "comments": 103,
       "quotes": 1,
-      "views": 971
+      "views": 972
     }
   ],
   [
@@ -1184,18 +1195,18 @@
       "retweets": 0,
       "comments": 8,
       "quotes": 0,
-      "views": 284
+      "views": 293
     }
   ],
   [
     "lubijiaocheng",
     {
       "posts": 7,
-      "likes": 626,
+      "likes": 624,
       "retweets": 1,
       "comments": 637,
       "quotes": 2,
-      "views": 53852
+      "views": 53856
     }
   ],
   [
@@ -1228,7 +1239,7 @@
       "retweets": 10,
       "comments": 135,
       "quotes": 6,
-      "views": 3500
+      "views": 3503
     }
   ],
   [
@@ -1268,7 +1279,7 @@
     "kyle_yuk",
     {
       "posts": 1,
-      "likes": 13,
+      "likes": 12,
       "retweets": 0,
       "comments": 14,
       "quotes": 1,
@@ -1279,7 +1290,7 @@
     "kyleqian_",
     {
       "posts": 1,
-      "likes": 13,
+      "likes": 12,
       "retweets": 1,
       "comments": 8,
       "quotes": 0,
@@ -1312,11 +1323,11 @@
     "NICKO490",
     {
       "posts": 1,
-      "likes": 149,
+      "likes": 143,
       "retweets": 6,
       "comments": 113,
       "quotes": 0,
-      "views": 1426
+      "views": 1427
     }
   ],
   [
@@ -1334,18 +1345,18 @@
     "Paiin_ip",
     {
       "posts": 13,
-      "likes": 79,
+      "likes": 74,
       "retweets": 6,
       "comments": 52,
       "quotes": 2,
-      "views": 1471
+      "views": 1476
     }
   ],
   [
     "0xmunnaa",
     {
       "posts": 12,
-      "likes": 176,
+      "likes": 175,
       "retweets": 22,
       "comments": 146,
       "quotes": 1,
@@ -1360,14 +1371,14 @@
       "retweets": 0,
       "comments": 0,
       "quotes": 0,
-      "views": 167
+      "views": 169
     }
   ],
   [
     "Dctrust1",
     {
       "posts": 1,
-      "likes": 13,
+      "likes": 12,
       "retweets": 0,
       "comments": 13,
       "quotes": 0,
@@ -1378,22 +1389,11 @@
     "TheZentrox",
     {
       "posts": 2,
-      "likes": 185,
+      "likes": 183,
       "retweets": 0,
       "comments": 166,
       "quotes": 4,
       "views": 2761
-    }
-  ],
-  [
-    "goitomDRX",
-    {
-      "posts": 8,
-      "likes": 314,
-      "retweets": 17,
-      "comments": 297,
-      "quotes": 8,
-      "views": 3314
     }
   ],
   [
@@ -1411,7 +1411,7 @@
     "0xRudraWeb3_X",
     {
       "posts": 1,
-      "likes": 4,
+      "likes": 3,
       "retweets": 0,
       "comments": 2,
       "quotes": 0,
@@ -1422,40 +1422,29 @@
     "Honi287",
     {
       "posts": 1,
-      "likes": 8,
-      "retweets": 1,
+      "likes": 7,
+      "retweets": 0,
       "comments": 7,
       "quotes": 0,
       "views": 341
     }
   ],
   [
-    "rayhan13579100",
-    {
-      "posts": 8,
-      "likes": 789,
-      "retweets": 226,
-      "comments": 741,
-      "quotes": 6,
-      "views": 9362
-    }
-  ],
-  [
     "sohailSHP",
     {
       "posts": 2,
-      "likes": 226,
-      "retweets": 8,
+      "likes": 222,
+      "retweets": 9,
       "comments": 259,
       "quotes": 8,
-      "views": 6271
+      "views": 6272
     }
   ],
   [
     "elhamteh_eth",
     {
       "posts": 2,
-      "likes": 200,
+      "likes": 197,
       "retweets": 4,
       "comments": 220,
       "quotes": 2,
@@ -1466,7 +1455,7 @@
     "Samarjit71",
     {
       "posts": 1,
-      "likes": 61,
+      "likes": 58,
       "retweets": 7,
       "comments": 53,
       "quotes": 1,
@@ -1543,7 +1532,7 @@
     "AyasXBT",
     {
       "posts": 3,
-      "likes": 27,
+      "likes": 26,
       "retweets": 3,
       "comments": 18,
       "quotes": 0,
@@ -1554,7 +1543,7 @@
     "jhsrain",
     {
       "posts": 2,
-      "likes": 28,
+      "likes": 27,
       "retweets": 2,
       "comments": 29,
       "quotes": 1,
@@ -1565,22 +1554,22 @@
     "cryptorahman1",
     {
       "posts": 1,
-      "likes": 11,
+      "likes": 10,
       "retweets": 2,
       "comments": 11,
       "quotes": 0,
-      "views": 477
+      "views": 478
     }
   ],
   [
     "Yellowspoon_kr",
     {
       "posts": 14,
-      "likes": 230,
+      "likes": 223,
       "retweets": 3,
       "comments": 232,
       "quotes": 1,
-      "views": 3000
+      "views": 3019
     }
   ],
   [
@@ -1620,11 +1609,11 @@
     "advait_jayant",
     {
       "posts": 3,
-      "likes": 14,
+      "likes": 13,
       "retweets": 1,
       "comments": 10,
       "quotes": 1,
-      "views": 599
+      "views": 600
     }
   ],
   [
@@ -1646,7 +1635,7 @@
       "retweets": 6,
       "comments": 12,
       "quotes": 0,
-      "views": 684
+      "views": 685
     }
   ],
   [
@@ -1686,11 +1675,11 @@
     "aominethefirst",
     {
       "posts": 1,
-      "likes": 28,
+      "likes": 27,
       "retweets": 0,
       "comments": 18,
       "quotes": 1,
-      "views": 1688
+      "views": 1693
     }
   ],
   [
@@ -1712,7 +1701,7 @@
       "retweets": 0,
       "comments": 26,
       "quotes": 0,
-      "views": 538
+      "views": 539
     }
   ],
   [
@@ -1723,7 +1712,7 @@
       "retweets": 0,
       "comments": 3,
       "quotes": 1,
-      "views": 249
+      "views": 250
     }
   ],
   [
@@ -1741,7 +1730,7 @@
     "IloriAdemola5",
     {
       "posts": 4,
-      "likes": 46,
+      "likes": 43,
       "retweets": 0,
       "comments": 25,
       "quotes": 3,
@@ -1752,7 +1741,7 @@
     "NnmBalaji99111",
     {
       "posts": 1,
-      "likes": 54,
+      "likes": 53,
       "retweets": 2,
       "comments": 56,
       "quotes": 0,
@@ -1807,8 +1796,8 @@
     "waynetipsy",
     {
       "posts": 1,
-      "likes": 30,
-      "retweets": 3,
+      "likes": 29,
+      "retweets": 4,
       "comments": 37,
       "quotes": 0,
       "views": 1162
@@ -1818,7 +1807,7 @@
     "0xkiel_",
     {
       "posts": 2,
-      "likes": 98,
+      "likes": 96,
       "retweets": 2,
       "comments": 74,
       "quotes": 0,
@@ -1840,7 +1829,7 @@
     "dailycombo2025",
     {
       "posts": 1,
-      "likes": 10,
+      "likes": 9,
       "retweets": 0,
       "comments": 9,
       "quotes": 1,
@@ -1877,7 +1866,7 @@
       "retweets": 27,
       "comments": 14,
       "quotes": 0,
-      "views": 780
+      "views": 783
     }
   ],
   [
@@ -1906,7 +1895,7 @@
     "lordsgood",
     {
       "posts": 1,
-      "likes": 41,
+      "likes": 40,
       "retweets": 1,
       "comments": 48,
       "quotes": 0,
@@ -1917,7 +1906,7 @@
     "Since_Crypto",
     {
       "posts": 1,
-      "likes": 20,
+      "likes": 18,
       "retweets": 2,
       "comments": 17,
       "quotes": 0,
@@ -1939,22 +1928,22 @@
     "dqnnt1999",
     {
       "posts": 1,
-      "likes": 38,
+      "likes": 37,
       "retweets": 2,
       "comments": 33,
       "quotes": 0,
-      "views": 463
+      "views": 464
     }
   ],
   [
     "Joshcopy1",
     {
       "posts": 2,
-      "likes": 117,
+      "likes": 115,
       "retweets": 1,
       "comments": 88,
       "quotes": 9,
-      "views": 6748
+      "views": 6749
     }
   ],
   [
@@ -1965,7 +1954,7 @@
       "retweets": 3,
       "comments": 10,
       "quotes": 0,
-      "views": 214
+      "views": 218
     }
   ],
   [
@@ -1976,7 +1965,7 @@
       "retweets": 1,
       "comments": 40,
       "quotes": 0,
-      "views": 615
+      "views": 616
     }
   ],
   [
@@ -1998,40 +1987,40 @@
       "retweets": 1,
       "comments": 25,
       "quotes": 1,
-      "views": 660
+      "views": 661
     }
   ],
   [
     "ewokz13",
     {
       "posts": 1,
-      "likes": 7,
+      "likes": 6,
       "retweets": 2,
       "comments": 4,
       "quotes": 0,
-      "views": 125
+      "views": 126
     }
   ],
   [
     "uiuxweb",
     {
       "posts": 1,
-      "likes": 34,
+      "likes": 35,
       "retweets": 1,
       "comments": 29,
       "quotes": 0,
-      "views": 19119
+      "views": 19120
     }
   ],
   [
     "ni_celeb",
     {
       "posts": 1,
-      "likes": 26,
+      "likes": 24,
       "retweets": 1,
       "comments": 18,
       "quotes": 0,
-      "views": 354
+      "views": 355
     }
   ],
   [
@@ -2053,7 +2042,7 @@
       "retweets": 1,
       "comments": 0,
       "quotes": 0,
-      "views": 104
+      "views": 105
     }
   ],
   [
@@ -2071,11 +2060,11 @@
     "gogozza",
     {
       "posts": 1,
-      "likes": 29,
+      "likes": 28,
       "retweets": 0,
       "comments": 33,
       "quotes": 0,
-      "views": 705
+      "views": 707
     }
   ],
   [
@@ -2086,18 +2075,18 @@
       "retweets": 0,
       "comments": 30,
       "quotes": 0,
-      "views": 805
+      "views": 807
     }
   ],
   [
     "BlvckKunle",
     {
       "posts": 1,
-      "likes": 43,
+      "likes": 42,
       "retweets": 2,
       "comments": 37,
       "quotes": 1,
-      "views": 1131
+      "views": 1135
     }
   ],
   [
@@ -2126,18 +2115,18 @@
     "ridaWeb4",
     {
       "posts": 1,
-      "likes": 18,
+      "likes": 17,
       "retweets": 0,
       "comments": 8,
       "quotes": 0,
-      "views": 266
+      "views": 267
     }
   ],
   [
     "CryptoDieEasy",
     {
       "posts": 1,
-      "likes": 7,
+      "likes": 6,
       "retweets": 0,
       "comments": 3,
       "quotes": 1,
@@ -2148,7 +2137,7 @@
     "traviSKrypto",
     {
       "posts": 1,
-      "likes": 32,
+      "likes": 31,
       "retweets": 1,
       "comments": 24,
       "quotes": 1,
