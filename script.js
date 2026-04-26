@@ -22,10 +22,8 @@ async function fetchData() {
     try {
         const response = await fetch("leaderboard.json");
         const json = await response.json();
-        
         rawData = json;
         normalizeData(rawData);
-        
         sortData();
         renderTable();
         updateArrows();
@@ -53,6 +51,7 @@ async function fetchTweets() {
         } else {
             allTweets = [];
         }
+        console.log("✅ Загружено all_tweets.json, всего твитов:", allTweets.length);
         if (typeof renderAnalytics === "function") renderAnalytics();
     } catch (err) {
         console.error("Failed to fetch all tweets:", err);
@@ -66,7 +65,6 @@ setInterval(() => { fetchTweets(); fetchData(); }, 3600000);
 // - Normalize leaderboard data -
 function normalizeData(json) {
     data = [];
-    
     // Универсальный геттер: ищет ключ с пробелами, без пробелов, или через перебор
     const getVal = (obj, key) => {
         if (obj[key] !== undefined && obj[key] !== null) return obj[key];
@@ -78,7 +76,7 @@ function normalizeData(json) {
         }
         return 0;
     };
-    
+
     if (Array.isArray(json) && json.length > 0 && !Array.isArray(json[0])) {
         data = json.map(item => extractBaseStatsFromItem(item, getVal));
     } else if (Array.isArray(json) && json.length > 0 && Array.isArray(json[0])) {
@@ -95,19 +93,17 @@ function normalizeData(json) {
         });
     }
     data = data.map(d => applyTimeFilterIfNeeded(d));
-    
+
     function extractBaseStatsFromItem(item, getVal) {
         const username = item.username || item.user || item.name || item.screen_name || "";
-        
         const posts = Number(getVal(item, "posts") || item.tweets || 0);
         const likes = Number(getVal(item, "likes") || item.favorite_count || 0);
         const retweets = Number(getVal(item, "retweets") || item.retweet_count || 0);
         const comments = Number(getVal(item, "comments") || item.reply_count || 0);
         const views = Number(getVal(item, "views") || item.views_count || 0);
-        
         return { username, posts, likes, retweets, comments, views };
     }
-    
+
     function applyTimeFilterIfNeeded(base) {
         if (!base || !base.username) return base;
         if (timeFilter === "all") return base;
@@ -161,6 +157,210 @@ function filterData() {
     return data.filter(item => (item.username || "").toLowerCase().includes(query));
 }
 
+// === NFT CARD: ОТКРЫТИЕ МОДАЛЬНОГО ОКНА ===
+function showCardModal(username) {
+    const user = data.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) return;
+    currentCardData = { username, stats: user };
+    generateCardCanvas(username, user);
+    const modal = document.getElementById('card-modal');
+    if (modal) modal.style.display = 'flex';
+    document.getElementById('card-modal-title').textContent = `@${username} Card`;
+    document.getElementById('mint-status').textContent = '';
+    document.getElementById('btn-mint').disabled = false;
+}
+
+function closeCardModal() {
+    document.getElementById('card-modal').style.display = 'none';
+}
+
+// === NFT CARD: ГЕНЕРАЦИЯ CANVAS (1200x675 - Twitter Format) ===
+async function generateCardCanvas(username, stats) {
+    const canvas = document.getElementById('user-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = 1200, H = 675;
+    canvas.width = W;
+    canvas.height = H;
+
+    // 1. Фон (градиент)
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#0f1f1f');
+    grad.addColorStop(0.5, '#1a3333');
+    grad.addColorStop(1, '#0d1a1a');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // 2. Внешняя рамка
+    ctx.strokeStyle = 'rgba(111, 227, 209, 0.4)';
+    ctx.lineWidth = 4;
+    ctx.roundRect(12, 12, W - 24, H - 24, 20);
+    ctx.stroke();
+
+    // Внутренняя тонкая рамка
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.roundRect(20, 20, W - 40, H - 40, 16);
+    ctx.stroke();
+
+    // 3. Аватар (круглый, с обводкой)
+    const avatarUrl = await fetchAvatarUrl(username);
+    if (avatarUrl) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = avatarUrl;
+        await new Promise(res => { img.onload = res; img.onerror = res; });
+        ctx.shadowColor = 'rgba(111, 227, 209, 0.4)';
+        ctx.shadowBlur = 20;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(120, 130, 60, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(img, 60, 70, 120, 120);
+        ctx.restore();
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.arc(120, 130, 60, 0, Math.PI * 2);
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#6fe3d1';
+        ctx.stroke();
+    }
+
+    // 4. Никнейм и подзаголовок
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 48px Segoe UI, sans-serif';
+    ctx.fillText(`@${username}`, 210, 120);
+    ctx.fillStyle = '#6fe3d1';
+    ctx.font = '24px Segoe UI, sans-serif';
+    ctx.fillText('RITUAL COMMUNITY LEADERBOARD', 210, 155);
+
+    // 5. Разделительная линия под шапкой
+    ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(40, 185);
+    ctx.lineTo(W - 40, 185);
+    ctx.stroke();
+
+    // 6. Метрики в рамках/ячейках (как на скрине)
+    const metrics = [
+        { label: 'Posts', val: stats.posts || 0, icon: '📝' },
+        { label: 'Likes', val: stats.likes || 0, icon: '❤️' },
+        { label: 'Retweets', val: stats.retweets || 0, icon: '🔁' },
+        { label: 'Comments', val: stats.comments || 0, icon: '💬' },
+        { label: 'Views', val: stats.views || 0, icon: '👁️' }
+    ];
+
+    const cellW = (W - 120) / 5;
+    const cellH = 160;
+    const startY = 220;
+
+    metrics.forEach((m, i) => {
+        const x = 60 + i * cellW;
+        const y = startY;
+        // Фон ячейки
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+        ctx.roundRect(x, y, cellW - 12, cellH, 12);
+        ctx.fill();
+        // Рамка ячейки
+        ctx.strokeStyle = 'rgba(111, 227, 209, 0.2)';
+        ctx.lineWidth = 1.5;
+        ctx.roundRect(x, y, cellW - 12, cellH, 12);
+        ctx.stroke();
+        // Иконка и название
+        ctx.fillStyle = '#a9ddd3';
+        ctx.font = '22px Segoe UI, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${m.icon} ${m.label}`, x + (cellW - 12) / 2, y + 45);
+        // Значение
+        ctx.fillStyle = '#6fe3d1';
+        ctx.font = 'bold 36px Segoe UI, sans-serif';
+        ctx.fillText(Number(m.val).toLocaleString(), x + (cellW - 12) / 2, y + 100);
+    });
+
+    ctx.textAlign = 'left';
+
+    // 7. Нижняя разделительная линия
+    ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(40, H - 100);
+    ctx.lineTo(W - 40, H - 100);
+    ctx.stroke();
+
+    // 8. Футер
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.font = '20px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('MINTED ON RITUAL TESTNET', W / 2, H - 60);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.font = '16px Segoe UI, sans-serif';
+    ctx.fillText('Generated ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), W / 2, H - 35);
+
+    currentCardData.imageData = canvas.toDataURL('image/png').split(',')[1];
+
+    // Кнопка Download
+    document.getElementById('btn-download').onclick = () => {
+        const link = document.createElement('a');
+        link.download = `card_${username}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    };
+}
+
+async function fetchAvatarUrl(username) {
+    const clean = username.replace(/^@/, '').toLowerCase();
+    const tweet = allTweets.find(t =>
+        (t.user?.screen_name || t.user?.name || '').toLowerCase().replace(/^@/, '') === clean
+    );
+    return tweet?.user?.profile_image_url_https || null;
+}
+
+// === NFT MINT: МИНТ ЧЕРЕЗ RITUAL TESTNET ===
+async function mintCardNFT() {
+    const status = document.getElementById('mint-status');
+    const btn = document.getElementById('btn-mint');
+    if (!window.ethereum) { status.textContent = '❌ Установи MetaMask'; return; }
+    btn.disabled = true;
+    status.textContent = '⏳ Подключение к кошельку...';
+    try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const address = await signer.getAddress();
+        const network = await provider.getNetwork();
+        if (network.chainId !== 1979n) {
+            status.textContent = '🔄 Переключаю на Ritual Testnet...';
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: '0x7BB' }]
+            });
+        }
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+        status.textContent = '⏳ Подтверди транзакцию в MetaMask...';
+        const tx = await contract.mintCard(
+            address,
+            currentCardData.username,
+            currentCardData.stats.posts || 0,
+            currentCardData.stats.likes || 0,
+            currentCardData.stats.retweets || 0,
+            currentCardData.stats.comments || 0,
+            currentCardData.stats.views || 0,
+            currentCardData.imageData,
+            { value: ethers.parseEther("0.001") }
+        );
+        status.textContent = '⛓️ Транзакция отправлена. Ожидание подтверждения...';
+        await tx.wait();
+        status.textContent = '✅ NFT успешно заминчен! Проверь кошелёк.';
+        status.style.color = '#4ade80';
+    } catch (err) {
+        console.error(err);
+        status.textContent = `❌ Ошибка: ${err.message || err}`;
+        status.style.color = '#ff6b6b';
+    } finally {
+        btn.disabled = false;
+    }
+}
+
 // - Render Table with Generate Card Button -
 function renderTable() {
     const tbody = document.getElementById("leaderboard-body");
@@ -170,35 +370,28 @@ function renderTable() {
     if (currentPage > totalPages) currentPage = totalPages;
     const start = (currentPage - 1) * perPage;
     const pageData = filtered.slice(start, start + perPage);
-    
     pageData.forEach(stats => {
         const name = stats.username || "";
         const tr = document.createElement("tr");
-        
         const nameCell = document.createElement("td");
         const nameContainer = document.createElement("div");
         nameContainer.style.display = "flex";
         nameContainer.style.alignItems = "center";
         nameContainer.style.gap = "8px";
-        
         const nameSpan = document.createElement("span");
         nameSpan.textContent = escapeHtml(name);
-        
         // Кнопка Generate Card
         const cardBtn = document.createElement("button");
         cardBtn.className = 'generate-card-btn';
         cardBtn.textContent = '🎴 Generate Card';
         cardBtn.title = currentLang === 'en' ? `Generate NFT card for ${escapeHtml(name)}` : `Сгенерировать NFT карточку для ${escapeHtml(name)}`;
-        
         cardBtn.onclick = function(e) {
             e.stopPropagation();
             showCardModal(name);
         };
-        
         nameContainer.appendChild(nameSpan);
         nameContainer.appendChild(cardBtn);
         nameCell.appendChild(nameContainer);
-        
         tr.appendChild(nameCell);
         tr.insertAdjacentHTML('beforeend', `<td>${Number(stats.posts || 0)}</td>`);
         tr.insertAdjacentHTML('beforeend', `<td>${Number(stats.likes || 0)}</td>`);
@@ -207,7 +400,6 @@ function renderTable() {
         tr.insertAdjacentHTML('beforeend', `<td>${Number(stats.views || 0)}</td>`);
         tbody.appendChild(tr);
     });
-    
     document.getElementById("page-info").textContent = `Page ${currentPage} / ${totalPages}`;
     addUserClickHandlers();
 }
@@ -307,24 +499,36 @@ function toggleTweetsRow(tr, username) {
     const nextRow = tr.nextElementSibling;
     const isAlreadyOpen = nextRow && nextRow.classList.contains("tweets-row") &&
         nextRow.dataset.username === username;
+    
     document.querySelectorAll(".tweets-row").forEach(row => row.remove());
     document.querySelectorAll("tbody tr").forEach(row => row.classList.remove("active-row"));
+    
     if (isAlreadyOpen) return;
+    
     tr.classList.add("active-row");
     
     const tweetsRow = document.createElement("tr");
     tweetsRow.classList.add("tweets-row");
     tweetsRow.dataset.username = username;
+    
     const td = document.createElement("td");
     td.colSpan = 6;
     
+    // Отладка: выводим username для поиска
+    console.log("🔍 Ищем твиты для пользователя:", username);
+    console.log("📊 Всего твитов в allTweets:", allTweets.length);
+    
     const userTweets = allTweets.filter(tweet => {
-        const candidate = (tweet.user?.screen_name || tweet.user?.name || "").toLowerCase();
-        return candidate.replace(/^@/, "") === username.toLowerCase().replace(/^@/, "");
+        const candidate = (tweet.user?.screen_name || tweet.user?.name || tweet.username || "").toLowerCase();
+        const match = candidate.replace(/^@/, "") === username.toLowerCase().replace(/^@/, "");
+        if (match) console.log("✅ Найден твит:", candidate);
+        return match;
     });
     
+    console.log("📝 Найдено твитов:", userTweets.length);
+    
     if (userTweets.length === 0) {
-        td.innerHTML = "<i style='color:#aaa;'>У пользователя нет постов</i>";
+        td.innerHTML = "<i style='color:#aaa;'>У пользователя нет постов (или данные еще не загружены)</i>";
     } else {
         const container = document.createElement("div");
         container.classList.add("tweet-container");
@@ -361,184 +565,9 @@ function toggleTweetsRow(tr, username) {
         });
         td.appendChild(container);
     }
+    
     tweetsRow.appendChild(td);
     tr.parentNode.insertBefore(tweetsRow, tr.nextElementSibling);
-}
-
-// === NFT CARD: ОТКРЫТИЕ МОДАЛЬНОГО ОКНА ===
-function showCardModal(username) {
-    const user = data.find(u => u.username.toLowerCase() === username.toLowerCase());
-    if (!user) return;
-    
-    currentCardData = { username, stats: user };
-    generateCardCanvas(username, user);
-    
-    const modal = document.getElementById('card-modal');
-    if (modal) modal.style.display = 'flex';
-    document.getElementById('card-modal-title').textContent = `@${username} Card`;
-    document.getElementById('mint-status').textContent = '';
-    document.getElementById('btn-mint').disabled = false;
-}
-
-function closeCardModal() {
-    document.getElementById('card-modal').style.display = 'none';
-}
-
-// === NFT CARD: ГЕНЕРАЦИЯ CANVAS (600x800 PNG) ===
-async function generateCardCanvas(username, stats) {
-    const canvas = document.getElementById('user-canvas');
-    const ctx = canvas.getContext('2d');
-    const W = 600, H = 800;
-    
-    canvas.width = W;
-    canvas.height = H;
-    
-    // 1. Фон (градиент)
-    const grad = ctx.createLinearGradient(0, 0, W, H);
-    grad.addColorStop(0, '#1a2a2a');
-    grad.addColorStop(0.5, '#2F4F4F');
-    grad.addColorStop(1, '#0d1117');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
-    
-    // 2. Рамка
-    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-    ctx.lineWidth = 4;
-    ctx.roundRect(10, 10, W-20, H-20, 16);
-    ctx.stroke();
-    
-    // 3. Аватар (ищем в allTweets)
-    const avatarUrl = await fetchAvatarUrl(username);
-    if (avatarUrl) {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.src = avatarUrl;
-        await new Promise(res => { img.onload = res; img.onerror = res; });
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(80, 100, 50, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.clip();
-        ctx.drawImage(img, 30, 50, 100, 100);
-        ctx.restore();
-        ctx.strokeStyle = '#6fe3d1'; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.arc(80, 100, 50, 0, Math.PI * 2); ctx.stroke();
-    }
-    
-    // 4. Данные пользователя
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 28px Segoe UI, sans-serif';
-    ctx.fillText(`@${username}`, 150, 90);
-    ctx.font = '16px Segoe UI, sans-serif';
-    ctx.fillStyle = '#a9ddd3';
-    ctx.fillText('RITUAL COMMUNITY LEADERBOARD', 150, 115);
-    
-    // Разделительная линия
-    ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(30, 150);
-    ctx.lineTo(W-30, 150);
-    ctx.stroke();
-    
-    const metrics = [
-        { label: 'Posts', val: stats.posts || 0, icon: '📝' },
-        { label: 'Likes', val: stats.likes || 0, icon: '❤️' },
-        { label: 'Retweets', val: stats.retweets || 0, icon: '🔁' },
-        { label: 'Comments', val: stats.comments || 0, icon: '💬' },
-        { label: 'Views', val: stats.views || 0, icon: '👁️' }
-    ];
-    
-    let y = 200;
-    ctx.font = '20px Segoe UI, sans-serif';
-    ctx.fillStyle = '#fff';
-    metrics.forEach(m => {
-        ctx.fillText(`${m.icon} ${m.label}:`, 40, y);
-        ctx.fillStyle = '#6fe3d1';
-        ctx.font = 'bold 22px Segoe UI, sans-serif';
-        ctx.fillText(Number(m.val).toLocaleString(), 220, y);
-        ctx.fillStyle = '#fff';
-        ctx.font = '20px Segoe UI, sans-serif';
-        y += 45;
-    });
-    
-    // 5. Футер
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.font = '14px Segoe UI, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Minted on Ritual Testnet • Generated ' + new Date().toLocaleDateString(), W/2, H-40);
-    
-    // Сохраняем base64 для минта (без префикса)
-    currentCardData.imageData = canvas.toDataURL('image/png').split(',')[1];
-    
-    // Кнопка Download
-    document.getElementById('btn-download').onclick = () => {
-        const link = document.createElement('a');
-        link.download = `card_${username}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-    };
-}
-
-async function fetchAvatarUrl(username) {
-    const clean = username.replace(/^@/, '').toLowerCase();
-    const tweet = allTweets.find(t => 
-        (t.user?.screen_name || t.user?.name || '').toLowerCase().replace(/^@/, '') === clean
-    );
-    return tweet?.user?.profile_image_url_https || null;
-}
-
-// === NFT MINT: МИНТ ЧЕРЕЗ RITUAL TESTNET ===
-async function mintCardNFT() {
-    const status = document.getElementById('mint-status');
-    const btn = document.getElementById('btn-mint');
-    
-    if (!window.ethereum) { status.textContent = '❌ Установи MetaMask'; return; }
-    
-    btn.disabled = true;
-    status.textContent = '⏳ Подключение к кошельку...';
-    
-    try {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const address = await signer.getAddress();
-        
-        const network = await provider.getNetwork();
-        if (network.chainId !== 1979n) {
-            status.textContent = '🔄 Переключаю на Ritual Testnet...';
-            await window.ethereum.request({
-                method: 'wallet_switchEthereumChain',
-                params: [{ chainId: '0x7BB' }]
-            });
-        }
-        
-        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-        
-        status.textContent = '⏳ Подтверди транзакцию в MetaMask...';
-        const tx = await contract.mintCard(
-            address,
-            currentCardData.username,
-            currentCardData.stats.posts || 0,
-            currentCardData.stats.likes || 0,
-            currentCardData.stats.retweets || 0,
-            currentCardData.stats.comments || 0,
-            currentCardData.stats.views || 0,
-            currentCardData.imageData,
-            { value: ethers.parseEther("0.001") }
-        );
-        
-        status.textContent = '⛓️ Транзакция отправлена. Ожидание подтверждения...';
-        await tx.wait();
-        status.textContent = '✅ NFT успешно заминчен! Проверь кошелёк.';
-        status.style.color = '#4ade80';
-        
-    } catch (err) {
-        console.error(err);
-        status.textContent = `❌ Ошибка: ${err.message || err}`;
-        status.style.color = '#ff6b6b';
-    } finally {
-        btn.disabled = false;
-    }
 }
 
 // - Tabs setup and Analytics rendering -
@@ -551,7 +580,6 @@ function setupTabs() {
             const lb = document.getElementById('leaderboard-wrapper');
             const an = document.getElementById('tab-analytics');
             const gallery = document.getElementById('tab-nft-gallery');
-            
             if (tab === 'analytics') {
                 if (lb) lb.style.display = 'none';
                 if (an) an.style.display = 'block';
@@ -577,9 +605,7 @@ function setupTabs() {
 async function loadNFTGallery() {
     const grid = document.getElementById('nft-gallery-grid');
     if (!grid) return;
-    
     grid.innerHTML = '<p class="gallery-loading">⏳ Загрузка данных из Ritual Testnet...</p>';
-    
     const cached = localStorage.getItem('ritual_nft_gallery');
     if (cached) {
         const { data, timestamp } = JSON.parse(cached);
@@ -588,25 +614,19 @@ async function loadNFTGallery() {
             return;
         }
     }
-    
     try {
-        const provider = window.ethereum 
-            ? new ethers.BrowserProvider(window.ethereum) 
+        const provider = window.ethereum
+            ? new ethers.BrowserProvider(window.ethereum)
             : new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
-        
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-        
         const filter = contract.filters.Transfer(ethers.ZeroAddress);
         const events = await contract.queryFilter(filter);
-        
         const nfts = [];
         const seenIds = new Set();
-        
         for (const event of events) {
             const tokenId = event.args.tokenId.toString();
             if (seenIds.has(tokenId)) continue;
             seenIds.add(tokenId);
-            
             try {
                 const card = await contract.cards(tokenId);
                 nfts.push({
@@ -625,12 +645,9 @@ async function loadNFTGallery() {
                 console.warn(`Failed to fetch token ${tokenId}`, e);
             }
         }
-        
         nfts.sort((a, b) => b.mintedAt - a.mintedAt);
-        
         localStorage.setItem('ritual_nft_gallery', JSON.stringify({ data: nfts, timestamp: Date.now() }));
         renderNFTCards(nfts);
-        
     } catch (err) {
         console.error("Gallery load error:", err);
         grid.innerHTML = `<p class="gallery-error">❌ Ошибка загрузки. Проверьте консоль или попробуйте позже.<br><small>${err.message}</small></p>`;
@@ -640,18 +657,16 @@ async function loadNFTGallery() {
 function renderNFTCards(nfts) {
     const grid = document.getElementById('nft-gallery-grid');
     if (!grid) return;
-    
     grid.innerHTML = '';
     if (nfts.length === 0) {
         grid.innerHTML = '<p class="gallery-empty">🎨 Пока нет заминченных NFT. Будьте первым!</p>';
         return;
     }
-    
     nfts.forEach(nft => {
         const card = document.createElement('div');
         card.className = 'nft-gallery-card';
         card.innerHTML = `
-            <img src="image/png;base64,${nft.imageData}" alt="Card ${nft.username}" loading="lazy">
+            <img src="data:image/png;base64,${nft.imageData}" alt="Card ${nft.username}" loading="lazy">
             <div class="nft-info">
                 <h4>@${nft.username}</h4>
                 <p>Token ID: #${nft.tokenId}</p>
@@ -817,7 +832,7 @@ function renderAnalytics() {
     if (elAvgLikes) elAvgLikes.textContent = `Avg Likes: ${avgLikes.toFixed(2)}`;
     if (elAvgViews) elAvgViews.textContent = `Avg Views: ${avgViews.toFixed(2)}`;
     window._analyticsFilteredData = { tweets, users, period };
-    
+
     function renderTopAuthors(metric) {
         const listEl = document.getElementById('top-authors-list');
         if (!listEl) return;
@@ -849,7 +864,7 @@ function renderAnalytics() {
             listEl.appendChild(li);
         });
     }
-    
+
     function renderTopPosts(metric) {
         const listEl = document.getElementById('top-posts-list');
         if (!listEl) return;
@@ -880,7 +895,7 @@ function renderAnalytics() {
             listEl.appendChild(li);
         });
     }
-    
+
     const perDay = {};
     const chartDays = period === 'all' ? 60 : (period === '7' ? 7 : (period === '14' ? 14 : 30));
     tweets.forEach(t => {
@@ -900,7 +915,6 @@ function renderAnalytics() {
         labels.push(key);
         counts.push(perDay[key] || 0);
     }
-    
     try {
         const ctx = document.getElementById('analytics-chart');
         if (ctx) {
@@ -955,14 +969,14 @@ function renderAnalytics() {
             }
         }
     } catch (err) { console.warn('Chart render failed', err); }
-    
+
     const authorMetricSelect = document.getElementById('author-metric-select');
     const postMetricSelect = document.getElementById('post-metric-select');
     const authorMetric = authorMetricSelect ? authorMetricSelect.value : 'posts';
     const postMetric = postMetricSelect ? postMetricSelect.value : 'likes';
     renderTopAuthors(authorMetric);
     renderTopPosts(postMetric);
-    
+
     if (authorMetricSelect && !authorMetricSelect._bound) {
         authorMetricSelect.addEventListener('change', e => renderTopAuthors(e.target.value));
         authorMetricSelect._bound = true;
@@ -971,7 +985,6 @@ function renderAnalytics() {
         postMetricSelect.addEventListener('change', e => renderTopPosts(e.target.value));
         postMetricSelect._bound = true;
     }
-    
     renderHeatmap(tweets);
     bindExportButtons();
 }
@@ -1015,7 +1028,6 @@ try { setupTabs(); setupAnalyticsTabs(); } catch(e) { console.warn('Tabs init fa
 function setLanguage(lang) {
     currentLang = lang;
     localStorage.setItem('lang', lang);
-
     const langEn = document.getElementById('lang-en');
     const langRu = document.getElementById('lang-ru');
     if (langEn) {
@@ -1026,187 +1038,8 @@ function setLanguage(lang) {
         langRu.classList.toggle('active', lang === 'ru');
         langRu.classList.toggle('inactive', lang !== 'ru');
     }
-
     const h1 = document.getElementById('welcome-title');
-    if (h1) h1.textContent = lang === 'en' ? 'WELCOME Ritualists!' : 'ДОБРО ПОЖАЛОВАТЬ, Ритуалисты';
-
-    const welcomeP1 = document.getElementById('welcome-desc-1');
-    if (welcomeP1) welcomeP1.innerHTML = lang === 'en' ? 'This leaderboard is generated based on all posts in the <a href="https://x.com/i/communities/1896991026272723220" target="_blank" class="white-link">Ritual Community</a>.' : 'Этот список лидеров генерируется на основе всех постов в <a href="https://x.com/i/communities/1896991026272723220" target="_blank" class="white-link">сообществе Ритуал</a>.';
-
-    const welcomeP2 = document.getElementById('welcome-desc-2');
-    if (welcomeP2) welcomeP2.innerHTML = lang === 'en' ? 'By clicking on any participant, you can view their works directly on the website.' : 'Нажав на любого участника, вы можете просмотреть его работы непосредственно на веб-сайте.';
-
-    const welcomeP3 = document.getElementById('welcome-desc-3');
-    if (welcomeP3) welcomeP3.textContent = lang === 'en' ? 'By clicking on any metric (for example, views), you can filter by it.' : 'Нажав на любую метрику (например, просмотры), вы можете отфильтровать по ней.';
-
-    const updateInfoP = document.getElementById('last-updated-static');
-    if (updateInfoP) updateInfoP.textContent = lang === 'en' ? 'Updated every 2 days' : 'Обновляется каждые 2 дня';
-
-    const supportP = document.getElementById('support-us');
-    if (supportP) supportP.textContent = lang === 'en' ? 'Support us on Twitter!' : 'Поддержите нас в Twitter!';
-
-    const followDevTextElement = document.getElementById('follow-dev-text');
-    const followDevLinkElement = document.getElementById('follow-dev-link');
-    if (followDevTextElement && followDevLinkElement) {
-        const linkText = followDevLinkElement.textContent;
-        followDevTextElement.textContent = lang === 'en' ? 'Follow Developer - ' : 'Следите за разработчиком - ';
-        followDevLinkElement.textContent = linkText;
-        followDevLinkElement.style.color = 'white';
-        followDevLinkElement.style.textDecoration = 'underline';
-        followDevTextElement.appendChild(followDevLinkElement);
-    }
-
-    const lastUpdatedLabel = document.getElementById('label-last-updated');
-    if (lastUpdatedLabel) {
-        lastUpdatedLabel.textContent = lang === 'en' ? 'Last updated:' : 'Последнее обновление:';
-    }
-
-    const timeSelectOptions = document.querySelectorAll('#time-select option');
-    if (timeSelectOptions.length >= 4) {
-        timeSelectOptions[0].textContent = lang === 'en' ? 'Last 7 days' : 'Последние 7 дней';
-        timeSelectOptions[1].textContent = lang === 'en' ? 'Last 14 days' : 'Последние 14 дней';
-        timeSelectOptions[2].textContent = lang === 'en' ? 'Last 30 days' : 'Последние 30 дней';
-        timeSelectOptions[3].textContent = lang === 'en' ? 'All time' : 'За всё время';
-    }
-
-    const searchInput = document.getElementById('search');
-    if (searchInput) searchInput.placeholder = lang === 'en' ? 'Type @handle or part of name...' : 'Введите @ник или часть имени...';
-
-    const prevPageBtn = document.getElementById('prev-page');
-    if (prevPageBtn) prevPageBtn.textContent = lang === 'en' ? 'Previous' : 'Предыдущая';
-
-    const nextPageBtn = document.getElementById('next-page');
-    if (nextPageBtn) nextPageBtn.textContent = lang === 'en' ? 'Next' : 'Следующая';
-
-    const leaderboardTabBtn = document.getElementById('tab-leaderboard-btn');
-    if (leaderboardTabBtn) leaderboardTabBtn.textContent = lang === 'en' ? 'Leaderboard' : 'Лидерборд';
-
-    const analyticsTabBtn = document.getElementById('tab-analytics-btn');
-    if (analyticsTabBtn) analyticsTabBtn.textContent = lang === 'en' ? 'Analytics' : 'Аналитика';
-
-    const analyticsH2 = document.getElementById('analytics-title');
-    if (analyticsH2) analyticsH2.textContent = lang === 'en' ? 'Analytics' : 'Аналитика';
-
-    const analyticsTimeOptions = document.querySelectorAll('#analytics-time-select option');
-    if (analyticsTimeOptions.length >= 4) {
-        analyticsTimeOptions[0].textContent = lang === 'en' ? 'All time' : 'За всё время';
-        analyticsTimeOptions[1].textContent = lang === 'en' ? 'Last 30 days' : 'Последние 30 дней';
-        analyticsTimeOptions[2].textContent = lang === 'en' ? 'Last 14 days' : 'Последние 14 дней';
-        analyticsTimeOptions[3].textContent = lang === 'en' ? 'Last 7 days' : 'Последние 7 дней';
-    }
-
-    const analyticsTimeLabel = document.getElementById('analytics-time-label');
-    if (analyticsTimeLabel) analyticsTimeLabel.textContent = lang === 'en' ? 'Filter by time:' : 'Фильтровать по времени:';
-
-    const hourLabel = document.getElementById('hour-label');
-    if (hourLabel) hourLabel.textContent = lang === 'en' ? 'Filter by hour:' : 'Фильтровать по часу:';
-
-    const hourSelectOptions = document.querySelectorAll('#hour-select option');
-    if (hourSelectOptions.length >= 25) {
-        hourSelectOptions[0].textContent = lang === 'en' ? 'All hours' : 'Все часы';
-    }
-
-    const avgMetricsBtn = document.getElementById('analytics-tab-averages');
-    if (avgMetricsBtn) avgMetricsBtn.textContent = lang === 'en' ? 'Avg metrics' : 'Средние метрики';
-
-    const topAuthorsBtn = document.getElementById('analytics-tab-authors');
-    if (topAuthorsBtn) topAuthorsBtn.textContent = lang === 'en' ? 'Top 10 authors' : 'Топ 10 авторов';
-
-    const topPostsBtn = document.getElementById('analytics-tab-posts');
-    if (topPostsBtn) topPostsBtn.textContent = lang === 'en' ? 'Top 10 posts' : 'Топ 10 постов';
-
-    const exportCsvBtn = document.getElementById('export-csv-btn');
-    if (exportCsvBtn) exportCsvBtn.textContent = lang === 'en' ? 'Export CSV' : 'Экспорт CSV';
-
-    const exportJsonBtn = document.getElementById('export-json-btn');
-    if (exportJsonBtn) exportJsonBtn.textContent = lang === 'en' ? 'Export JSON' : 'Экспорт JSON';
-
-    const headers = {
-        'name-header': { en: 'User', ru: 'Пользователь' },
-        'posts-header': { en: 'Posts ▲', ru: 'Посты ▲' },
-        'likes-header': { en: 'Likes', ru: 'Лайки' },
-        'retweets-header': { en: 'Retweets', ru: 'Ретвиты' },
-        'comments-header': { en: 'Comments', ru: 'Комментарии' },
-        'views-col-header': { en: 'Views', ru: 'Просмотры' }
-    };
-    Object.entries(headers).forEach(([id, texts]) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = texts[lang];
-    });
-
-    const authorMetricOptions = document.querySelectorAll('#author-metric-select option');
-    if (authorMetricOptions.length >= 3) {
-        authorMetricOptions[0].textContent = lang === 'en' ? 'Posts' : 'Посты';
-        authorMetricOptions[1].textContent = lang === 'en' ? 'Likes' : 'Лайки';
-        authorMetricOptions[2].textContent = lang === 'en' ? 'Views' : 'Просмотры';
-    }
-
-    const postMetricOptions = document.querySelectorAll('#post-metric-select option');
-    if (postMetricOptions.length >= 2) {
-        postMetricOptions[0].textContent = lang === 'en' ? 'Likes' : 'Лайки';
-        postMetricOptions[1].textContent = lang === 'en' ? 'Views' : 'Просмотры';
-    }
-
-    const avgMetricsH3 = document.getElementById('analytics-averages-title');
-    if (avgMetricsH3) avgMetricsH3.textContent = lang === 'en' ? 'Average metrics per user' : 'Средние метрики на пользователя';
-
-    const heatmapH3 = document.getElementById('heatmap-title');
-    if (heatmapH3) heatmapH3.textContent = lang === 'en' ? 'Activity Heatmap (Tweets by Day & Hour)' : 'Тепловая карта активности (Твиты по дням и часам)';
-
-    const topAuthorsH3 = document.getElementById('top-authors-title');
-    if (topAuthorsH3) topAuthorsH3.textContent = lang === 'en' ? 'Top 10 authors' : 'Топ 10 авторов';
-
-    const topPostsH3 = document.getElementById('top-posts-title');
-    if (topPostsH3) topPostsH3.textContent = lang === 'en' ? 'Top 10 posts' : 'Топ 10 постов';
-
-    const sortLabel1 = document.getElementById('author-metric-label');
-    if (sortLabel1) sortLabel1.textContent = lang === 'en' ? 'Sort by:' : 'Сортировать по:';
-
-    const sortLabel2 = document.getElementById('post-metric-label');
-    if (sortLabel2) sortLabel2.textContent = lang === 'en' ? 'Sort by:' : 'Сортировать по:';
-
-    const totalPostsEl = document.getElementById('total-posts');
-    if (totalPostsEl) {
-        const currentText = totalPostsEl.textContent;
-        const value = currentText.split(': ')[1] || '0';
-        totalPostsEl.textContent = lang === 'en' ? `Total Posts: ${value}` : `Всего Постов: ${value}`;
-    }
-    const totalUsersEl = document.getElementById('total-users');
-    if (totalUsersEl) {
-        const currentText = totalUsersEl.textContent;
-        const value = currentText.split(': ')[1] || '0';
-        totalUsersEl.textContent = lang === 'en' ? `Total Users: ${value}` : `Всего Пользователей: ${value}`;
-    }
-    const totalViewsEl = document.getElementById('total-views');
-    if (totalViewsEl) {
-        const currentText = totalViewsEl.textContent;
-        const value = currentText.split(': ')[1] || '0';
-        totalViewsEl.textContent = lang === 'en' ? `Total Views: ${value}` : `Всего Просмотров: ${value}`;
-    }
-    const avgPostsEl = document.getElementById('avg-posts');
-    if (avgPostsEl) {
-        const currentText = avgPostsEl.textContent;
-        const value = currentText.split(': ')[1] || '0.00';
-        avgPostsEl.textContent = lang === 'en' ? `Avg Posts: ${value}` : `Среднее Постов: ${value}`;
-    }
-    const avgLikesEl = document.getElementById('avg-likes');
-    if (avgLikesEl) {
-        const currentText = avgLikesEl.textContent;
-        const value = currentText.split(': ')[1] || '0.00';
-        avgLikesEl.textContent = lang === 'en' ? `Avg Likes: ${value}` : `Среднее Лайков: ${value}`;
-    }
-    const avgViewsEl = document.getElementById('avg-views');
-    if (avgViewsEl) {
-        const currentText = avgViewsEl.textContent;
-        const value = currentText.split(': ')[1] || '0.00';
-        avgViewsEl.textContent = lang === 'en' ? `Avg Views: ${value}` : `Среднее Просмотров: ${value}`;
-    }
-
-    const searchLabel = document.getElementById('search-label');
-    if (searchLabel) searchLabel.textContent = lang === 'en' ? 'SEARCH USER' : 'ПОИСК ПОЛЬЗОВАТЕЛЯ';
-
-    const filterLabel = document.getElementById('filter-label');
-    if (filterLabel) filterLabel.textContent = lang === 'en' ? 'FILTER BY TIME:' : 'ФИЛЬТРОВАТЬ ПО ВРЕМЕНИ:';
+    if (h1) h1.textContent = lang === 'en' ? 'WELCOME OPENGRADIENTS!' : 'ДОБРО ПОЖАЛОВАТЬ, Опенградиенты!';
 }
 
 // === DOMContentLoaded: ИНИЦИАЛИЗАЦИЯ ===
@@ -1234,35 +1067,16 @@ document.addEventListener('DOMContentLoaded', () => {
         setLanguage('en');
     }
     
-    // Snow effect initialization
-    const snowContainer = document.getElementById('snowContainer');
-    if (snowContainer) {
-        const snowflakeCount = 50;
-        const containerRect = snowContainer.getBoundingClientRect();
-        for (let i = 0; i < snowflakeCount; i++) {
-            const flake = document.createElement('div');
-            flake.classList.add('snowflake');
-            const size = Math.random() * 4 + 2;
-            flake.style.width = `${size}px`;
-            flake.style.height = `${size}px`;
-            flake.style.left = `${Math.random() * containerRect.width}px`;
-            flake.style.top = `${Math.random() * -containerRect.height}px`;
-            flake.style.animationDuration = `${Math.random() * 10 + 5}s, ${Math.random() * 4 + 3}s`;
-            flake.style.animationDelay = `${Math.random() * 5}s`;
-            snowContainer.appendChild(flake);
-        }
-    }
-    
     // NFT Mint: Привязка кнопки
     const mintBtn = document.getElementById('btn-mint');
     if (mintBtn) mintBtn.addEventListener('click', mintCardNFT);
-
+    
     // NFT Gallery: Кнопка обновления
     const refreshBtn = document.getElementById('refresh-nft-btn');
     if (refreshBtn) {
-      refreshBtn.addEventListener('click', () => {
-        localStorage.removeItem('ritual_nft_gallery');
-        loadNFTGallery();
-      });
+        refreshBtn.addEventListener('click', () => {
+            localStorage.removeItem('ritual_nft_gallery');
+            loadNFTGallery();
+        });
     }
 });
