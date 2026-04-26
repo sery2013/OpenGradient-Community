@@ -81,13 +81,24 @@ function normalizeData(json) {
   }
   data = data.map(d => applyTimeFilterIfNeeded(d));
   
-  function extractBaseStatsFromItem(item) {
+    function extractBaseStatsFromItem(item) {
+    // Вспомогательная функция: ищет значение по ключу, игнорируя пробелы
+    const getVal = (key) => {
+      for (let k in item) {
+        if (k.trim() === key) return item[k];
+      }
+      return 0;
+    };
+
     const username = item.username || item.user || item.name || item.screen_name || "";
-    const posts = Number(item.posts || item.tweets || 0);
-    const likes = Number(item.likes || item.favorite_count || 0);
-    const retweets = Number(item.retweets || item.retweet_count || 0);
-    const comments = Number(item.comments || item.reply_count || 0);
-    const views = Number(item.views || item.views_count || 0);
+    
+    // Используем getVal, чтобы найти "posts " или "posts"
+    const posts = Number(getVal("posts") || item.tweets || 0);
+    const likes = Number(getVal("likes") || item.favorite_count || 0);
+    const retweets = Number(getVal("retweets") || item.retweet_count || 0);
+    const comments = Number(getVal("comments") || item.reply_count || 0);
+    const views = Number(getVal("views") || item.views_count || 0);
+    
     return { username, posts, likes, retweets, comments, views };
   }
   
