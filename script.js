@@ -1,1053 +1,825 @@
-// === ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ===
-let rawData = [];
-let data = [];
-let allTweets = [];
-let sortKey = "posts";
-let sortOrder = "desc";
-let currentPage = 1;
-const perPage = 15;
-let timeFilter = "all";
-let analyticsChart = null;
-let analyticsPeriod = "all";
-let analyticsHourFilter = "all";
-let currentLang = 'en';
+/* === GLOBAL STYLES === */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: #0d1117;
+  color: #fff;
+  overflow-x: hidden;
+}
 
-// === NFT MINT: ГЛОБАЛЬНЫЕ НАСТРОЙКИ ===
-// ⚠️ ВСТАВЬ СЮДА СВОЙ АДРЕС КОНТРАКТА ПОСЛЕ ДЕПЛОЯ В REMIX
-const CONTRACT_ADDRESS = "ВСТАВЬ_СЮДА_АДРЕС_КОНТРАКТА";
-// ⚠️ ВСТАВЬ СЮДА ABI КОНТРАКТА (скопировать из Remix: вкладка Compile → кнопка ABI)
-const CONTRACT_ABI = [/* ВСТАВЬ_СЮДА_СКОПИРОВАННЫЙ_ABI_МАССИВ */];
-// Данные текущей карточки для минта
-let currentCardData = { username: "", stats: {}, imageData: "" };
+/* === BACKGROUND === */
+.background {
+  position: fixed;
+  inset: 0;
+  background: url("https://i.imgur.com/whGwSLM.png") no-repeat center center / cover;
+  z-index: -1;
+  filter: brightness(0.35) blur(2px);
+}
 
-// - Fetch leaderboard data -
-async function fetchData() {
-  try {
-    const response = await fetch("leaderboard.json");
-    const json = await response.json();
-    rawData = json;
-    normalizeData(rawData);
-    sortData();
-    renderTable();
-    updateArrows();
-    updateTotals();
-  } catch (err) {
-    console.error("Failed to fetch leaderboard:", err);
+/* === CENTERED BANNER === */
+.centered-banner {
+  width: 100%;
+  height: 100px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #0d1117;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 0; /* УБРАНО: отступ снизу */
+}
+
+.banner-link {
+  display: block;
+  width: 1350px;
+  height: 100px;
+  background: url("https://i.yapx.ru/cInFv.png") no-repeat center center;
+  background-size: 1350px 100px;
+  cursor: pointer;
+}
+
+/* === CONTAINER — УМЕНЬШЕН ОТСТУП СВЕРХУ === */
+.container {
+  max-width: 1000px;
+  margin: 8px auto 60px; /* БЫЛО: 160px → СТАЛО: 8px */
+  padding: 20px;
+  text-align: center;
+}
+
+/* === WELCOME BLOCK — УБРАН ВЕРХНИЙ ОТСТУП === */
+.welcome-block {
+  background-color: transparent;
+  border: 1px solid #2F4F4F;
+  border-radius: 5%;
+  padding: 20px;
+  color: white;
+  text-align: left;
+  margin: 0 auto 20px; /* БЫЛО: 20px auto → СТАЛО: 0 auto 20px */
+  max-width: 800px;
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+}
+
+.welcome-block h1 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 2rem;
+  text-align: center;
+}
+
+/* === STATS === */
+.stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.stat-box {
+  flex: 1;
+  padding: 15px;
+  font-size: 1.1rem;
+  background: linear-gradient(135deg, #2F4F4F, #1a2a2a);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 7.5%;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+}
+
+.stat-box::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: url('image/svg+xml;utf8,✦✧✦✧');
+  background-repeat: repeat;
+  background-size: 100px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.stat-box:hover {
+  border-color: #fff;
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.6);
+  transform: scale(1.03);
+}
+
+/* === SEARCH & FILTER === */
+.search-time-filter-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 25px;
+  padding: 15px;
+  background: linear-gradient(135deg, #2F4F4F, #1a2a2a);
+  border-radius: 7.5%;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.search-time-filter-container::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: url('data:image/svg+xml;utf8,✦✧✦✧');
+  background-repeat: repeat;
+  background-size: 100px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.search-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.search-label {
+  font-weight: 600;
+  color: #fff;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.search-input {
+  flex: 1;
+  padding: 10px 15px;
+  border-radius: 5%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+  color: #fff;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.search-input::placeholder { color: #a9ddd3; }
+.search-input:focus {
+  outline: none;
+  border-color: #6fe3d1;
+  box-shadow: 0 0 10px rgba(111, 227, 209, 0.5);
+}
+
+.filter-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-label {
+  font-weight: 600;
+  color: #a9ddd3;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.time-select {
+  padding: 8px 12px;
+  border-radius: 5%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #2F4F4F;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.time-select:hover {
+  background: #3a5f5f;
+  border-color: rgba(255,255,255,0.3);
+}
+
+/* === TABLE === */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 3%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #2F4F4F, #1a2a2a);
+  backdrop-filter: blur(5px);
+  position: relative;
+}
+
+table::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: url('image/svg+xml;utf8,✦✧✦✧');
+  background-repeat: repeat;
+  background-size: 100px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+thead th {
+  padding: 12px 15px;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  user-select: none;
+  transition: 0.2s;
+}
+
+thead th:hover { text-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
+thead th.active { color: #fff; text-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
+
+.sort-arrow { font-size: 0.8rem; margin-left: 5px; opacity: 0.7; }
+
+tbody td {
+  padding: 10px 15px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+}
+
+/* Сдвиг заголовка User вправо */
+#name-header {
+  text-align: left !important;
+  padding-left: 30px !important;
+}
+
+/* === PAGINATION === */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.pagination button {
+  padding: 8px 15px;
+  color: #fff;
+  font-weight: 500;
+  background: linear-gradient(135deg, #2F4F4F, #1a2a2a);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 7.5%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pagination button:hover {
+  background: linear-gradient(135deg, #3a5f5f, #2a3a3a);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+}
+
+#page-info { font-weight: 600; color: #fff; }
+
+/* === TWEETS ACCORDION === */
+.tweets-row td {
+  background: linear-gradient(135deg, #2F4F4F, #1a2a2a);
+  border-top: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 25px;
+  animation: fadeInAccordion 0.4s ease;
+  border-radius: 5%;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes fadeInAccordion {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tweet-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.tweet-card {
+  background: linear-gradient(135deg, #2F4F4F, #1a2a2a);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 5%;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
+  width: 445px;
+  color: #fff;
+  padding: 15px 18px;
+  text-align: left;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.tweet-card:hover {
+  transform: translateY(-5px);
+  border-color: #fff;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+}
+
+.tweet-card p { margin: 0; font-size: 0.95rem; line-height: 1.4rem; white-space: pre-line; }
+.tweet-card img { width: 100%; border-radius: 5%; margin-top: 10px; object-fit: cover; }
+.tweet-card .tweet-date { margin-top: 10px; font-size: 0.9rem; color: #fff; opacity: 0.8; text-align: right; font-style: italic; }
+.tweet-card.short { padding: 10px 14px; font-size: 0.9rem; text-align: center; justify-content: center; }
+
+tr.active-row {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05)) !important;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+  transition: all 0.3s ease;
+}
+
+/* === TABS — СТИЛЬНЫЕ ЭФФЕКТЫ === */
+.tabs {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.tab-btn {
+  padding: 8px 14px;
+  border-radius: 5%;
+  border: 2px solid rgba(255,255,255,0.25);
+  background: linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.tab-btn::before {
+  content: " ";
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background-image: url('image/svg+xml;utf8,✦✧✦✧');
+  background-repeat: repeat; background-size: 100px;
+  pointer-events: none; z-index: -1;
+}
+
+.tab-btn::after {
+  content: "";
+  position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transform: skewX(-25deg);
+  transition: left 0.6s ease;
+  pointer-events: none;
+}
+
+.tab-btn:hover {
+  background: linear-gradient(90deg, rgba(111,227,209,0.25), rgba(0,168,150,0.1));
+  border-color: rgba(111,227,209,0.7);
+  box-shadow: 0 0 18px rgba(111,227,209,0.45), inset 0 0 12px rgba(111,227,209,0.15);
+  transform: translateY(-3px);
+}
+.tab-btn:hover::after { left: 150%; }
+
+.tab-btn.active {
+  background: linear-gradient(90deg, rgba(111,227,209,0.3), rgba(0,168,150,0.15));
+  border-color: rgba(111,227,209,0.9);
+  box-shadow: 0 0 22px rgba(111,227,209,0.5), inset 0 0 14px rgba(111,227,209,0.2);
+}
+
+.tab-content { padding: 8px 0 30px; }
+
+/* === COMBINED BOTTOM BLOCK === */
+.combined-bottom-block {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 15px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  width: 100%;
+  border: 1px solid rgba(111,227,209,0.1);
+  transition: all 0.3s ease;
+}
+
+.combined-bottom-block:hover {
+  border-color: rgba(111,227,209,0.3);
+  box-shadow: 0 0 20px rgba(111,227,209,0.15);
+}
+
+/* === TEAM BOX === */
+.team-box {
+  display: inline-block;
+  margin-top: 15px;
+  padding: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 7.5%;
+  background: linear-gradient(135deg, #2F4F4F, #1a2a2a);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.team-box::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background-image: url('image/svg+xml;utf8,✦✧✦✧');
+  background-repeat: repeat; background-size: 100px;
+  pointer-events: none; z-index: -1;
+}
+
+.team-box p { margin: 5px 0; font-weight: 600; color: #fff; }
+
+/* === GENERATE CARD BUTTON (вместо Twitter icon) === */
+.generate-card-btn {
+  padding: 6px 14px;
+  margin-left: 8px;
+  background: linear-gradient(135deg, #6fe3d1, #00a896);
+  color: #0d1117;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(111, 227, 209, 0.3);
+}
+
+.generate-card-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(111, 227, 209, 0.5);
+  background: linear-gradient(135deg, #82f0e0, #00c4b0);
+}
+
+.generate-card-btn:active { transform: translateY(0); }
+
+/* === CARD MODAL — УЛУЧШЕННЫЙ ДИЗАЙН === */
+.card-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 12, 20, 0.95);
+  backdrop-filter: blur(12px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.card-modal-content {
+  background: linear-gradient(160deg, #1a2e2e, #0d1515);
+  border: 2px solid rgba(111, 227, 209, 0.3);
+  border-radius: 20px;
+  padding: 30px;
+  max-width: 900px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 0 60px rgba(111, 227, 209, 0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.close-modal {
+  position: absolute;
+  top: 15px; right: 20px;
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: #fff;
+  font-size: 1.8rem;
+  cursor: pointer;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.close-modal:hover {
+  background: rgba(255,255,255,0.2);
+  transform: rotate(90deg);
+}
+
+#card-modal-title {
+  margin: 0 0 20px;
+  font-size: 1.6rem;
+  color: #6fe3d1;
+}
+
+.canvas-wrapper {
+  margin: 0 auto 25px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+  background: #000;
+  max-width: 100%;
+  border: 2px solid rgba(111, 227, 209, 0.2);
+}
+
+#user-canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 65vh;
+  object-fit: contain;
+}
+
+.card-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.action-btn {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-btn.download {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  border: 2px solid rgba(255,255,255,0.2);
+}
+.action-btn.download:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.4);
+  transform: translateY(-2px);
+}
+
+.action-btn.mint {
+  background: linear-gradient(90deg, #6fe3d1, #00a896);
+  color: #0d1117;
+  box-shadow: 0 4px 15px rgba(111, 227, 209, 0.3);
+}
+.action-btn.mint:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(111, 227, 209, 0.5);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.status-text {
+  width: 100%;
+  color: #a9ddd3;
+  font-size: 0.95rem;
+  margin-top: 15px;
+  min-height: 24px;
+  font-family: monospace;
+}
+
+/* === NFT GALLERY TAB === */
+#tab-nft-gallery { padding: 20px 0; }
+
+.gallery-header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+.gallery-header h2 { font-size: 2rem; margin-bottom: 8px; color: #fff; }
+.gallery-header p { color: #a9ddd3; margin-bottom: 15px; }
+
+#refresh-nft-btn {
+  margin-top: 10px;
+  background: #2F4F4F;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+
+.nft-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  padding: 10px 0;
+}
+
+.nft-gallery-card {
+  background: linear-gradient(135deg, #2F4F4F, #1a2a2a);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+
+.nft-gallery-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(111, 227, 209, 0.15);
+  border-color: #6fe3d1;
+}
+
+.nft-gallery-card img {
+  width: 100%;
+  height: 350px;
+  object-fit: cover;
+  display: block;
+  background: #0d1117;
+}
+
+.nft-info { padding: 15px; text-align: left; }
+.nft-info h4 { margin: 0 0 8px; font-size: 1.2rem; color: #fff; }
+.nft-info p { margin: 0 0 10px; font-size: 0.85rem; color: #a9ddd3; font-family: monospace; }
+
+.nft-stats {
+  display: flex;
+  justify-content: space-between;
+  background: rgba(0,0,0,0.2);
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+  color: #fff;
+}
+
+.nft-explorer-link {
+  display: block;
+  text-align: center;
+  background: rgba(255,255,255,0.1);
+  color: #6fe3d1;
+  padding: 8px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.nft-explorer-link:hover { background: rgba(111, 227, 209, 0.2); }
+
+.gallery-loading, .gallery-empty, .gallery-error {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px;
+  color: #a9ddd3;
+  font-size: 1.1rem;
+}
+.gallery-error { color: #ff6b6b; }
+
+/* === ANALYTICS === */
+.analytics-time-filter {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 18px;
+  background: rgba(255,255,255,0.02);
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.analytics-nested-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.03);
+}
+
+.analytics-tab-btn {
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: #fff !important;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 200ms ease;
+  border-radius: 5% 5% 0 0;
+}
+
+.analytics-tab-btn.active {
+  color: #fff !important;
+  border-bottom-color: #fff;
+}
+
+.analytics-nested-content {
+  display: none !important;
+  animation: fadeIn 250ms ease;
+  background: #2F4F4F !important;
+  color: #fff !important;
+  border-radius: 5%;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.analytics-nested-content.active { display: block !important; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.analytics-block {
+  background: #2F4F4F !important;
+  padding: 12px;
+  border-radius: 5%;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff !important;
+}
+
+.analytics-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+.analytics-block select {
+  background: #2F4F4F !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 6px 8px;
+  border-radius: 7.5%;
+}
+
+#top-authors-list, #top-posts-list { list-style: none; margin: 0; padding: 0; }
+
+#top-authors-list li, .top-post-item {
+  padding: 10px;
+  border-radius: 5%;
+  background: #2F4F4F !important;
+  margin-bottom: 8px;
+  border: 1px solid rgba(255,255,255,0.02);
+  color: #fff !important;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#top-authors-list li::after, .top-post-item::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 1px;
+  background: #DCDCDC;
+  opacity: 0.8;
+  z-index: 1;
+}
+#top-authors-list li:last-child::after, .top-post-item:last-child::after { display: none; }
+
+.top-post-item .excerpt { max-width: 70%; color: #fff !important; }
+.top-post-item .meta { color: #fff !important; font-weight: 600; }
+
+/* === SELECT STYLING === */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+  padding-right: 32px;
+  border-radius: 5%;
+}
+
+select option {
+  background: #2F4F4F !important;
+  color: #fff !important;
+  padding: 8px;
+}
+
+/* === MOBILE === */
+@media (max-width: 768px) {
+  #leaderboard-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -15px;
+    padding: 0 15px;
   }
+  table { min-width: 100%; width: fit-content; margin: 0; border-radius: 5%; }
+  .container { padding: 10px; margin: 8px auto 40px; }
+  .welcome-section h1 { font-size: 2rem; }
+  .welcome-section p { font-size: 1rem; }
+  .tabs { gap: 8px; }
+  .tab-btn { padding: 6px 10px; font-size: 0.9rem; }
+  .stats { flex-direction: column; gap: 10px; }
+  .stat-box { font-size: 1rem; padding: 12px; }
+  .search-box { width: 100%; }
+  #search { width: 100%; padding: 8px 12px; font-size: 1rem; }
+  .time-filter { flex-direction: column; gap: 8px; padding: 8px 15px; width: fit-content; margin: 15px auto; }
+  .time-filter label, .time-filter select { font-size: 0.95rem; }
+  .pagination button, .pagination span { padding: 6px 10px; font-size: 0.9rem; }
+  .generate-card-btn { width: 20px; height: 20px; margin-left: 6px; font-size: 0.8rem; }
+  .tweet-card { width: 100% !important; max-width: 100% !important; padding: 10px 12px; }
+  .tweet-card p { font-size: 0.9rem; }
+  .tweet-card .tweet-date { font-size: 0.8rem; }
+  .analytics-row { flex-direction: column; gap: 10px; }
+  .analytics-row .stat-box { width: 100% !important; }
+  #top-authors-list li, .top-post-item { flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 12px; }
+  #top-authors-list li .author-metric-value, .top-post-item .meta { margin-top: 4px; width: fit-content; }
 }
 
-// - Fetch all tweets -
-async function fetchTweets() {
-  try {
-    const response = await fetch("all_tweets.json");
-    const json = await response.json();
-    if (Array.isArray(json)) {
-      allTweets = json;
-    } else if (json && typeof json === "object") {
-      if (Array.isArray(json.tweets)) {
-        allTweets = json.tweets;
-      } else if (Array.isArray(json.data)) {
-        allTweets = json.data;
-      } else {
-        allTweets = [json];
-      }
-    } else {
-      allTweets = [];
-    }
-    if (typeof renderAnalytics === "function") renderAnalytics();
-  } catch (err) {
-    console.error("Failed to fetch all tweets:", err);
-    allTweets = [];
-  }
-}
-
-fetchTweets().then(() => fetchData());
-setInterval(() => { fetchTweets(); fetchData(); }, 3600000);
-
-// - Normalize leaderboard data -
-function normalizeData(json) {
-  data = [];
-  if (Array.isArray(json) && json.length > 0 && !Array.isArray(json[0])) {
-    data = json.map(item => extractBaseStatsFromItem(item));
-  } else if (Array.isArray(json) && json.length > 0 && Array.isArray(json[0])) {
-    data = json.map(([name, stats]) => {
-      const base = extractBaseStatsFromItem(stats || {});
-      base.username = name || base.username || "";
-      return applyTimeFilterIfNeeded(base);
-    });
-  } else if (json && typeof json === "object") {
-    data = Object.entries(json).map(([name, stats]) => {
-      const base = extractBaseStatsFromItem(stats || {});
-      base.username = name || base.username || "";
-      return applyTimeFilterIfNeeded(base);
-    });
-  }
-  data = data.map(d => applyTimeFilterIfNeeded(d));
-  
-  function extractBaseStatsFromItem(item) {
-    const username = item.username || item.user || item.name || item.screen_name || "";
-    const posts = Number(item.posts || item.tweets || 0);
-    const likes = Number(item.likes || item.favorite_count || 0);
-    const retweets = Number(item.retweets || item.retweet_count || 0);
-    const comments = Number(item.comments || item.reply_count || 0);
-    const views = Number(item.views || item.views_count || 0);
-    return { username, posts, likes, retweets, comments, views };
-  }
-  
-  function applyTimeFilterIfNeeded(base) {
-    if (!base || !base.username) return base;
-    if (timeFilter === "all") return base;
-    const days = Number(timeFilter);
-    if (!days || days <= 0) return base;
-    const now = new Date();
-    const uname = String(base.username).toLowerCase().replace(/^@/, "");
-    const userTweets = allTweets.filter(t => {
-      const candidate = (t.user && (t.user.screen_name || t.user.name)) || "";
-      return String(candidate).toLowerCase().replace(/^@/, "") === uname;
-    });
-    let posts = 0, likes = 0, retweets = 0, comments = 0, views = 0;
-    userTweets.forEach(tweet => {
-      const created = tweet.tweet_created_at || tweet.created_at || tweet.created || null;
-      if (!created) return;
-      const tweetDate = new Date(created);
-      if (isNaN(tweetDate)) return;
-      const diffDays = (now - tweetDate) / (1000 * 60 * 60 * 24);
-      if (diffDays <= days) {
-        posts += 1;
-        likes += Number(tweet.favorite_count || 0);
-        retweets += Number(tweet.retweet_count || 0);
-        comments += Number(tweet.reply_count || 0);
-        views += Number(tweet.views_count || 0);
-      }
-    });
-    return { username: base.username, posts, likes, retweets, comments, views };
-  }
-}
-
-// - Update totals -
-function updateTotals() {
-  const totalPosts = data.reduce((sum, s) => sum + (Number(s.posts) || 0), 0);
-  const totalViews = data.reduce((sum, s) => sum + (Number(s.views) || 0), 0);
-  document.getElementById("total-posts").textContent = `Total Posts: ${totalPosts}`;
-  document.getElementById("total-users").textContent = `Total Users: ${data.length}`;
-  document.getElementById("total-views").textContent = `Total Views: ${totalViews}`;
-}
-
-// - Sort, Filter, Render -
-function sortData() {
-  data.sort((a, b) => {
-    const valA = Number(a[sortKey] || 0);
-    const valB = Number(b[sortKey] || 0);
-    return sortOrder === "asc" ? valA - valB : valB - valA;
-  });
-}
-
-function filterData() {
-  const query = document.getElementById("search").value.toLowerCase();
-  return data.filter(item => (item.username || "").toLowerCase().includes(query));
-}
-
-// === NFT CARD: ОТКРЫТИЕ МОДАЛЬНОГО ОКНА ===
-function showCardModal(username) {
-  const user = data.find(u => u.username.toLowerCase() === username.toLowerCase());
-  if (!user) return;
-  
-  currentCardData = { username, stats: user };
-  generateCardCanvas(username, user);
-  
-  const modal = document.getElementById('card-modal');
-  if (modal) modal.style.display = 'flex';
-  document.getElementById('card-modal-title').textContent = `@${username} Card`;
-  document.getElementById('mint-status').textContent = '';
-  document.getElementById('btn-mint').disabled = false;
-}
-
-function closeCardModal() {
-  document.getElementById('card-modal').style.display = 'none';
-}
-
-// === NFT CARD: ГЕНЕРАЦИЯ CANVAS (600x800 PNG) ===
-async function generateCardCanvas(username, stats) {
-  const canvas = document.getElementById('user-canvas');
-  const ctx = canvas.getContext('2d');
-  const W = 600, H = 800;
-  
-  // 1. Фон (градиент)
-  const grad = ctx.createLinearGradient(0, 0, W, H);
-  grad.addColorStop(0, '#1a2a2a');
-  grad.addColorStop(0.5, '#2F4F4F');
-  grad.addColorStop(1, '#0d1117');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
-  
-  // 2. Рамка
-  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-  ctx.lineWidth = 4;
-  ctx.roundRect(10, 10, W-20, H-20, 16);
-  ctx.stroke();
-  
-  // 3. Аватар (ищем в allTweets)
-  const avatarUrl = await fetchAvatarUrl(username);
-  if (avatarUrl) {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.src = avatarUrl;
-    await new Promise(res => { img.onload = res; img.onerror = res; });
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(80, 100, 50, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.clip();
-    ctx.drawImage(img, 30, 50, 100, 100);
-    ctx.restore();
-    ctx.strokeStyle = '#6fe3d1'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(80, 100, 50, 0, Math.PI * 2); ctx.stroke();
-  }
-  
-  // 4. Данные пользователя
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 28px Segoe UI, sans-serif';
-  ctx.fillText(`@${username}`, 150, 90);
-  ctx.font = '16px Segoe UI, sans-serif';
-  ctx.fillStyle = '#a9ddd3';
-  ctx.fillText('RITUAL COMMUNITY LEADERBOARD', 150, 115);
-  
-  const metrics = [
-    { label: 'Posts', val: stats.posts || 0, icon: '📝' },
-    { label: 'Likes', val: stats.likes || 0, icon: '❤️' },
-    { label: 'Retweets', val: stats.retweets || 0, icon: '🔁' },
-    { label: 'Comments', val: stats.comments || 0, icon: '💬' },
-    { label: 'Views', val: stats.views || 0, icon: '👁️' }
-  ];
-  
-  let y = 200;
-  ctx.font = '20px Segoe UI, sans-serif';
-  ctx.fillStyle = '#fff';
-  metrics.forEach(m => {
-    ctx.fillText(`${m.icon} ${m.label}:`, 40, y);
-    ctx.fillStyle = '#6fe3d1';
-    ctx.font = 'bold 22px Segoe UI, sans-serif';
-    ctx.fillText(Number(m.val).toLocaleString(), 220, y);
-    ctx.fillStyle = '#fff';
-    ctx.font = '20px Segoe UI, sans-serif';
-    y += 45;
-  });
-  
-  // 5. Футер
-  ctx.fillStyle = 'rgba(255,255,255,0.4)';
-  ctx.font = '14px Segoe UI, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('Minted on Ritual Testnet • Generated ' + new Date().toLocaleDateString(), W/2, H-40);
-  
-  // Сохраняем base64 для минта (без префикса)
-  currentCardData.imageData = canvas.toDataURL('image/png').split(',')[1];
-  
-  // Кнопка Download
-  document.getElementById('btn-download').onclick = () => {
-    const link = document.createElement('a');
-    link.download = `card_${username}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  };
-}
-
-// Вспомогательная: поиск аватара в allTweets
-async function fetchAvatarUrl(username) {
-  const clean = username.replace(/^@/, '').toLowerCase();
-  const tweet = allTweets.find(t => 
-    (t.user?.screen_name || t.user?.name || '').toLowerCase().replace(/^@/, '') === clean
-  );
-  return tweet?.user?.profile_image_url_https || null;
-}
-
-// === NFT MINT: МИНТ ЧЕРЕЗ RITUAL TESTNET ===
-async function mintCardNFT() {
-  const status = document.getElementById('mint-status');
-  const btn = document.getElementById('btn-mint');
-  
-  if (!window.ethereum) { status.textContent = '❌ Установи MetaMask'; return; }
-  
-  btn.disabled = true;
-  status.textContent = '⏳ Подключение к кошельку...';
-  
-  try {
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
-    const address = await signer.getAddress();
-    
-    // Проверка сети Ritual (Chain ID: 1979)
-    const network = await provider.getNetwork();
-    if (network.chainId !== 1979n) {
-      status.textContent = '🔄 Переключаю на Ritual Testnet...';
-      await window.ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0x7BB' }] // 1979 in hex
-      });
-    }
-    
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-    
-    status.textContent = '⏳ Подтверди транзакцию в MetaMask...';
-    const tx = await contract.mintCard(
-      address,
-      currentCardData.username,
-      currentCardData.stats.posts || 0,
-      currentCardData.stats.likes || 0,
-      currentCardData.stats.retweets || 0,
-      currentCardData.stats.comments || 0,
-      currentCardData.stats.views || 0,
-      currentCardData.imageData,
-      { value: ethers.parseEther("0.001") } // Оплата 0.001 RITUAL
-    );
-    
-    status.textContent = '⛓️ Транзакция отправлена. Ожидание подтверждения...';
-    await tx.wait();
-    status.textContent = '✅ NFT успешно заминчен! Проверь кошелёк.';
-    status.style.color = '#4ade80';
-    
-  } catch (err) {
-    console.error(err);
-    status.textContent = `❌ Ошибка: ${err.message || err}`;
-    status.style.color = '#ff6b6b';
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-// - Render Table with NFT Card Button (вместо Share) -
-function renderTable() {
-  const tbody = document.getElementById("leaderboard-body");
-  tbody.innerHTML = "";
-  const filtered = filterData();
-  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
-  if (currentPage > totalPages) currentPage = totalPages;
-  const start = (currentPage - 1) * perPage;
-  const pageData = filtered.slice(start, start + perPage);
-  
-  pageData.forEach(stats => {
-    const name = stats.username || "";
-    const tr = document.createElement("tr");
-    
-    const nameCell = document.createElement("td");
-    const nameContainer = document.createElement("div");
-    nameContainer.style.display = "flex";
-    nameContainer.style.alignItems = "center";
-    nameContainer.style.gap = "8px";
-    
-    const nameSpan = document.createElement("span");
-    nameSpan.textContent = escapeHtml(name);
-    
-    // Кнопка NFT Card (вместо Share)
-    const nftBtn = document.createElement("button");
-    nftBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.244 2.25H8.05l4.713 6.231zm-1.161 17.52h1.833L7.08 4.126H5.03z"/></svg>`;
-    nftBtn.className = 'share-btn';
-    nftBtn.title = currentLang === 'en' ? `Generate NFT card for ${escapeHtml(name)}` : `Сгенерировать NFT карточку для ${escapeHtml(name)}`;
-    
-    // ОТКРЫВАЕМ МОДАЛЬНОЕ ОКНО ВМЕСТО ШАРИНГА
-    nftBtn.onclick = function(e) {
-      e.stopPropagation();
-      showCardModal(name);
-    };
-    
-    nameContainer.appendChild(nameSpan);
-    nameContainer.appendChild(nftBtn);
-    nameCell.appendChild(nameContainer);
-    
-    tr.appendChild(nameCell);
-    tr.insertAdjacentHTML('beforeend', `<td>${Number(stats.posts || 0)}</td>`);
-    tr.insertAdjacentHTML('beforeend', `<td>${Number(stats.likes || 0)}</td>`);
-    tr.insertAdjacentHTML('beforeend', `<td>${Number(stats.retweets || 0)}</td>`);
-    tr.insertAdjacentHTML('beforeend', `<td>${Number(stats.comments || 0)}</td>`);
-    tr.insertAdjacentHTML('beforeend', `<td>${Number(stats.views || 0)}</td>`);
-    tbody.appendChild(tr);
-  });
-  
-  document.getElementById("page-info").textContent = `Page ${currentPage} / ${totalPages}`;
-  addUserClickHandlers();
-}
-
-// - Escaping HTML -
-function escapeHtml(str) {
-  const stringified = String(str || '');
-  return stringified
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-// - Sorting headers -
-function updateSort(key) {
-  if (sortKey === key) sortOrder = sortOrder === "asc" ? "desc" : "asc";
-  else { sortKey = key; sortOrder = "desc"; }
-  sortData();
-  renderTable();
-  updateArrows();
-}
-
-function updateArrows() {
-  document.querySelectorAll(".sort-arrow").forEach(el => el.textContent = "");
-  const active = document.querySelector(`#${sortKey}-header .sort-arrow`) || document.querySelector(`#${sortKey}-col-header .sort-arrow`);
-  if (active) active.textContent = sortOrder === "asc" ? "▲" : "▼";
-  document.querySelectorAll("thead th").forEach(th => th.classList.remove("active"));
-  const headerId = sortKey + (["views", "retweets", "comments"].includes(sortKey) ? "-col-header" : "-header");
-  const headerEl = document.getElementById(headerId);
-  if (headerEl) headerEl.classList.add("active");
-}
-
-// - Pagination -
-document.getElementById("prev-page").onclick = () => { if (currentPage > 1) { currentPage--; renderTable(); } };
-document.getElementById("next-page").onclick = () => {
-  const total = Math.ceil(filterData().length / perPage);
-  if (currentPage < total) { currentPage++; renderTable(); }
-};
-
-// - Search -
-document.getElementById("search").addEventListener("input", () => { currentPage = 1; renderTable(); });
-
-// - Sorting headers click -
-["posts","likes","retweets","comments","views"].forEach(key => {
-  const el = document.getElementById(key === "views" ? "views-col-header" : key+"-header");
-  if(el) el.addEventListener("click", () => updateSort(key));
-});
-
-// - Time filter -
-document.getElementById("time-select").addEventListener("change", e => {
-  timeFilter = e.target.value || "all";
-  currentPage = 1;
-  normalizeData(rawData);
-  sortData();
-  renderTable();
-  updateTotals();
-});
-
-// - Отображение твитов при клике на пользователя -
-function showTweets(username) {
-    const container = document.getElementById("tweets-list");
-    const title = document.getElementById("tweets-title");
-    container.innerHTML = "";
-    const userTweets = allTweets.filter(tweet => {
-        const candidate = (tweet.user && (tweet.user.screen_name || tweet.user.name)) || "";
-        return candidate.toLowerCase().replace(/^@/, "") === username.toLowerCase().replace(/^@/, "");
-    });
-    title.textContent = `Посты пользователя: ${username}`;
-    if(userTweets.length === 0) {
-        container.innerHTML = "<li>У пользователя нет постов</li>";
-        return;
-    }
-    userTweets.forEach(tweet => {
-        const li = document.createElement("li");
-        const content = tweet.text || tweet.content || "(no content)";
-        const url = tweet.url || (tweet.id_str ? `https://twitter.com/${username}/status/${tweet.id_str}` : "#");
-        li.innerHTML = `<a href="${url}" target="_blank">${escapeHtml(content)}</a>`;
-        container.appendChild(li);
-    });
-}
-
-// - Добавляем обработчики клика на строки таблицы после рендера -
-function addUserClickHandlers() {
-    const tbody = document.getElementById("leaderboard-body");
-    tbody.querySelectorAll("tr").forEach(tr => {
-        tr.addEventListener("click", () => {
-            const username = tr.children[0].textContent.trim();
-            toggleTweetsRow(tr, username);
-        });
-    });
-}
-
-// - Создание аккордеона твитов -
-function toggleTweetsRow(tr, username) {
-  const nextRow = tr.nextElementSibling;
-  const isAlreadyOpen = nextRow && nextRow.classList.contains("tweets-row") &&
-                        nextRow.dataset.username === username;
-  document.querySelectorAll(".tweets-row").forEach(row => row.remove());
-  document.querySelectorAll("tbody tr").forEach(row => row.classList.remove("active-row"));
-  if (isAlreadyOpen) return;
-  tr.classList.add("active-row");
-  
-  const tweetsRow = document.createElement("tr");
-  tweetsRow.classList.add("tweets-row");
-  tweetsRow.dataset.username = username;
-  const td = document.createElement("td");
-  td.colSpan = 6;
-  
-  const userTweets = allTweets.filter(tweet => {
-    const candidate = (tweet.user?.screen_name || tweet.user?.name || "").toLowerCase();
-    return candidate.replace(/^@/, "") === username.toLowerCase().replace(/^@/, "");
-  });
-  
-  if (userTweets.length === 0) {
-    td.innerHTML = "<i style='color:#aaa;'>У пользователя нет постов</i>";
-  } else {
-    const container = document.createElement("div");
-    container.classList.add("tweet-container");
-    userTweets.forEach(tweet => {
-      const content = tweet.full_text || tweet.text || tweet.content || "";
-      const url = tweet.url || (tweet.id_str ? `https://twitter.com/${username}/status/${tweet.id_str}` : "#");
-      let dateRaw = tweet.created_at || tweet.tweet_created_at || "";
-      let date = "";
-      if (dateRaw) {
-        const parsed = new Date(dateRaw);
-        date = !isNaN(parsed)
-          ? parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
-          : dateRaw.split(" ")[0];
-      }
-      const mediaList = tweet.extended_entities?.media || tweet.entities?.media || tweet.media || [];
-      const uniqueMediaUrls = [...new Set(mediaList.map(m => m.media_url_https || m.media_url).filter(Boolean))];
-      let imgTag = uniqueMediaUrls.map(url => `<img src="${url}">`).join("");
-      if (!imgTag) {
-        const match = content.match(/https?:\/\/\S+\.(jpg|jpeg|png|gif|webp)/i);
-        if (match) imgTag = `<img src="${match[0]}">`;
-      }
-      const card = document.createElement("div");
-      card.classList.add("tweet-card");
-      const wordCount = content.trim().split(/\s+/).length;
-      if (wordCount <= 3 && !imgTag) card.classList.add("short");
-      card.innerHTML = `
-        <a href="${url}" target="_blank" style="text-decoration:none; color:inherit;">
-          <p>${escapeHtml(content)}</p>
-          ${imgTag}
-          <div class="tweet-date">${date}</div>
-        </a>
-      `;
-      container.appendChild(card);
-    });
-    td.appendChild(container);
-  }
-  tweetsRow.appendChild(td);
-  tr.parentNode.insertBefore(tweetsRow, tr.nextElementSibling);
-}
-
-// - Tabs setup and Analytics rendering -
-function setupTabs() {
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      const tab = btn.dataset.tab;
-      const lb = document.getElementById('leaderboard-wrapper');
-      const an = document.getElementById('tab-analytics');
-      const gallery = document.getElementById('tab-nft-gallery');
-      
-      if (tab === 'analytics') {
-        if (lb) lb.style.display = 'none';
-        if (an) an.style.display = 'block';
-        if (gallery) gallery.style.display = 'none';
-        renderAnalytics();
-      } else if (tab === 'nft-gallery') {
-        if (lb) lb.style.display = 'none';
-        if (an) an.style.display = 'none';
-        if (gallery) {
-          gallery.style.display = 'block';
-          setTimeout(loadNFTGallery, 100); // Загружаем галерею с небольшой задержкой
-        }
-      } else {
-        if (lb) lb.style.display = 'block';
-        if (an) an.style.display = 'none';
-        if (gallery) gallery.style.display = 'none';
-      }
-    });
-  });
-}
-
-// === NFT GALLERY: ЗАГРУЗКА ВСЕХ NFT ИЗ БЛОКЧЕЙНА ===
-async function loadNFTGallery() {
-  const grid = document.getElementById('nft-gallery-grid');
-  if (!grid) return;
-  
-  grid.innerHTML = '<p class="gallery-loading">⏳ Загрузка данных из Ritual Testnet...</p>';
-  
-  // Проверка кэша (5 минут)
-  const cached = localStorage.getItem('ritual_nft_gallery');
-  if (cached) {
-    const { data, timestamp } = JSON.parse(cached);
-    if (Date.now() - timestamp < 5 * 60 * 1000) {
-      renderNFTCards(data);
-      return;
-    }
-  }
-  
-  try {
-    // Используем публичный RPC, если MetaMask не подключен
-    const provider = window.ethereum 
-      ? new ethers.BrowserProvider(window.ethereum) 
-      : new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
-    
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-    
-    // Ищем все события минта (Transfer от нулевого адреса)
-    const filter = contract.filters.Transfer(ethers.ZeroAddress);
-    const events = await contract.queryFilter(filter);
-    
-    const nfts = [];
-    const seenIds = new Set();
-    
-    for (const event of events) {
-      const tokenId = event.args.tokenId.toString();
-      if (seenIds.has(tokenId)) continue;
-      seenIds.add(tokenId);
-      
-      try {
-        const card = await contract.cards(tokenId);
-        nfts.push({
-          tokenId,
-          username: card.username,
-          posts: card.posts.toString(),
-          likes: card.likes.toString(),
-          retweets: card.retweets.toString(),
-          comments: card.comments.toString(),
-          views: card.views.toString(),
-          imageData: card.imageData,
-          mintedAt: card.mintedAt.toString(),
-          owner: event.args.to
-        });
-      } catch (e) {
-        console.warn(`Failed to fetch token ${tokenId}`, e);
-      }
-    }
-    
-    // Сортируем по новизне
-    nfts.sort((a, b) => b.mintedAt - a.mintedAt);
-    
-    // Сохраняем в кэш
-    localStorage.setItem('ritual_nft_gallery', JSON.stringify({ data: nfts, timestamp: Date.now() }));
-    renderNFTCards(nfts);
-    
-  } catch (err) {
-    console.error("Gallery load error:", err);
-    grid.innerHTML = `<p class="gallery-error">❌ Ошибка загрузки. Проверьте консоль или попробуйте позже.<br><small>${err.message}</small></p>`;
-  }
-}
-
-function renderNFTCards(nfts) {
-  const grid = document.getElementById('nft-gallery-grid');
-  if (!grid) return;
-  
-  grid.innerHTML = '';
-  if (nfts.length === 0) {
-    grid.innerHTML = '<p class="gallery-empty">🎨 Пока нет заминченных NFT. Будьте первым!</p>';
-    return;
-  }
-  
-  nfts.forEach(nft => {
-    const card = document.createElement('div');
-    card.className = 'nft-gallery-card';
-    card.innerHTML = `
-      <img src="data:image/png;base64,${nft.imageData}" alt="Card ${nft.username}" loading="lazy">
-      <div class="nft-info">
-        <h4>@${nft.username}</h4>
-        <p>Token ID: #${nft.tokenId}</p>
-        <div class="nft-stats">
-          <span>📝 ${nft.posts}</span>
-          <span>❤️ ${nft.likes}</span>
-          <span>👁️ ${nft.views}</span>
-        </div>
-        <a href="https://explorer.ritualfoundation.org/token/${CONTRACT_ADDRESS}/instance/${nft.tokenId}" target="_blank" class="nft-explorer-link">
-          🔍 View on Explorer
-        </a>
-      </div>
-    `;
-    grid.appendChild(card);
-  });
-}
-
-// - Функция для отрисовки тепловой гистограммы -
-function renderHeatmap(tweets) {
-  const container = document.getElementById('heatmap-container');
-  if (!container) return;
-  const heatmap = Array(7).fill().map(() => Array(24).fill(0));
-  tweets.forEach(t => {
-    const created = t.tweet_created_at || t.created_at || t.created;
-    if (!created) return;
-    const d = new Date(created);
-    if (isNaN(d)) return;
-    const day = d.getUTCDay();
-    const hour = d.getUTCHours();
-    heatmap[day][hour] = (heatmap[day][hour] || 0) + 1;
-  });
-  const max = Math.max(...heatmap.flat());
-  container.innerHTML = '';
-  for (let day = 0; day < 7; day++) {
-    for (let hour = 0; hour < 24; hour++) {
-      const count = heatmap[day][hour] || 0;
-      const cell = document.createElement('div');
-      cell.style.width = '100%';
-      cell.style.aspectRatio = '1';
-      cell.style.borderRadius = '3px';
-      cell.title = `${count} tweet(s)\n${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][day]}, ${hour}:00 UTC`;
-      if (count === 0) {
-        cell.style.backgroundColor = 'rgba(255,255,255,0.03)';
-      } else {
-        const intensity = count / (max || 1);
-        const r = Math.floor(111 * intensity + 255 * (1 - intensity));
-        const g = Math.floor(227 * intensity + 255 * (1 - intensity));
-        const b = Math.floor(209 * intensity + 255 * (1 - intensity));
-        cell.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
-      }
-      container.appendChild(cell);
-    }
-  }
-}
-
-// - Функция для скачивания файла -
-function downloadFile(filename, content, mimeType = 'text/plain') {
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-// - Функция экспорта в CSV -
-function exportToCSV() {
-  const users = window._analyticsFilteredData?.users || {};
-  const rows = [];
-  rows.push(['Username', 'Posts', 'Likes', 'Views'].join(','));
-  for (const [username, stats] of Object.entries(users)) {
-    rows.push([username, stats.posts, stats.likes, stats.views].map(v => `"${v}"`).join(','));
-  }
-  const csvContent = rows.join('\n');
-  downloadFile('leaderboard-export.csv', csvContent, 'text/csv');
-}
-
-// - Функция экспорта в JSON -
-function exportToJSON() {
-  const data = window._analyticsFilteredData || {};
-  const jsonContent = JSON.stringify(data, null, 2);
-  downloadFile('leaderboard-export.json', jsonContent, 'application/json');
-}
-
-// - Функция привязки кнопок экспорта -
-function bindExportButtons() {
-  const csvBtn = document.getElementById('export-csv');
-  const jsonBtn = document.getElementById('export-json');
-  if (csvBtn && !csvBtn._bound) {
-    csvBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      exportToCSV();
-    });
-    csvBtn._bound = true;
-  }
-  if (jsonBtn && !jsonBtn._bound) {
-    jsonBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      exportToJSON();
-    });
-    jsonBtn._bound = true;
-  }
-}
-
-function renderAnalytics() {
-  let tweets = Array.isArray(allTweets) ? allTweets : [];
-  const now = new Date();
-  const period = analyticsPeriod;
-  if (period !== 'all') {
-    const days = Number(period);
-    if (days > 0) {
-      tweets = tweets.filter(t => {
-        const created = t.tweet_created_at || t.created_at || t.created || null;
-        if (!created) return false;
-        const d = new Date(created);
-        if (isNaN(d)) return false;
-        const diffDays = (now - d) / (1000 * 60 * 60 * 24);
-        return diffDays <= days;
-      });
-    }
-  }
-  if (analyticsHourFilter !== 'all') {
-      const targetHour = Number(analyticsHourFilter);
-      if (!isNaN(targetHour) && targetHour >= 0 && targetHour <= 23) {
-          tweets = tweets.filter(t => {
-              const created = t.tweet_created_at || t.created_at || t.created || null;
-              if (!created) return false;
-              const d = new Date(created);
-              if (isNaN(d)) return false;
-              const hour = d.getUTCHours();
-              return hour === targetHour;
-          });
-      }
-  }
-  const users = {};
-  tweets.forEach(t => {
-    const u = (t.user && (t.user.screen_name || t.user.name)) || t.username || "";
-    const uname = String(u).toLowerCase().replace(/^@/, "");
-    if (!uname) return;
-    const likes = Number(t.favorite_count || t.likes || t.like_count || 0) || 0;
-    const views = Number(t.views_count || t.views || 0) || 0;
-    if (!users[uname]) users[uname] = { posts: 0, likes: 0, views: 0 };
-    users[uname].posts += 1;
-    users[uname].likes += likes;
-    users[uname].views += views;
-  });
-  const uniqueUsers = Object.keys(users).length;
-  const totalPosts = tweets.length;
-  const totalLikes = Object.values(users).reduce((s,u)=>s+u.likes,0);
-  const totalViews = Object.values(users).reduce((s,u)=>s+u.views,0);
-  const avgPosts = uniqueUsers ? (totalPosts/uniqueUsers) : 0;
-  const avgLikes = uniqueUsers ? (totalLikes/uniqueUsers) : 0;
-  const avgViews = uniqueUsers ? (totalViews/uniqueUsers) : 0;
-  const elAvgPosts = document.getElementById('avg-posts');
-  const elAvgLikes = document.getElementById('avg-likes');
-  const elAvgViews = document.getElementById('avg-views');
-  if (elAvgPosts) elAvgPosts.textContent = `Avg Posts: ${avgPosts.toFixed(2)}`;
-  if (elAvgLikes) elAvgLikes.textContent = `Avg Likes: ${avgLikes.toFixed(2)}`;
-  if (elAvgViews) elAvgViews.textContent = `Avg Views: ${avgViews.toFixed(2)}`;
-  window._analyticsFilteredData = { tweets, users, period };
-  
-  function renderTopAuthors(metric) {
-    const listEl = document.getElementById('top-authors-list');
-    if (!listEl) return;
-    const data = window._analyticsFilteredData || { users: {} };
-    const arr = Object.entries(data.users).map(([name,stats]) => ({ name, value: Number(stats[metric]||0), stats }));
-    arr.sort((a,b)=> b.value - a.value);
-    const top = arr.slice(0,10);
-    listEl.innerHTML = '';
-    if (top.length === 0) { listEl.innerHTML = '<li>Нет данных</li>'; return; }
-    top.forEach((it, idx) => {
-      const li = document.createElement('li');
-      li.className = 'top-author-item';
-      const postsStr = `<span class="metric-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="display:inline; margin-right: 2px;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87.69 6.89L12 21.5l-5.69-1.48.69-6.89-5-4.87 6.81-1.01L12 2z"/></svg>${it.stats.posts} posts</span>`;
-      const likesStr = `<span class="metric-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="display:inline; margin-right: 2px;"><path d="M12 21.35l-1.45-1.45C5.4 15.56 2 12.12 2 8.5c0-1.74.67-3.35 1.96-4.64A23.85 23.85 0 0112 0c8.25 0 15.5 5.5 15.5 15.5 0 1.74-.67 3.35-1.96 4.64l-1.45 1.45C19.5 21.35 16.5 24 12 24z"/></svg>${it.stats.likes} likes</span>`;
-      const retweetsStr = `<span class="metric-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="display:inline; margin-right: 2px;"><path d="M17 7h-4v2h4v6h-4v2h4v2H7v-2h4V9H7V7h10z"/></svg>${it.stats.retweets} retweets</span>`;
-      const viewsStr = `<span class="metric-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="display:inline; margin-right: 2px;"><path d="M12 6c3.76 0 7.08 2.06 9.07 5.33 1.99 3.27 1.99 7.24 0 10.51C19.08 25.14 15.76 27.2 12 27.2s-7.08-2.06-9.07-5.33c-1.99-3.27-1.99-7.24 0-10.51C4.92 8.06 8.24 6 12 6zm0 2c-1.66 0-3.18.7-4.25 1.81L12 14l4.25-4.19C15.18 8.7 13.66 8 12 8zm0 12c1.66 0 3.18-.7 4.25-1.81L12 18l-4.25 4.19C8.82 23.3 10.34 24 12 24z"/></svg>${it.stats.views} views</span>`;
-      li.innerHTML = `
-          <div class="author-info">
-              <span class="author-rank">${idx + 1}.</span>
-              <strong class="author-name">${escapeHtml(it.name)}</strong>
-              <div class="author-metrics">
-                  ${postsStr} ${likesStr} ${retweetsStr} ${viewsStr}
-              </div>
-          </div>
-          <div class="author-sort-value">
-              ${it.value} ${metric === 'posts' ? 'posts' : metric === 'likes' ? 'likes' : 'views'}
-          </div>
-      `;
-      listEl.appendChild(li);
-    });
-  }
-  
-  function renderTopPosts(metric) {
-    const listEl = document.getElementById('top-posts-list');
-    if (!listEl) return;
-    const data = window._analyticsFilteredData || { tweets: [] };
-    const postsArr = data.tweets.map(t => {
-      const likes = Number(t.favorite_count || t.likes || t.like_count || 0) || 0;
-      const views = Number(t.views_count || t.views || 0) || 0;
-      const text = (t.full_text || t.text || t.content || '').slice(0,200);
-      const author = (t.user && (t.user.screen_name || t.user.name)) || t.username || '';
-      const url = t.url || (t.id_str && author ? `https://twitter.com/${author}/status/${t.id_str}` : '#');
-      return { t, likes, views, text, author, url };
-    });
-    postsArr.sort((a,b) => (b[metric]||0) - (a[metric]||0));
-    const top = postsArr.slice(0,10);
-    listEl.innerHTML = '';
-    if (top.length === 0) { listEl.innerHTML = '<li>Нет данных</li>'; return; }
-    top.forEach((p, idx) => {
-      const li = document.createElement('li');
-      li.className = 'top-post-item';
-      const excerpt = document.createElement('div');
-      excerpt.className = 'excerpt';
-      excerpt.innerHTML = `<a href="${p.url}" target="_blank">${escapeHtml(p.text || '(no text)')}</a>`;
-      const meta = document.createElement('div');
-      meta.className = 'meta';
-      meta.innerHTML = `<div class="author">${escapeHtml(p.author || '(unknown)')}</div><div class="metric">${p[metric] || 0}</div>`;
-      li.appendChild(excerpt);
-      li.appendChild(meta);
-      listEl.appendChild(li);
-    });
-  }
-  
-  const perDay = {};
-  const chartDays = period === 'all' ? 60 : (period === '7' ? 7 : (period === '14' ? 14 : 30));
-  tweets.forEach(t => {
-    const created = t.tweet_created_at || t.created_at || t.created || null;
-    if (!created) return;
-    const d = new Date(created);
-    if (isNaN(d)) return;
-    const key = d.toISOString().slice(0,10);
-    perDay[key] = (perDay[key] || 0) + 1;
-  });
-  const labels = [];
-  const counts = [];
-  for (let i = chartDays - 1; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(now.getDate() - i);
-    const key = d.toISOString().slice(0,10);
-    labels.push(key);
-    counts.push(perDay[key] || 0);
-  }
-  
-  try {
-    const ctx = document.getElementById('analytics-chart');
-    if (ctx) {
-      if (analyticsChart) {
-        analyticsChart.data.labels = labels;
-        analyticsChart.data.datasets[0].data = counts;
-        analyticsChart.update();
-      } else if (window.Chart) {
-        analyticsChart = new Chart(ctx.getContext('2d'), {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: 'Tweets per day',
-              data: counts,
-              fill: false,
-              borderColor: '#ffffff',
-              borderWidth: 2,
-              pointBackgroundColor: '#ffffff',
-              pointBorderColor: '#ffffff',
-              pointBorderWidth: 2,
-              pointRadius: 4,
-              pointHoverRadius: 6,
-              tension: 0.3
-            }]
-          },
-          options: {
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                mode: 'index',
-                intersect: false,
-                callbacks: {
-                  label: function(context) { return `Tweets: ${context.raw}`; }
-                }
-              }
-            },
-            scales: {
-              x: {
-                grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                ticks: { maxRotation: 0, minRotation: 0, color: '#ffffff' }
-              },
-              y: {
-                beginAtZero: true,
-                grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                ticks: { color: '#ffffff' }
-              }
-            }
-          }
-        });
-      }
-    }
-  } catch (err) { console.warn('Chart render failed', err); }
-  
-  const authorMetricSelect = document.getElementById('author-metric-select');
-  const postMetricSelect = document.getElementById('post-metric-select');
-  const authorMetric = authorMetricSelect ? authorMetricSelect.value : 'posts';
-  const postMetric = postMetricSelect ? postMetricSelect.value : 'likes';
-  renderTopAuthors(authorMetric);
-  renderTopPosts(postMetric);
-  
-  if (authorMetricSelect && !authorMetricSelect._bound) {
-    authorMetricSelect.addEventListener('change', e => renderTopAuthors(e.target.value));
-    authorMetricSelect._bound = true;
-  }
-  if (postMetricSelect && !postMetricSelect._bound) {
-    postMetricSelect.addEventListener('change', e => renderTopPosts(e.target.value));
-    postMetricSelect._bound = true;
-  }
-  
-  renderHeatmap(tweets);
-  bindExportButtons();
-}
-
-// Analytics time period filter
-const analyticsTimeSelect = document.getElementById('analytics-time-select');
-if (analyticsTimeSelect) {
-  analyticsTimeSelect.addEventListener('change', e => {
-    analyticsPeriod = e.target.value || 'all';
-    renderAnalytics();
-  });
-}
-
-const hourSelect = document.getElementById('hour-select');
-if (hourSelect) {
-    hourSelect.addEventListener('change', e => {
-        analyticsHourFilter = e.target.value || 'all';
-        renderAnalytics();
-    });
-}
-
-// Nested analytics tabs setup
-function setupAnalyticsTabs() {
-  const btns = document.querySelectorAll('.analytics-tab-btn');
-  btns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      btns.forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.analytics-nested-content').forEach(s => s.classList.remove('active'));
-      btn.classList.add('active');
-      const section = btn.dataset.analyticsTab;
-      const sectionEl = document.querySelector(`[data-analytics-section="${section}"]`);
-      if (sectionEl) sectionEl.classList.add('active');
-    });
-  });
-}
-
-// Инициализация табов
-try { setupTabs(); setupAnalyticsTabs(); } catch(e) { console.warn('Tabs init failed', e); }
-
-// === LANGUAGE SWITCHER ===
-function setLanguage(lang) {
-    currentLang = lang;
-    localStorage.setItem('lang', lang);
-    const langEn = document.getElementById('lang-en');
-    const langRu = document.getElementById('lang-ru');
-    if (langEn) { langEn.classList.toggle('active', lang === 'en'); langEn.classList.toggle('inactive', lang !== 'en'); }
-    if (langRu) { langRu.classList.toggle('active', lang === 'ru'); langRu.classList.toggle('inactive', lang !== 'ru'); }
-    // ... (остальной код локализации остаётся без изменений) ...
-    const h1 = document.getElementById('welcome-title');
-    if (h1) h1.textContent = lang === 'en' ? 'WELCOME OPENGRADIENTS!' : 'ДОБРО ПОЖАЛОВАТЬ, Опенградиенты!';
-    // [Для краткости: весь остальной код setLanguage остаётся как в оригинале]
-}
-
-// === DOMContentLoaded: ИНИЦИАЛИЗАЦИЯ ===
-document.addEventListener('DOMContentLoaded', () => {
-    // Language switcher
-    const langEn = document.getElementById('lang-en');
-    const langRu = document.getElementById('lang-ru');
-    if (langEn) langEn.addEventListener('click', () => { if (currentLang !== 'en') setLanguage('en'); });
-    if (langRu) langRu.addEventListener('click', () => { if (currentLang !== 'ru') setLanguage('ru'); });
-    const savedLang = localStorage.getItem('lang');
-    if (savedLang && (savedLang === 'en' || savedLang === 'ru')) { setLanguage(savedLang); }
-    else { setLanguage('en'); }
-    
-    // NFT Gallery: Кнопка обновления
-    const refreshBtn = document.getElementById('refresh-nft-btn');
-    if (refreshBtn) {
-      refreshBtn.addEventListener('click', () => {
-        localStorage.removeItem('ritual_nft_gallery'); // Сброс кэша
-        loadNFTGallery();
-      });
-    }
-    
-    // NFT Mint: Привязка кнопки
-    const mintBtn = document.getElementById('btn-mint');
-    if (mintBtn) mintBtn.addEventListener('click', mintCardNFT);
-    
-    // Snow effect (если есть контейнер)
-    const snowContainer = document.getElementById('snowContainer');
-    if (snowContainer) {
-      const snowflakeCount = 50;
-      const containerRect = snowContainer.getBoundingClientRect();
-      for (let i = 0; i < snowflakeCount; i++) {
-        const flake = document.createElement('div');
-        flake.classList.add('snowflake');
-        const size = Math.random() * 4 + 2;
-        flake.style.width = `${size}px`;
-        flake.style.height = `${size}px`;
-        flake.style.left = `${Math.random() * containerRect.width}px`;
-        flake.style.top = `${Math.random() * -containerRect.height}px`;
-        flake.style.animationDuration = `${Math.random() * 10 + 5}s, ${Math.random() * 4 + 3}s`;
-        flake.style.animationDelay = `${Math.random() * 5}s`;
-        snowContainer.appendChild(flake);
-      }
-    }
-});
+/* === GLOBAL OVERRIDES === */
+* { color: #fff !important; border-radius: 8px !important; }
+a { color: white !important; text-decoration: underline; }
