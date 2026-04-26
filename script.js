@@ -495,76 +495,78 @@ function addUserClickHandlers() {
 }
 
 // - Создание аккордеона твитов -
+// - Создание аккордеона твитов (ИСПРАВЛЕННАЯ ВЕРСИЯ) -
 function toggleTweetsRow(tr, username) {
-    const nextRow = tr.nextElementSibling;
-    const isAlreadyOpen = nextRow && nextRow.classList.contains("tweets-row") &&
-        nextRow.dataset.username === username;
-    
-    document.querySelectorAll(".tweets-row").forEach(row => row.remove());
-    document.querySelectorAll("tbody tr").forEach(row => row.classList.remove("active-row"));
-    
-    if (isAlreadyOpen) return;
-    
-    tr.classList.add("active-row");
-    
-    const tweetsRow = document.createElement("tr");
-    tweetsRow.classList.add("tweets-row");
-    tweetsRow.dataset.username = username;
-    
-    const td = document.createElement("td");
-    td.colSpan = 6;
-    
-    const userTweets = allTweets.filter(tweet => {
-        const candidate = (tweet.user?.screen_name || tweet.user?.name || "").toLowerCase();
-        return candidate.replace(/^@/, "") === username.toLowerCase().replace(/^@/, "");
-    });
-    
-    if (userTweets.length === 0) {
-        td.innerHTML = "<i style='color:#aaa;'>У пользователя нет постов</i>";
-    } else {
-        const container = document.createElement("div");
-        container.classList.add("tweet-container");
-        userTweets.forEach(tweet => {
-            const content = tweet.full_text || tweet.text || tweet.content || "";
-            const url = tweet.url || (tweet.id_str ? `https://twitter.com/${username}/status/${tweet.id_str}` : "#");
-            
-            let dateRaw = tweet.created_at || tweet.tweet_created_at || "";
-            let date = "";
-            if (dateRaw) {
-                const parsed = new Date(dateRaw);
-                date = !isNaN(parsed)
-                    ? parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
-                    : dateRaw.split(" ")[0];
-            }
-            
-            const mediaList = tweet.extended_entities?.media || tweet.entities?.media || tweet.media || [];
-            const uniqueMediaUrls = [...new Set(mediaList.map(m => m.media_url_https || m.media_url).filter(Boolean))];
-            let imgTag = uniqueMediaUrls.map(url => `<img src="${url}">`).join("");
-            
-            if (!imgTag) {
-                const match = content.match(/https?:\/\/\S+\.(jpg|jpeg|png|gif|webp)/i);
-                if (match) imgTag = `<img src="${match[0]}">`;
-            }
-            
-            const card = document.createElement("div");
-            card.classList.add("tweet-card");
-            const wordCount = content.trim().split(/\s+/).length;
-            if (wordCount <= 3 && !imgTag) card.classList.add("short");
-            
-            card.innerHTML = `
-                <a href="${url}" target="_blank" style="text-decoration:none; color:inherit;">
-                    <p>${escapeHtml(content)}</p>
-                    ${imgTag}
-                    <div class="tweet-date">${date}</div>
-                </a>
-            `;
-            container.appendChild(card);
-        });
-        td.appendChild(container);
-    }
-    
-    tweetsRow.appendChild(td);
-    tr.parentNode.insertBefore(tweetsRow, tr.nextElementSibling);
+// Удаляем все открытые аккордеоны и подсветку
+document.querySelectorAll(".tweets-row").forEach(row => row.remove());
+document.querySelectorAll("tbody tr").forEach(row => row.classList.remove("active-row"));
+
+// Подсветить текущую строку
+tr.classList.add("active-row");
+
+// Создаём новую строку для аккордеона
+const tweetsRow = document.createElement("tr");
+tweetsRow.classList.add("tweets-row");
+const td = document.createElement("td");
+td.colSpan = 6;
+td.style.padding = "20px";
+td.style.background = "linear-gradient(135deg, #2F4F4F, #1a2a2a)";
+td.style.borderRadius = "12px";
+
+// Фильтруем твиты пользователя — надёжное сравнение
+const cleanUsername = username.toLowerCase().replace(/^@/, "").trim();
+const userTweets = allTweets.filter(tweet => {
+if (!tweet || !tweet.user) return false;
+const tweetUser = tweet.user.screen_name || tweet.user.name || tweet.username || "";
+const cleanTweetUser = String(tweetUser).toLowerCase().replace(/^@/, "").trim();
+return cleanTweetUser === cleanUsername;
+});
+
+if (userTweets.length === 0) {
+td.innerHTML = "<i style='color:#a9ddd3;'>У пользователя нет постов в сообществе</i>";
+} else {
+const container = document.createElement("div");
+container.style.display = "flex";
+container.style.flexWrap = "wrap";
+container.style.gap = "15px";
+container.style.justifyContent = "flex-start";
+
+userTweets.forEach(tweet => {
+const content = tweet.full_text || tweet.text || tweet.content || "No content";
+const url = tweet.url || (tweet.id_str ? `https://twitter.com/${username}/status/${tweet.id_str}` : "#");
+const dateRaw = tweet.created_at || tweet.tweet_created_at || "";
+const date = dateRaw ? new Date(dateRaw).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "";
+
+// Собираем изображения
+const mediaList = tweet.extended_entities?.media || tweet.entities?.media || [];
+const imgUrls = [...new Set(mediaList.map(m => m.media_url_https).filter(Boolean))];
+const imgHtml = imgUrls.map(src => `<img src="${src}" style="width:100%; border-radius:8px; margin-top:8px;">`).join("");
+
+// Создаём карточку твита
+const card = document.createElement("div");
+card.style.cssText = `
+background: #1a2a2a;
+border: 1px solid rgba(111,227,209,0.3);
+border-radius: 12px;
+padding: 12px 15px;
+width: 100%;
+max-width: 450px;
+color: #fff;
+`;
+card.innerHTML = `
+<a href="${url}" target="_blank" style="text-decoration:none; color:inherit;">
+<p style="margin:0 0 8px 0; line-height:1.4;">${escapeHtml(content)}</p>
+${imgHtml}
+<div style="margin-top:8px; font-size:0.85rem; color:#a9ddd3; text-align:right;">${date}</div>
+</a>
+`;
+container.appendChild(card);
+});
+td.appendChild(container);
+}
+
+tweetsRow.appendChild(td);
+tr.parentNode.insertBefore(tweetsRow, tr.nextElementSibling);
 }
 
 // - Tabs setup and Analytics rendering -
