@@ -277,7 +277,38 @@ async function generateCardCanvas(username, stats) {
     });
 
     ctx.textAlign = 'left';
+// === ДОБАВЛЕНИЕ ЛОГОТИПА И ТЕКСТА (ВАШ ЗАПРОС) ===
+    const logoImg = new Image();
+    logoImg.crossOrigin = 'anonymous';
+    logoImg.src = 'https://github.com/sery2013/OpenGradient-Community/blob/main/RITUAL.png?raw=true'; // Укажи здесь путь к файлу логотипа
 
+    await new Promise(res => { 
+        logoImg.onload = res; 
+        logoImg.onerror = res; 
+    });
+
+    if (logoImg.complete && logoImg.naturalWidth > 0) {
+        const logoSize = 40; // Размер логотипа
+        const padding = 15;
+        const textToDisplay = "RITUAL COMMUNITY"; // Твой текст
+        
+        ctx.font = 'bold 28px Segoe UI, sans-serif';
+        const textWidth = ctx.measureText(textToDisplay).width;
+        
+        // Вычисляем центр для всей конструкции (лого + отступ + текст)
+        const totalWidth = logoSize + padding + textWidth;
+        const startX = (W - totalWidth) / 2;
+        const centerY = 470; // Координата Y (внутри твоей красной рамки)
+
+        // Рисуем логотип
+        ctx.drawImage(logoImg, startX, centerY - (logoSize / 2), logoSize, logoSize);
+        
+        // Рисуем текст
+        ctx.fillStyle = '#6fe3d1';
+        ctx.textAlign = 'left';
+        ctx.fillText(textToDisplay, startX + logoSize + padding, centerY + 10);
+    }
+    // === КОНЕЦ ВСТАВКИ ===
     // 7. Нижняя разделительная линия
     ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
     ctx.lineWidth = 2;
