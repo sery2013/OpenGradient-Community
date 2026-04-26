@@ -64,7 +64,6 @@ setInterval(() => { fetchTweets(); fetchData(); }, 3600000);
 // - Normalize leaderboard data -
 function normalizeData(json) {
     data = [];
-    // Универсальный геттер: ищет ключ с пробелами, без пробелов, или через перебор
     const getVal = (obj, key) => {
         if (obj[key] !== undefined && obj[key] !== null) return obj[key];
         if (obj[key + " "] !== undefined && obj[key + " "] !== null) return obj[key + " "];
@@ -173,7 +172,7 @@ function closeCardModal() {
     document.getElementById('card-modal').style.display = 'none';
 }
 
-// === NFT CARD: ГЕНЕРАЦИЯ CANVAS (1200x675 - Twitter Format, как на скрине 1) ===
+// === NFT CARD: ГЕНЕРАЦИЯ CANVAS (1200x675 - Twitter Format) ===
 async function generateCardCanvas(username, stats) {
     const canvas = document.getElementById('user-canvas');
     const ctx = canvas.getContext('2d');
@@ -208,7 +207,6 @@ async function generateCardCanvas(username, stats) {
         img.crossOrigin = 'anonymous';
         img.src = avatarUrl;
         await new Promise(res => { img.onload = res; img.onerror = res; });
-        
         ctx.shadowColor = 'rgba(111, 227, 209, 0.4)';
         ctx.shadowBlur = 20;
         ctx.save();
@@ -219,7 +217,6 @@ async function generateCardCanvas(username, stats) {
         ctx.drawImage(img, 60, 70, 120, 120);
         ctx.restore();
         ctx.shadowBlur = 0;
-        
         ctx.beginPath();
         ctx.arc(120, 130, 60, 0, Math.PI * 2);
         ctx.lineWidth = 4;
@@ -231,7 +228,6 @@ async function generateCardCanvas(username, stats) {
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 48px Segoe UI, sans-serif';
     ctx.fillText(`@${username}`, 210, 120);
-    
     ctx.fillStyle = '#6fe3d1';
     ctx.font = '24px Segoe UI, sans-serif';
     ctx.fillText('RITUAL COMMUNITY LEADERBOARD', 210, 155);
@@ -244,7 +240,7 @@ async function generateCardCanvas(username, stats) {
     ctx.lineTo(W - 40, 185);
     ctx.stroke();
 
-    // 6. Метрики в рамках/ячейках (5 боксов в ряд)
+    // 6. Метрики в рамках/ячейках
     const metrics = [
         { label: 'Posts', val: stats.posts || 0, icon: '📝' },
         { label: 'Likes', val: stats.likes || 0, icon: '❤️' },
@@ -260,31 +256,27 @@ async function generateCardCanvas(username, stats) {
     metrics.forEach((m, i) => {
         const x = 60 + i * cellW;
         const y = startY;
-
         // Фон ячейки
         ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
         ctx.roundRect(x, y, cellW - 12, cellH, 12);
         ctx.fill();
-
         // Рамка ячейки
         ctx.strokeStyle = 'rgba(111, 227, 209, 0.2)';
         ctx.lineWidth = 1.5;
         ctx.roundRect(x, y, cellW - 12, cellH, 12);
         ctx.stroke();
-
         // Иконка и название
         ctx.fillStyle = '#a9ddd3';
         ctx.font = '22px Segoe UI, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(`${m.icon} ${m.label}`, x + (cellW - 12) / 2, y + 45);
-
         // Значение
         ctx.fillStyle = '#6fe3d1';
         ctx.font = 'bold 36px Segoe UI, sans-serif';
         ctx.fillText(Number(m.val).toLocaleString(), x + (cellW - 12) / 2, y + 100);
     });
 
-    ctx.textAlign = 'left'; // Возвращаем выравнивание
+    ctx.textAlign = 'left';
 
     // 7. Нижняя разделительная линия
     ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
@@ -299,7 +291,6 @@ async function generateCardCanvas(username, stats) {
     ctx.font = '20px Segoe UI, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('MINTED ON RITUAL TESTNET', W / 2, H - 60);
-    
     ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
     ctx.font = '16px Segoe UI, sans-serif';
     ctx.fillText('Generated ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), W / 2, H - 35);
@@ -387,6 +378,7 @@ function renderTable() {
         nameContainer.style.gap = "8px";
         const nameSpan = document.createElement("span");
         nameSpan.textContent = escapeHtml(name);
+        
         // Кнопка Generate Card
         const cardBtn = document.createElement("button");
         cardBtn.className = 'generate-card-btn';
@@ -396,6 +388,7 @@ function renderTable() {
             e.stopPropagation();
             showCardModal(name);
         };
+        
         nameContainer.appendChild(nameSpan);
         nameContainer.appendChild(cardBtn);
         nameCell.appendChild(nameContainer);
@@ -501,7 +494,7 @@ function addUserClickHandlers() {
     });
 }
 
-// - Создание аккордеона твитов (ИСПРАВЛЕН ПОИСК) -
+// - Создание аккордеона твитов -
 function toggleTweetsRow(tr, username) {
     const nextRow = tr.nextElementSibling;
     const isAlreadyOpen = nextRow && nextRow.classList.contains("tweets-row") &&
@@ -521,14 +514,9 @@ function toggleTweetsRow(tr, username) {
     const td = document.createElement("td");
     td.colSpan = 6;
     
-    // Очистка имени от @ и пробелов для поиска
-    const cleanUsername = username.toLowerCase().replace(/^@/, "").trim();
-    
-    // Фильтрация твитов: проверяем совпадение имен без @
     const userTweets = allTweets.filter(tweet => {
         const candidate = (tweet.user?.screen_name || tweet.user?.name || "").toLowerCase();
-        const cleanCandidate = candidate.replace(/^@/, "").trim();
-        return cleanCandidate === cleanUsername;
+        return candidate.replace(/^@/, "") === username.toLowerCase().replace(/^@/, "");
     });
     
     if (userTweets.length === 0) {
@@ -675,7 +663,7 @@ function renderNFTCards(nfts) {
         const card = document.createElement('div');
         card.className = 'nft-gallery-card';
         card.innerHTML = `
-            <img src="data:image/png;base64,${nft.imageData}" alt="Card ${nft.username}" loading="lazy">
+            <img src="image/png;base64,${nft.imageData}" alt="Card ${nft.username}" loading="lazy">
             <div class="nft-info">
                 <h4>@${nft.username}</h4>
                 <p>Token ID: #${nft.tokenId}</p>
@@ -1006,7 +994,6 @@ if (analyticsTimeSelect) {
         renderAnalytics();
     });
 }
-
 const hourSelect = document.getElementById('hour-select');
 if (hourSelect) {
     hourSelect.addEventListener('change', e => {
