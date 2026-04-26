@@ -1776,3 +1776,97 @@ a:link, a:visited {
   font-size: 1.1rem;
 }
 .gallery-error { color: #ff6b6b; }
+/* ==========================================
+   === 1. СТИЛЬНЫЕ ЭФФЕКТЫ ДЛЯ ВКЛАДОК ===
+   ========================================== */
+.tabs {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.tab-btn {
+  padding: 8px 14px;
+  border-radius: 5%;
+  border: 2px solid rgba(255,255,255,0.25);
+  background: linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* Плавная анимация */
+}
+
+/* Магические символы (оставляем как было) */
+.tab-btn::before {
+  content: " ";
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background-image: url('image/svg+xml;utf8,✦✧✦✧');
+  background-repeat: repeat; background-size: 100px;
+  pointer-events: none; z-index: -1;
+}
+
+/* Эффект "блика" при наведении */
+.tab-btn::after {
+  content: "";
+  position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transform: skewX(-25deg);
+  transition: left 0.6s ease;
+  pointer-events: none;
+}
+
+/* Hover: бирюзовое свечение + подъем + блик */
+.tab-btn:hover {
+  background: linear-gradient(90deg, rgba(111,227,209,0.25), rgba(0,168,150,0.1));
+  border-color: rgba(111,227,209,0.7);
+  box-shadow: 0 0 18px rgba(111,227,209,0.45), inset 0 0 12px rgba(111,227,209,0.15);
+  transform: translateY(-3px);
+}
+.tab-btn:hover::after { left: 150%; }
+
+/* Active: постоянное мягкое свечение */
+.tab-btn.active {
+  background: linear-gradient(90deg, rgba(111,227,209,0.3), rgba(0,168,150,0.15));
+  border-color: rgba(111,227,209,0.9);
+  box-shadow: 0 0 22px rgba(111,227,209,0.5), inset 0 0 14px rgba(111,227,209,0.2);
+  transform: translateY(0);
+}
+
+/* ==========================================
+   === 2. УБИРАЕМ ОТСТУП МЕЖДУ БАННЕРОМ И WELCOME ===
+   ========================================== */
+.centered-banner {
+  width: 100%;
+  height: 100px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #0d1117;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 0; /* Обнуляем нижний отступ */
+}
+
+.container {
+  max-width: 1000px;
+  margin: 8px auto 60px; /* Уменьшен верхний отступ с 140/160px до 8px */
+  padding: 20px;
+  text-align: center;
+}
+
+.welcome-block {
+  background-color: transparent;
+  border: 1px solid #2F4F4F;
+  border-radius: 5%;
+  padding: 20px;
+  color: white;
+  text-align: left;
+  margin: 0 auto 20px; /* Убран верхний отступ, оставлен только нижний */
+  max-width: 800px;
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+}
