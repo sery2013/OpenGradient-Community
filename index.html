@@ -5,29 +5,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ritual Community</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Подключаем ethers.js для работы с блокчейном -->
     <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
     <style>
-        /* Базовые стили, чтобы фон точно отображался */
-        html, body {
-            background-color: #080c14 !important;
-            background-image: linear-gradient(rgba(8, 12, 20, 0.55), rgba(8, 12, 20, 0.55)), url('https://github.com/sery2013/Ritual-Community/blob/main/%E2%80%94Pngtree%E2%80%94turquoise%20beautiful%20background%20with%20lights_1243717.jpg?raw=true');
-            background-size: cover !important;
-            background-position: center !important;
-            background-repeat: no-repeat !important;
-            background-attachment: fixed !important;
-            min-height: 100%;
-            margin: 0;
-            padding: 0;
+        /* === CENTERED BANNER (1350×100, по центру, кликабельный) === */
+        .centered-banner {
+            width: 100%;
+            height: 100px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #0d1117;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 0;
         }
-        
-        .container {
-            background-color: transparent !important;
-            min-height: 100vh;
+
+        .banner-link {
+            display: block;
+            width: 1350px;
+            height: 100px;
+            background: url("https://github.com/sery2013/OpenGradient-Community/blob/main/OpenGradient%20Community.png?raw=true") no-repeat center center;
+            background-size: 1350px 100px;
+            cursor: pointer;
+            text-decoration: none;
         }
-        
-        .background {
-            display: none !important;
+
+        /* === LANGUAGE SWITCHER === */
+        .lang-switcher {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1001;
+            display: flex;
+            gap: 2px;
+        }
+
+        .lang-btn {
+            background: #2F4F4F;
+            color: #aaa;
+            border: 1px solid #6fe3d1;
+            border-radius: 5px;
+            padding: 5px 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .lang-btn:first-child { border-radius: 5px 0 0 5px; }
+        .lang-btn:last-child { border-radius: 0 5px 5px 0; border-left: none; }
+        .lang-btn.active { background: #6fe3d1; color: #0d1117; }
+        .lang-btn:hover { background: #4a6b6b; }
+        .lang-btn.active:hover { background: #5bc0bd; }
+
+        /* === WELCOME BLOCK === */
+        .welcome-block {
+            background-color: transparent;
+            border: 1px solid #2F4F4F;
+            border-radius: 5%;
+            padding: 20px;
+            color: white;
+            text-align: left;
+            margin: 0 auto 20px;
+            max-width: 800px;
+            box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+        }
+
+        .welcome-block h1 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 2rem;
+            text-align: center;
         }
 
         /* === CARD MODAL STYLES === */
@@ -147,6 +196,7 @@
         .gallery-loading, .gallery-empty, .gallery-error {
             grid-column: 1 / -1; text-align: center; padding: 40px; color: #a9ddd3; font-size: 1.1rem;
         }
+
         .gallery-error { color: #ff6b6b; }
     </style>
 </head>
@@ -173,22 +223,21 @@
         <!-- === WELCOME SECTION === -->
         <div class="welcome-block">
             <h1 id="welcome-title">RITUAL COMMUNITY</h1>
-            <p id="welcome-desc-1">This leaderboard is generated based on all posts in the community.</p>
-            <p id="welcome-desc-2">By clicking on any participant, you can view their works directly.</p>
+            <p id="welcome-desc-1">This leaderboard is generated based on all posts in the <a href="https://x.com/i/communities/1978779669693362400" target="_blank">Ritual Community</a>.</p>
+            <p id="welcome-desc-2">By clicking on any participant, you can view their works directly on the website.</p>
             <p id="welcome-desc-3">By clicking on any metric (for example, views), you can filter by it.</p>
             <p><strong>Last updated:</strong> <span id="manual-last-updated">10 Apr, 2026</span></p>
         </div>
 
-        <!-- === COMBINED BLOCK: TABS + FOLLOW DEVELOPER (РАСТЯНУТЫЙ) === -->
+        <!-- === COMBINED BLOCK: TABS + FOLLOW DEVELOPER === -->
         <div class="combined-bottom-block">
             <div class="tabs-wrapper">
                 <button class="tab-btn active" data-tab="leaderboard" id="tab-leaderboard-btn">Leaderboard</button>
                 <button class="tab-btn" data-tab="analytics" id="tab-analytics-btn">Analytics</button>
                 <button class="tab-btn" data-tab="nft-gallery" id="tab-nft-gallery-btn">🖼️ NFT Gallery</button>
             </div>
-            <!-- Этот блок теперь растягивается -->
             <div class="team-box">
-                <p id="follow-dev-text">Follow Developer - <a href="https://x.com/kaye_moni" target="_blank" id="follow-dev-link">@kaye_moni</a></p>
+                <p id="follow-dev-text" style="text-align: center;">Follow Developer - <a href="https://x.com/kaye_moni" target="_blank" id="follow-dev-link">@kaye_moni</a></p>
             </div>
         </div>
 
