@@ -23,21 +23,15 @@ async function fetchData() {
         const response = await fetch("leaderboard.json");
         const json = await response.json();
         
-        // Отладка: вывод в консоль
-        console.log("✅ Загружено leaderboard.json:", json.slice(0, 2));
-        
         rawData = json;
         normalizeData(rawData);
-        
-        // Отладка: проверка после нормализации
-        console.log("✅ После normalizeData, первые 3 записи:", data.slice(0, 3));
         
         sortData();
         renderTable();
         updateArrows();
         updateTotals();
     } catch (err) {
-        console.error("❌ Failed to fetch leaderboard:", err);
+        console.error("Failed to fetch leaderboard:", err);
     }
 }
 
@@ -167,16 +161,6 @@ function filterData() {
     return data.filter(item => (item.username || "").toLowerCase().includes(query));
 }
 
-// - SHARE BUTTON FUNCTIONALITY -
-function shareUserOnTwitter(username) {
-    const tweetText = `Check out @${username} on the Ritual Community Leaderboard! #RitualCommunity #Leaderboard`;
-    const leaderboardUrl = window.location.href;
-    const encodedText = encodeURIComponent(tweetText);
-    const encodedUrl = encodeURIComponent(leaderboardUrl);
-    const twitterIntentUrl = `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`;
-    window.open(twitterIntentUrl, '_blank', 'width=600,height=400');
-}
-
 // - Render Table with Generate Card Button -
 function renderTable() {
     const tbody = document.getElementById("leaderboard-body");
@@ -200,7 +184,7 @@ function renderTable() {
         const nameSpan = document.createElement("span");
         nameSpan.textContent = escapeHtml(name);
         
-        // Кнопка Generate Card (вместо Share)
+        // Кнопка Generate Card
         const cardBtn = document.createElement("button");
         cardBtn.className = 'generate-card-btn';
         cardBtn.textContent = '🎴 Generate Card';
@@ -381,6 +365,171 @@ function toggleTweetsRow(tr, username) {
     tr.parentNode.insertBefore(tweetsRow, tr.nextElementSibling);
 }
 
+// === NFT CARD: ОТКРЫТИЕ МОДАЛЬНОГО ОКНА ===
+function showCardModal(username) {
+    const user = data.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) return;
+    
+    currentCardData = { username, stats: user };
+    generateCardCanvas(username, user);
+    
+    const modal = document.getElementById('card-modal');
+    if (modal) modal.style.display = 'flex';
+    document.getElementById('card-modal-title').textContent = `@${username} Card`;
+    document.getElementById('mint-status').textContent = '';
+    document.getElementById('btn-mint').disabled = false;
+}
+
+function closeCardModal() {
+    document.getElementById('card-modal').style.display = 'none';
+}
+
+// === NFT CARD: ГЕНЕРАЦИЯ CANVAS (600x800 PNG) ===
+async function generateCardCanvas(username, stats) {
+    const canvas = document.getElementById('user-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = 600, H = 800;
+    
+    // 1. Фон (градиент)
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#1a2a2a');
+    grad.addColorStop(0.5, '#2F4F4F');
+    grad.addColorStop(1, '#0d1117');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+    
+    // 2. Рамка
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 4;
+    ctx.roundRect(10, 10, W-20, H-20, 16);
+    ctx.stroke();
+    
+    // 3. Аватар (ищем в allTweets)
+    const avatarUrl = await fetchAvatarUrl(username);
+    if (avatarUrl) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = avatarUrl;
+        await new Promise(res => { img.onload = res; img.onerror = res; });
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(80, 100, 50, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(img, 30, 50, 100, 100);
+        ctx.restore();
+        ctx.strokeStyle = '#6fe3d1'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(80, 100, 50, 0, Math.PI * 2); ctx.stroke();
+    }
+    
+    // 4. Данные пользователя
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 28px Segoe UI, sans-serif';
+    ctx.fillText(`@${username}`, 150, 90);
+    ctx.font = '16px Segoe UI, sans-serif';
+    ctx.fillStyle = '#a9ddd3';
+    ctx.fillText('RITUAL COMMUNITY LEADERBOARD', 150, 115);
+    
+    const metrics = [
+        { label: 'Posts', val: stats.posts || 0, icon: '📝' },
+        { label: 'Likes', val: stats.likes || 0, icon: '❤️' },
+        { label: 'Retweets', val: stats.retweets || 0, icon: '🔁' },
+        { label: 'Comments', val: stats.comments || 0, icon: '💬' },
+        { label: 'Views', val: stats.views || 0, icon: '👁️' }
+    ];
+    
+    let y = 200;
+    ctx.font = '20px Segoe UI, sans-serif';
+    ctx.fillStyle = '#fff';
+    metrics.forEach(m => {
+        ctx.fillText(`${m.icon} ${m.label}:`, 40, y);
+        ctx.fillStyle = '#6fe3d1';
+        ctx.font = 'bold 22px Segoe UI, sans-serif';
+        ctx.fillText(Number(m.val).toLocaleString(), 220, y);
+        ctx.fillStyle = '#fff';
+        ctx.font = '20px Segoe UI, sans-serif';
+        y += 45;
+    });
+    
+    // 5. Футер
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '14px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Minted on Ritual Testnet • Generated ' + new Date().toLocaleDateString(), W/2, H-40);
+    
+    // Сохраняем base64 для минта (без префикса)
+    currentCardData.imageData = canvas.toDataURL('image/png').split(',')[1];
+    
+    // Кнопка Download
+    document.getElementById('btn-download').onclick = () => {
+        const link = document.createElement('a');
+        link.download = `card_${username}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    };
+}
+
+async function fetchAvatarUrl(username) {
+    const clean = username.replace(/^@/, '').toLowerCase();
+    const tweet = allTweets.find(t => 
+        (t.user?.screen_name || t.user?.name || '').toLowerCase().replace(/^@/, '') === clean
+    );
+    return tweet?.user?.profile_image_url_https || null;
+}
+
+// === NFT MINT: МИНТ ЧЕРЕЗ RITUAL TESTNET ===
+async function mintCardNFT() {
+    const status = document.getElementById('mint-status');
+    const btn = document.getElementById('btn-mint');
+    
+    if (!window.ethereum) { status.textContent = '❌ Установи MetaMask'; return; }
+    
+    btn.disabled = true;
+    status.textContent = '⏳ Подключение к кошельку...';
+    
+    try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const address = await signer.getAddress();
+        
+        const network = await provider.getNetwork();
+        if (network.chainId !== 1979n) {
+            status.textContent = '🔄 Переключаю на Ritual Testnet...';
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: '0x7BB' }]
+            });
+        }
+        
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+        
+        status.textContent = '⏳ Подтверди транзакцию в MetaMask...';
+        const tx = await contract.mintCard(
+            address,
+            currentCardData.username,
+            currentCardData.stats.posts || 0,
+            currentCardData.stats.likes || 0,
+            currentCardData.stats.retweets || 0,
+            currentCardData.stats.comments || 0,
+            currentCardData.stats.views || 0,
+            currentCardData.imageData,
+            { value: ethers.parseEther("0.001") }
+        );
+        
+        status.textContent = '⛓️ Транзакция отправлена. Ожидание подтверждения...';
+        await tx.wait();
+        status.textContent = '✅ NFT успешно заминчен! Проверь кошелёк.';
+        status.style.color = '#4ade80';
+        
+    } catch (err) {
+        console.error(err);
+        status.textContent = `❌ Ошибка: ${err.message || err}`;
+        status.style.color = '#ff6b6b';
+    } finally {
+        btn.disabled = false;
+    }
+}
+
 // - Tabs setup and Analytics rendering -
 function setupTabs() {
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -491,7 +640,7 @@ function renderNFTCards(nfts) {
         const card = document.createElement('div');
         card.className = 'nft-gallery-card';
         card.innerHTML = `
-            <img src="data:image/png;base64,${nft.imageData}" alt="Card ${nft.username}" loading="lazy">
+            <img src="image/png;base64,${nft.imageData}" alt="Card ${nft.username}" loading="lazy">
             <div class="nft-info">
                 <h4>@${nft.username}</h4>
                 <p>Token ID: #${nft.tokenId}</p>
@@ -868,10 +1017,10 @@ function setLanguage(lang) {
     }
 
     const h1 = document.getElementById('welcome-title');
-    if (h1) h1.textContent = lang === 'en' ? 'WELCOME OPENGRADIENTS!' : 'ДОБРО ПОЖАЛОВАТЬ, Опенградиенты!';
+    if (h1) h1.textContent = lang === 'en' ? 'WELCOME Ritualists!' : 'ДОБРО ПОЖАЛОВАТЬ, Ритуалисты';
 
     const welcomeP1 = document.getElementById('welcome-desc-1');
-    if (welcomeP1) welcomeP1.innerHTML = lang === 'en' ? 'This leaderboard is generated based on all posts in the <a href="https://x.com/i/communities/1978779669693362400" target="_blank">Ritual Community</a>.' : 'Этот список лидеров генерируется на основе всех постов в <a href="https://x.com/i/communities/1978779669693362400" target="_blank">сообществе Ритуал</a>.';
+    if (welcomeP1) welcomeP1.innerHTML = lang === 'en' ? 'This leaderboard is generated based on all posts in the <a href="https://x.com/i/communities/1896991026272723220" target="_blank" class="white-link">Ritual Community</a>.' : 'Этот список лидеров генерируется на основе всех постов в <a href="https://x.com/i/communities/1896991026272723220" target="_blank" class="white-link">сообществе Ритуал</a>.';
 
     const welcomeP2 = document.getElementById('welcome-desc-2');
     if (welcomeP2) welcomeP2.innerHTML = lang === 'en' ? 'By clicking on any participant, you can view their works directly on the website.' : 'Нажав на любого участника, вы можете просмотреть его работы непосредственно на веб-сайте.';
@@ -1091,5 +1240,18 @@ document.addEventListener('DOMContentLoaded', () => {
             flake.style.animationDelay = `${Math.random() * 5}s`;
             snowContainer.appendChild(flake);
         }
+    }
+    
+    // NFT Mint: Привязка кнопки
+    const mintBtn = document.getElementById('btn-mint');
+    if (mintBtn) mintBtn.addEventListener('click', mintCardNFT);
+
+    // NFT Gallery: Кнопка обновления
+    const refreshBtn = document.getElementById('refresh-nft-btn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => {
+        localStorage.removeItem('ritual_nft_gallery');
+        loadNFTGallery();
+      });
     }
 });
