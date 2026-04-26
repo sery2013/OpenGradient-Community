@@ -294,7 +294,45 @@ async function generateCardCanvas(username, stats) {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
     ctx.font = '16px Segoe UI, sans-serif';
     ctx.fillText('Generated ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), W / 2, H - 35);
+// === ДОБАВЛЕНИЕ ЛОГОТИПА И ТЕКСТА (ИСПРАВЛЕНО) ===
+    const logoImg = new Image();
+    logoImg.crossOrigin = 'anonymous';
+    // ЗАМЕНИ НА СВОЮ ССЫЛКУ
+    logoImg.src = 'https://твоя-ссылка-на-лого.png'; 
 
+    // Ждем загрузки, чтобы логотип успел отрисоваться до сохранения в NFT
+    await new Promise((resolve) => {
+        logoImg.onload = resolve;
+        logoImg.onerror = () => {
+            console.error("Ошибка загрузки логотипа");
+            resolve();
+        };
+    });
+
+    if (logoImg.complete && logoImg.naturalWidth > 0) {
+        const logoSize = 46; // Размер иконки
+        const padding = 15;
+        const brandText = "YOUR TEXT"; // ТВОЙ ТЕКСТ
+        
+        ctx.font = 'bold 30px Segoe UI, sans-serif';
+        const textWidth = ctx.measureText(brandText).width;
+        
+        // Центрируем всю конструкцию в красной рамке
+        const totalWidth = logoSize + padding + textWidth;
+        const startX = (W - totalWidth) / 2;
+        const centerY = 485; // Позиция Y (внутри твоей рамки)
+
+        // Отрисовка
+        ctx.drawImage(logoImg, startX, centerY - (logoSize / 2), logoSize, logoSize);
+        ctx.fillStyle = '#6fe3d1';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(brandText, startX + logoSize + padding, centerY);
+    }
+    // === КОНЕЦ ВСТАВКИ ===
+
+    // ОСТАВЬ ЭТУ СТРОКУ ПОСЛЕ ВСТАВКИ
+    currentCardData.imageData = canvas.toDataURL('image/png').split(',')[1];
     currentCardData.imageData = canvas.toDataURL('image/png').split(',')[1];
 
     // Кнопка Download
