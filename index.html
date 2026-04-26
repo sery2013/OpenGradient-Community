@@ -5,27 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ritual Community</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Подключаем ethers.js для работы с блокчейном -->
     <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
 </head>
 <body>
-    <script>
-      fetch("last_updated.txt")
-        .then(response => response.text())
-        .then(text => {
-          document.getElementById("last-updated").textContent = text.trim();
-        })
-        .catch(() => {
-          document.getElementById("last-updated").textContent = "Unknown";
-        });
-    </script>
 
-    <!-- НОВЫЙ БЛОК ДЛЯ ЛОГОТИПА -->
-    <div class="top-logo-block">
-        <!-- Сюда можно вставить тег <img> с твоим логотипом -->
-        <!-- Пример: <img src="https://github.com/sery2013/OpenGradient-Community/blob/main/RITUAL.png?raw=true" alt="Logo" style="height: 50px;"> -->
+    <!-- === ЛОГОТИП КОМПАНИИ === -->
+    <div class="logo-container">
+        <a href="https://opengradient.ai" target="_blank">
+            <!-- Замени ссылку src на логотип, если есть другой -->
+            <img src="https://github.com/sery2013/OpenGradient-Community/blob/main/RITUAL.png?raw=true" alt="Company Logo" class="company-logo">
+        </a>
     </div>
 
-    <!-- ТЕКСТОВЫЙ ЗАГОЛОВОК -->
+    <!-- === TEXT HEADER (вместо баннера) === -->
     <div class="header-title" onclick="location.reload()">
         RITUAL COMMUNITY
     </div>
@@ -36,8 +29,7 @@
         <!-- === WELCOME SECTION === -->
         <div class="welcome-block">
             <h1 id="welcome-title">WELCOME OPENGRADIENTS!</h1>
-            <!-- Добавлен style="color: #fff;" чтобы ссылка была белой -->
-            <p id="welcome-desc-1">This leaderboard is generated based on all posts in the <a href="https://x.com/i/communities/1978779669693362400" target="_blank" style="color: #fff; text-decoration: underline;">Ritual Community</a>.</p>
+            <p id="welcome-desc-1">This leaderboard is generated based on all posts in the <a href="https://x.com/i/communities/1978779669693362400" target="_blank" class="white-link">Ritual Community</a>.</p>
             <p id="welcome-desc-2">By clicking on any participant, you can view their works directly on the website.</p>
             <p id="welcome-desc-3">By clicking on any metric (for example, views), you can filter by it.</p>
             <p><strong>Last updated:</strong> <span id="manual-last-updated">10 Apr, 2026</span></p>
@@ -51,7 +43,7 @@
                 <button class="tab-btn" data-tab="nft-gallery" id="tab-nft-gallery-btn">🖼️ NFT Gallery</button>
             </div>
             <div class="team-box">
-                <p id="follow-dev-text" style="text-align: center;">Follow Developer - <a href="https://x.com/kaye_moni" target="_blank" id="follow-dev-link">@kaye_moni</a></p>
+                <p id="follow-dev-text" style="text-align: center;">Follow Developer - <a href="https://x.com/kaye_moni" target="_blank" id="follow-dev-link" class="white-link">@kaye_moni</a></p>
             </div>
         </div>
 
@@ -99,6 +91,7 @@
                 <button id="next-page">Next</button>
             </div>
 
+            <!-- Контейнер для постов пользователя (Аккордеон) -->
             <div id="tweets-container" style="margin-top: 20px;">
                 <ul id="tweets-list"></ul>
             </div>
@@ -119,6 +112,7 @@
                 <label for="hour-select" id="hour-label" style="font-weight:600; color:#a9ddd3; white-space:nowrap;">Filter by hour:</label>
                 <select id="hour-select" style="flex:1; max-width:180px;">
                     <option value="all" id="hour-all">All hours</option>
+                    <!-- Опции часов 00-23 будут здесь -->
                     <option value="0" id="hour-0">00:00</option>
                     <option value="1" id="hour-1">01:00</option>
                     <option value="2" id="hour-2">02:00</option>
@@ -224,14 +218,16 @@
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО -->
+    <!-- === МОДАЛЬНОЕ ОКНО ДЛЯ ГЕНЕРАЦИИ КАРТОЧКИ (ВАЖНО: ДОБАВЛЕНО) === -->
     <div id="card-modal" class="card-modal" style="display:none;">
       <div class="card-modal-content">
         <button class="close-modal" onclick="closeCardModal()">✕</button>
         <h3 id="card-modal-title">User Card</h3>
+        
         <div class="canvas-wrapper">
           <canvas id="user-canvas" width="600" height="800"></canvas>
         </div>
+        
         <div class="card-actions">
           <button id="btn-download" class="action-btn download">📥 Скачать PNG</button>
           <button id="btn-mint" class="action-btn mint">🔥 Mint NFT (0.001 RITUAL)</button>
