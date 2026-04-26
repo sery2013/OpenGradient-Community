@@ -282,7 +282,7 @@ async function generateCardCanvas(username, stats) {
 try {
     const logoImg = new Image();
     logoImg.crossOrigin = 'anonymous';
-    logoImg.src = 'https://raw.githubusercontent.com/sery2013/OpenGradient-Community/main/RITUAL.png';
+    logoImg.src = 'https://i.postimg.cc/j524xqkG/RITUAL.png';
     
     console.log('🔄 Загрузка логотипа...');
     
