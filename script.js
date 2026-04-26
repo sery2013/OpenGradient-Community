@@ -304,8 +304,8 @@ try {
     // Рисуем логотип если загрузился
     if (logoImg.complete && logoImg.naturalWidth !== 0) {
         const logoSize = 45;  // Размер 45x45 пикселей
-        const logoX = (W / 2) - (logoSize / 2) - 180;  // По центру слева от текста
-        const logoY = H - 175;  // Позиция по вертикали
+        const logoX = (W / 2) - 220;  // СДВИНУЛ ЛЕВЕЕ (было -180, стало -220)
+        const logoY = H - 180;  // ПОДНЯЛ ВЫШЕ (было -175, стало -180)
         
         ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
         console.log('🎨 Логотип нарисован на позиции:', logoX, logoY);
@@ -319,7 +319,7 @@ try {
 ctx.fillStyle = '#6fe3d1';
 ctx.font = 'bold 32px Segoe UI, sans-serif';
 ctx.textAlign = 'center';
-ctx.fillText('TWITTER RITUAL COMMUNITY', W / 2, H - 145);
+ctx.fillText('TWITTER RITUAL COMMUNITY', W / 2, H - 135);  // ОПУСТИЛ НИЖЕ (было -145, стало -135)
 ctx.textAlign = 'left';
 // === КОНЕЦ ЛОГОТИПА ===
 
