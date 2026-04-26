@@ -278,6 +278,42 @@ async function generateCardCanvas(username, stats) {
 
     ctx.textAlign = 'left';
 
+    // === ЛОГОТИП И ТЕКСТ (с обработкой ошибок) ===
+    try {
+        const logoImg = new Image();
+        logoImg.crossOrigin = 'anonymous';
+        logoImg.src = 'https://github.com/sery2013/OpenGradient-Community/blob/main/OpenGradient%20Community.png?raw=true';
+        
+        // Ждём загрузки с таймаутом 3 секунды
+        await Promise.race([
+            new Promise(resolve => {
+                logoImg.onload = resolve;
+                logoImg.onerror = resolve; // Продолжаем даже если ошибка
+            }),
+            new Promise(resolve => setTimeout(resolve, 3000))
+        ]);
+
+        // Рисуем логотип если загрузился
+        if (logoImg.complete && logoImg.naturalWidth !== 0) {
+            const logoWidth = 150;
+            const logoHeight = 50;
+            const logoX = (W - logoWidth) / 2;
+            const logoY = H - 165;
+            
+            ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+        }
+        
+        // Текст под логотипом (рисуем всегда)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.font = '16px Segoe UI, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('OpenGradient Community', W / 2, H - 135);
+    } catch (e) {
+        console.warn('Logo load error:', e);
+        // Даже если ошибка - продолжаем
+    }
+    // === КОНЕЦ ЛОГОТИПА ===
+
     // 7. Нижняя разделительная линия
     ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
     ctx.lineWidth = 2;
@@ -286,7 +322,7 @@ async function generateCardCanvas(username, stats) {
     ctx.lineTo(W - 40, H - 100);
     ctx.stroke();
 
-    // 8. Футер
+    // 8. Футер (рисуем ВСЕГДА)
     ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
     ctx.font = '20px Segoe UI, sans-serif';
     ctx.textAlign = 'center';
