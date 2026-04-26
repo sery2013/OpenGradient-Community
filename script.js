@@ -282,46 +282,56 @@ async function generateCardCanvas(username, stats) {
 try {
     const logoImg = new Image();
     logoImg.crossOrigin = 'anonymous';
-    logoImg.src = 'https://github.com/sery2013/OpenGradient-Community/blob/main/OpenGradient%20Community.png?raw=true'; // ЗАМЕНИ НА СВОЮ ССЫЛКУ
+    // ЗАМЕНИ ССЫЛКУ НА ПРЯМУЮ ССЫЛКУ НА ИЗОБРАЖЕНИЕ
+    logoImg.src = 'https://raw.githubusercontent.com/sery2013/OpenGradient-Community/main/OpenGradient%20Community.png';
     
-    // Ждём загрузки с таймаутом
+    console.log('🔄 Загрузка логотипа...');
+    
+    // Ждём загрузки с таймаутом 5 секунд
     await Promise.race([
-        new Promise(resolve => {
+        new Promise((resolve, reject) => {
             logoImg.onload = () => {
-                console.log('✅ Логотип загружен:', logoImg.width, 'x', logoImg.height);
+                console.log('✅ Логотип загружен!', logoImg.width, 'x', logoImg.height);
                 resolve();
             };
             logoImg.onerror = (e) => {
                 console.error('❌ Ошибка загрузки логотипа:', e);
-                resolve();
+                reject(new Error('Logo failed to load'));
             };
         }),
-        new Promise(resolve => setTimeout(resolve, 3000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
     ]);
 
     // Рисуем логотип если загрузился
     if (logoImg.complete && logoImg.naturalWidth !== 0) {
-        const logoWidth = 200;  // УВЕЛИЧИЛ ширину
-        const logoHeight = 80;  // УВЕЛИЧИЛ высоту
-        const logoX = (W - logoWidth) / 2;
+        const logoWidth = 200;  // Ширина логотипа
+        const logoHeight = 80;  // Высота логотипа
+        const logoX = (W - logoWidth) / 2;  // По центру
         const logoY = H - 200;  // Позиция по вертикали
         
         ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
-        console.log('🎨 Логотип нарисован');
+        console.log('🎨 Логотип нарисован на позиции:', logoX, logoY);
     } else {
-        console.warn('⚠️ Логотип не загрузился, рисуем только текст');
+        console.warn('⚠️ Логотип не загрузился');
     }
     
-    // Текст под логотипом (БОЛЬШОЙ ШРИФТ)
-    ctx.fillStyle = '#6fe3d1';  // Бирюзовый цвет
-    ctx.font = 'bold 45px Segoe UI, sans-serif';  // УВЕЛИЧИЛ с 16px до 32px
-    ctx.textAlign = 'center';
-    ctx.fillText('TWITTER RITUAL COMMUNITY', W / 2, H - 140);  // Текст
-    ctx.textAlign = 'left';
-    
 } catch (e) {
-    console.error('Ошибка при отрисовке логотипа:', e);
+    console.error('❌ Ошибка при загрузке логотипа:', e.message);
+    // Рисуем заглушку если логотип не загрузился
+    ctx.fillStyle = 'rgba(111, 227, 209, 0.2)';
+    ctx.fillRect((W - 200) / 2, H - 200, 200, 80);
+    ctx.fillStyle = '#6fe3d1';
+    ctx.font = '14px Segoe UI';
+    ctx.textAlign = 'center';
+    ctx.fillText('LOGO', W / 2, H - 160);
 }
+
+// Текст под логотипом (рисуем ВСЕГДА)
+ctx.fillStyle = '#6fe3d1';
+ctx.font = 'bold 32px Segoe UI, sans-serif';
+ctx.textAlign = 'center';
+ctx.fillText('OpenGradient Community', W / 2, H - 140);
+ctx.textAlign = 'left';
 // === КОНЕЦ ЛОГОТИПА ===
 
     // 7. Нижняя разделительная линия
