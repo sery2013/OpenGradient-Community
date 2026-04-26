@@ -389,7 +389,7 @@ function renderTable() {
     const nameSpan = document.createElement("span");
     nameSpan.textContent = escapeHtml(name);
     
-    // Кнопка Generate Card (вместо Twitter icon)
+    // Кнопка Generate Card
     const cardBtn = document.createElement("button");
     cardBtn.className = 'generate-card-btn';
     cardBtn.textContent = '🎴 Generate Card';
@@ -1049,7 +1049,7 @@ function setLanguage(lang) {
     if (langEn) { langEn.classList.toggle('active', lang === 'en'); langEn.classList.toggle('inactive', lang !== 'en'); }
     if (langRu) { langRu.classList.toggle('active', lang === 'ru'); langRu.classList.toggle('inactive', lang !== 'ru'); }
     const h1 = document.getElementById('welcome-title');
-    if (h1) h1.textContent = lang === 'en' ? 'WELCOME OPENGRADIENTS!' : 'ДОБРО ПОЖАЛОВАТЬ, Опенградиенты!';
+    if (h1) h1.textContent = lang === 'en' ? 'RITUAL COMMUNITY' : 'СООБЩЕСТВО RITUAL';
 }
 
 // === DOMContentLoaded: ИНИЦИАЛИЗАЦИЯ ===
