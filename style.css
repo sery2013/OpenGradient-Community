@@ -127,7 +127,7 @@ overflow: hidden;
 content: "";
 position: absolute;
 top: 0; left: 0; right: 0; bottom: 0;
-background-image: url('data:image/svg+xml;utf8,✦✧✦');
+background-image: url('image/svg+xml;utf8,✦✧✦');
 background-repeat: repeat;
 background-size: 100px;
 pointer-events: none;
@@ -212,7 +212,7 @@ table::before {
 content: "";
 position: absolute;
 top: 0; left: 0; right: 0; bottom: 0;
-background-image: url('image/svg+xml;utf8,✦✧✦✧');
+background-image: url('image/svg+xml;utf8,✦✧✦');
 background-repeat: repeat;
 background-size: 100px;
 pointer-events: none;
@@ -363,7 +363,7 @@ transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 .tab-btn::before {
 content: " ";
 position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-background-image: url('image/svg+xml;utf8,✦✧✦✧');
+background-image: url('image/svg+xml;utf8,✦✧✧');
 background-repeat: repeat; background-size: 100px;
 pointer-events: none; z-index: -1;
 }
@@ -435,34 +435,38 @@ box-shadow: 0 0 20px rgba(111,227,209,0.15);
 .team-box::before {
 content: "";
 position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-background-image: url('image/svg+xml;utf8,✦✧✦✧');
+background-image: url('image/svg+xml;utf8,✦✧✦');
 background-repeat: repeat; background-size: 100px;
 pointer-events: none; z-index: -1;
 }
 
-.team-box p { margin: 5px 0; font-weight: 600; color: #fff; }
+.team-box p { margin: 5px 0; font-weight: 600; color: #fff; text-align: center; }
 
-/* === GENERATE CARD BUTTON === */
+/* === GENERATE CARD BUTTON (ТЁМНАЯ КНОПКА) === */
 .generate-card-btn {
-padding: 6px 14px;
-margin-left: 8px;
-background: linear-gradient(135deg, #6fe3d1, #00a896);
-color: #0d1117;
-border: none;
-border-radius: 8px;
-font-weight: 700;
-font-size: 0.85rem;
-cursor: pointer;
-transition: all 0.25s ease;
-white-space: nowrap;
-box-shadow: 0 2px 8px rgba(111, 227, 209, 0.3);
+  padding: 6px 14px;
+  margin-left: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #a9ddd3;
+  border: 1px solid rgba(111, 227, 209, 0.3);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .generate-card-btn:hover {
-transform: translateY(-2px);
-box-shadow: 0 4px 15px rgba(111, 227, 209, 0.5);
-background: linear-gradient(135deg, #82f0e0, #00c4b0);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(111, 227, 209, 0.3);
+  background: rgba(111, 227, 209, 0.12);
+  border-color: #6fe3d1;
+  color: #6fe3d1;
 }
+
+.generate-card-btn:active { transform: translateY(0); }
 
 /* === CARD MODAL === */
 .card-modal {
