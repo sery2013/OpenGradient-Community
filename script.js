@@ -389,7 +389,6 @@ function renderTable() {
     const nameSpan = document.createElement("span");
     nameSpan.textContent = escapeHtml(name);
     
-    // Кнопка Generate Card
     const cardBtn = document.createElement("button");
     cardBtn.className = 'generate-card-btn';
     cardBtn.textContent = '🎴 Generate Card';
