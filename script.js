@@ -390,6 +390,9 @@ async function generateCardCanvas(username, stats) {
     const ctx = canvas.getContext('2d');
     const W = 600, H = 800;
     
+    canvas.width = W;
+    canvas.height = H;
+    
     // 1. Фон (градиент)
     const grad = ctx.createLinearGradient(0, 0, W, H);
     grad.addColorStop(0, '#1a2a2a');
@@ -429,6 +432,14 @@ async function generateCardCanvas(username, stats) {
     ctx.font = '16px Segoe UI, sans-serif';
     ctx.fillStyle = '#a9ddd3';
     ctx.fillText('RITUAL COMMUNITY LEADERBOARD', 150, 115);
+    
+    // Разделительная линия
+    ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(30, 150);
+    ctx.lineTo(W-30, 150);
+    ctx.stroke();
     
     const metrics = [
         { label: 'Posts', val: stats.posts || 0, icon: '📝' },
