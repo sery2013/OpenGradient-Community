@@ -11,7 +11,7 @@ body {
 .background {
     position: fixed;
     inset: 0;
-    background: url("https://github.com/sery2013/OpenGradient-Community/blob/main/%E2%80%94Pngtree%E2%80%94turquoise%20beautiful%20background%20with%20lights_1243717.jpg?raw=true") no-repeat center center / cover;
+    background: url("https://i.imgur.com/whGwSLM.png") no-repeat center center / cover;
     z-index: -1;
     filter: brightness(0.35) blur(2px);
 }
@@ -426,7 +426,7 @@ tr.active-row {
 .team-box::before {
     content: "";
     position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-    background-image: url('image/svg+xml;utf8,✦✧✦✧');
+    background-image: url('image/svg+xml;utf8,✦✧✦');
     background-repeat: repeat; background-size: 100px;
     pointer-events: none; z-index: -1;
 }
@@ -469,7 +469,8 @@ tr.active-row {
     border: 2px solid rgba(255, 255, 255, 0.2);
     border-radius: 12px;
     padding: 25px;
-    max-width: 900px; width: 90%;
+    max-width: 90%; /* Шире для горизонтальной карточки */
+    width: 900px;
     text-align: center;
     position: relative;
     box-shadow: 0 0 40px rgba(111, 227, 209, 0.15);
