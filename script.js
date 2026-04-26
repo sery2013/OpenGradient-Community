@@ -389,6 +389,7 @@ function renderTable() {
     const nameSpan = document.createElement("span");
     nameSpan.textContent = escapeHtml(name);
     
+    // Кнопка Generate Card (тёмная)
     const cardBtn = document.createElement("button");
     cardBtn.className = 'generate-card-btn';
     cardBtn.textContent = '🎴 Generate Card';
@@ -939,7 +940,7 @@ function renderAnalytics() {
       } else if (window.Chart) {
         analyticsChart = new Chart(ctx.getContext('2d'), {
           type: 'line',
-          data: {
+           {
             labels: labels,
             datasets: [{
               label: 'Tweets per day',
