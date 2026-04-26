@@ -278,41 +278,51 @@ async function generateCardCanvas(username, stats) {
 
     ctx.textAlign = 'left';
 
-    // === ЛОГОТИП И ТЕКСТ (с обработкой ошибок) ===
-    try {
-        const logoImg = new Image();
-        logoImg.crossOrigin = 'anonymous';
-        logoImg.src = 'https://github.com/sery2013/OpenGradient-Community/blob/main/RITUAL.png?raw=true';
-        
-        // Ждём загрузки с таймаутом 3 секунды
-        await Promise.race([
-            new Promise(resolve => {
-                logoImg.onload = resolve;
-                logoImg.onerror = resolve; // Продолжаем даже если ошибка
-            }),
-            new Promise(resolve => setTimeout(resolve, 3000))
-        ]);
+    // === ЛОГОТИП И ТЕКСТ ===
+try {
+    const logoImg = new Image();
+    logoImg.crossOrigin = 'anonymous';
+    logoImg.src = 'https://github.com/sery2013/OpenGradient-Community/blob/main/OpenGradient%20Community.png?raw=true'; // ЗАМЕНИ НА СВОЮ ССЫЛКУ
+    
+    // Ждём загрузки с таймаутом
+    await Promise.race([
+        new Promise(resolve => {
+            logoImg.onload = () => {
+                console.log('✅ Логотип загружен:', logoImg.width, 'x', logoImg.height);
+                resolve();
+            };
+            logoImg.onerror = (e) => {
+                console.error('❌ Ошибка загрузки логотипа:', e);
+                resolve();
+            };
+        }),
+        new Promise(resolve => setTimeout(resolve, 3000))
+    ]);
 
-        // Рисуем логотип если загрузился
-        if (logoImg.complete && logoImg.naturalWidth !== 0) {
-            const logoWidth = 150;
-            const logoHeight = 50;
-            const logoX = (W - logoWidth) / 2;
-            const logoY = H - 165;
-            
-            ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
-        }
+    // Рисуем логотип если загрузился
+    if (logoImg.complete && logoImg.naturalWidth !== 0) {
+        const logoWidth = 200;  // УВЕЛИЧИЛ ширину
+        const logoHeight = 80;  // УВЕЛИЧИЛ высоту
+        const logoX = (W - logoWidth) / 2;
+        const logoY = H - 200;  // Позиция по вертикали
         
-        // Текст под логотипом (рисуем всегда)
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.font = '16px Segoe UI, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('Ritual Community', W / 2, H - 135);
-    } catch (e) {
-        console.warn('Logo load error:', e);
-        // Даже если ошибка - продолжаем
+        ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+        console.log('🎨 Логотип нарисован');
+    } else {
+        console.warn('⚠️ Логотип не загрузился, рисуем только текст');
     }
-    // === КОНЕЦ ЛОГОТИПА ===
+    
+    // Текст под логотипом (БОЛЬШОЙ ШРИФТ)
+    ctx.fillStyle = '#6fe3d1';  // Бирюзовый цвет
+    ctx.font = 'bold 32px Segoe UI, sans-serif';  // УВЕЛИЧИЛ с 16px до 32px
+    ctx.textAlign = 'center';
+    ctx.fillText('OpenGradient Community', W / 2, H - 140);  // Текст
+    ctx.textAlign = 'left';
+    
+} catch (e) {
+    console.error('Ошибка при отрисовке логотипа:', e);
+}
+// === КОНЕЦ ЛОГОТИПА ===
 
     // 7. Нижняя разделительная линия
     ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
