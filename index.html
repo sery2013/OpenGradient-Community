@@ -5,11 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ritual Community</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Подключаем ethers.js для работы с блокчейном -->
     <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
 </head>
 <body>
-    <!-- === TEXT HEADER (вместо баннера) === -->
+    <script>
+      fetch("last_updated.txt")
+        .then(response => response.text())
+        .then(text => {
+          document.getElementById("last-updated").textContent = text.trim();
+        })
+        .catch(() => {
+          document.getElementById("last-updated").textContent = "Unknown";
+        });
+    </script>
+
+    <!-- НОВЫЙ БЛОК ДЛЯ ЛОГОТИПА -->
+    <div class="top-logo-block">
+        <!-- Сюда можно вставить тег <img> с твоим логотипом -->
+        <!-- Пример: <img src="logo.png" alt="Logo" style="height: 50px;"> -->
+    </div>
+
+    <!-- ТЕКСТОВЫЙ ЗАГОЛОВОК -->
     <div class="header-title" onclick="location.reload()">
         RITUAL COMMUNITY
     </div>
@@ -20,7 +36,8 @@
         <!-- === WELCOME SECTION === -->
         <div class="welcome-block">
             <h1 id="welcome-title">WELCOME OPENGRADIENTS!</h1>
-            <p id="welcome-desc-1">This leaderboard is generated based on all posts in the <a href="https://x.com/i/communities/1978779669693362400" target="_blank">Ritual Community</a>.</p>
+            <!-- Добавлен style="color: #fff;" чтобы ссылка была белой -->
+            <p id="welcome-desc-1">This leaderboard is generated based on all posts in the <a href="https://x.com/i/communities/1978779669693362400" target="_blank" style="color: #fff; text-decoration: underline;">Ritual Community</a>.</p>
             <p id="welcome-desc-2">By clicking on any participant, you can view their works directly on the website.</p>
             <p id="welcome-desc-3">By clicking on any metric (for example, views), you can filter by it.</p>
             <p><strong>Last updated:</strong> <span id="manual-last-updated">10 Apr, 2026</span></p>
@@ -194,7 +211,7 @@
             </section>
         </div>
 
-        <!-- NFT Gallery tab (НОВАЯ) -->
+        <!-- NFT Gallery tab -->
         <div id="tab-nft-gallery" class="tab-content" style="display:none;">
             <div class="gallery-header">
                 <h2 style="color:#fff;">Minted Leaderboard Cards</h2>
@@ -207,16 +224,14 @@
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ГЕНЕРАЦИИ КАРТОЧКИ -->
+    <!-- МОДАЛЬНОЕ ОКНО -->
     <div id="card-modal" class="card-modal" style="display:none;">
       <div class="card-modal-content">
         <button class="close-modal" onclick="closeCardModal()">✕</button>
         <h3 id="card-modal-title">User Card</h3>
-        
         <div class="canvas-wrapper">
           <canvas id="user-canvas" width="600" height="800"></canvas>
         </div>
-        
         <div class="card-actions">
           <button id="btn-download" class="action-btn download">📥 Скачать PNG</button>
           <button id="btn-mint" class="action-btn mint">🔥 Mint NFT (0.001 RITUAL)</button>
