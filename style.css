@@ -636,3 +636,15 @@ select option { background: #2F4F4F !important; color: #fff !important; padding:
 
 * { color: #fff !important; border-radius: 8px !important; }
 a { color: white !important; text-decoration: underline; }
+/* Фильтры в Analytics - в тон фона */
+.analytics-time-filter select {
+background: #1a3a3a !important; /* Темно-бирюзовый в тон фона */
+color: #fff !important;
+border: 1px solid rgba(111, 227, 209, 0.3) !important;
+}
+
+/* Опции в фильтрах */
+.analytics-time-filter select option {
+background: #1a3a3a !important;
+color: #fff !important;
+}
