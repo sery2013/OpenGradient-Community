@@ -17,13 +17,32 @@ body {
     filter: brightness(0.35) blur(2px);
 }
 
-/* === NEW TEXT HEADER (Shimmering Gradient) === */
+/* === LOGO HEADER === */
+.logo-container {
+    text-align: center;
+    padding: 20px 0 10px 0;
+    z-index: 1001;
+    position: relative;
+}
+
+.company-logo {
+    height: 60px; /* Размер логотипа */
+    width: auto;
+    border-radius: 10px;
+    transition: transform 0.3s;
+}
+
+.company-logo:hover {
+    transform: scale(1.05);
+}
+
+/* === TEXT HEADER (Shimmering Gradient) === */
 .header-title {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 3rem;
     font-weight: 900;
     text-align: center;
-    padding: 30px 0 20px 0;
+    padding: 10px 0 30px 0;
     cursor: pointer;
     text-transform: uppercase;
     letter-spacing: 2px;
@@ -67,7 +86,7 @@ body {
 .welcome-block {
     background-color: transparent;
     border: 1px solid #2F4F4F;
-    border-radius: 5%;
+    border-radius: 12px; /* Немного меньше скругление */
     padding: 20px;
     color: white;
     text-align: left;
@@ -81,6 +100,12 @@ body {
     margin-bottom: 15px;
     font-size: 2rem;
     text-align: center;
+}
+
+/* Ссылки внутри welcome-block белые */
+.welcome-block a, .team-box a {
+    color: #fff !important;
+    text-decoration: underline;
 }
 
 /* === STATS === */
@@ -97,7 +122,7 @@ body {
     font-size: 1.1rem;
     background: linear-gradient(135deg, #2F4F4F, #1a2a2a);
     border: 2px solid rgba(255, 255, 255, 0.4);
-    border-radius: 7.5%;
+    border-radius: 12px; /* Квадратнее */
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
     transition: all 0.3s ease;
     position: relative;
@@ -131,7 +156,7 @@ body {
     margin-bottom: 25px;
     padding: 15px;
     background: linear-gradient(135deg, #2F4F4F, #1a2a2a);
-    border-radius: 7.5%;
+    border-radius: 12px; /* Квадратнее */
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
     position: relative;
     overflow: hidden;
@@ -141,7 +166,7 @@ body {
     content: "";
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background-image: url('image/svg+xml;utf8,✦✧✦');
+    background-image: url('image/svg+xml;utf8,✦✧');
     background-repeat: repeat;
     background-size: 100px;
     pointer-events: none;
@@ -166,7 +191,7 @@ body {
 .search-input {
     flex: 1;
     padding: 10px 15px;
-    border-radius: 5%;
+    border-radius: 8px; /* Квадратнее */
     border: 1px solid rgba(255, 255, 255, 0.2);
     background: linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
     color: #fff;
@@ -195,12 +220,13 @@ body {
     text-transform: uppercase;
 }
 
+/* Исправленный фильтр выбора времени */
 .time-select {
     padding: 8px 12px;
-    border-radius: 5%;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background: #2F4F4F;
-    color: #fff;
+    border-radius: 8px; /* Квадратнее */
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: #2F4F4F; /* Тон фона */
+    color: #fff; /* Читаемый белый текст */
     font-weight: 600;
     cursor: pointer;
     transition: all 180ms ease;
@@ -208,14 +234,14 @@ body {
 
 .time-select:hover {
     background: #3a5f5f;
-    border-color: rgba(255,255,255,0.3);
+    border-color: rgba(255,255,255,0.5);
 }
 
 /* === TABLE === */
 table {
     width: 100%;
     border-collapse: collapse;
-    border-radius: 3%;
+    border-radius: 12px;
     overflow: hidden;
     background: linear-gradient(135deg, #2F4F4F, #1a2a2a);
     backdrop-filter: blur(5px);
@@ -282,7 +308,7 @@ tbody tr:hover {
     font-weight: 500;
     background: linear-gradient(135deg, #2F4F4F, #1a2a2a);
     border: 2px solid rgba(255, 255, 255, 0.5);
-    border-radius: 7.5%;
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s ease;
 }
@@ -301,7 +327,7 @@ tbody tr:hover {
     border-top: 2px solid rgba(255, 255, 255, 0.3);
     padding: 25px;
     animation: fadeInAccordion 0.4s ease;
-    border-radius: 5%;
+    border-radius: 12px;
     color: #fff;
     position: relative;
     overflow: hidden;
@@ -323,7 +349,7 @@ tbody tr:hover {
 .tweet-card {
     background: linear-gradient(135deg, #2F4F4F, #1a2a2a);
     border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 5%;
+    border-radius: 12px;
     box-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
     width: 445px;
     color: #fff;
@@ -353,7 +379,7 @@ tr.active-row {
     transition: all 0.3s ease;
 }
 
-/* === TABS — СТИЛЬНЫЕ ЭФФЕКТЫ === */
+/* === TABS — КВАДРАТНЫЕ === */
 .tabs {
     display: flex;
     gap: 12px;
@@ -363,7 +389,7 @@ tr.active-row {
 
 .tab-btn {
     padding: 8px 14px;
-    border-radius: 5%;
+    border-radius: 8px; /* Квадратнее, было 5% */
     border: 2px solid rgba(255,255,255,0.25);
     background: linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
     color: #fff;
@@ -407,7 +433,7 @@ tr.active-row {
 
 .tab-content { padding: 8px 0 30px; }
 
-/* === COMBINED BOTTOM BLOCK (РАСТЯНУТЫЙ) === */
+/* === COMBINED BOTTOM BLOCK === */
 .combined-bottom-block {
     display: flex;
     align-items: center;
@@ -432,7 +458,6 @@ tr.active-row {
     gap: 10px;
 }
 
-/* Вот это правило растягивает блок разработчика! */
 .team-box {
     flex-grow: 1;
     text-align: right;
@@ -440,7 +465,7 @@ tr.active-row {
     display: inline-block;
     padding: 15px;
     border: 2px solid rgba(255, 255, 255, 0.5);
-    border-radius: 7.5%;
+    border-radius: 12px;
     background: linear-gradient(135deg, #2F4F4F, #1a2a2a);
     position: relative;
     overflow: hidden;
@@ -456,11 +481,11 @@ tr.active-row {
 
 .team-box p { margin: 5px 0; font-weight: 600; color: #fff; text-align: center; }
 
-/* === GENERATE CARD BUTTON (ТЁМНАЯ КНОПКА - под фон) === */
+/* === GENERATE CARD BUTTON === */
 .generate-card-btn {
     padding: 6px 14px;
     margin-left: 8px;
-    background: #2F4F4F; /* Цвет фона лидерборда */
+    background: #2F4F4F;
     color: #a9ddd3;
     border: 1px solid rgba(111, 227, 209, 0.3);
     border-radius: 8px;
@@ -609,7 +634,7 @@ tr.active-row {
 .analytics-tab-btn {
     padding: 10px 16px; border: none; background: transparent; color: #fff !important;
     font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent;
-    transition: all 200ms ease; border-radius: 5% 5% 0 0;
+    transition: all 200ms ease; border-radius: 8px 8px 0 0;
 }
 
 .analytics-tab-btn.active { color: #fff !important; border-bottom-color: #fff; }
@@ -617,14 +642,15 @@ tr.active-row {
 .analytics-nested-content {
     display: none !important; animation: fadeIn 250ms ease;
     background: #2F4F4F !important; color: #fff !important;
-    border-radius: 5%; padding: 10px; border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px; padding: 10px; border: 1px solid rgba(255, 255, 255, 0.05);
 }
+
 .analytics-nested-content.active { display: block !important; }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .analytics-block {
-    background: #2F4F4F !important; padding: 12px; border-radius: 5%;
+    background: #2F4F4F !important; padding: 12px; border-radius: 12px;
     margin-bottom: 12px; position: relative; overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.1); color: #fff !important;
 }
@@ -640,13 +666,13 @@ tr.active-row {
 
 .analytics-block select {
     background: #2F4F4F !important; color: #fff !important;
-    border: 1px solid rgba(255,255,255,0.08); padding: 6px 8px; border-radius: 7.5%;
+    border: 1px solid rgba(255,255,255,0.08); padding: 6px 8px; border-radius: 8px;
 }
 
 #top-authors-list, #top-posts-list { list-style: none; margin: 0; padding: 0; }
 
 #top-authors-list li, .top-post-item {
-    padding: 10px; border-radius: 5%; background: #2F4F4F !important;
+    padding: 10px; border-radius: 8px; background: #2F4F4F !important;
     margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.02); color: #fff !important;
     display: flex; justify-content: space-between; align-items: center;
     position: relative; overflow: hidden;
@@ -656,6 +682,7 @@ tr.active-row {
     content: ''; position: absolute; left: 0; right: 0; bottom: 0;
     height: 1px; background: #DCDCDC; opacity: 0.8; z-index: 1;
 }
+
 #top-authors-list li:last-child::after, .top-post-item:last-child::after { display: none; }
 
 .top-post-item .excerpt { max-width: 70%; color: #fff !important; }
@@ -665,7 +692,7 @@ select {
     appearance: none; -webkit-appearance: none; -moz-appearance: none;
     background-image: url("image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
     background-repeat: no-repeat; background-position: right 8px center; background-size: 16px;
-    padding-right: 32px; border-radius: 5%;
+    padding-right: 32px; border-radius: 8px;
 }
 
 select option { background: #2F4F4F !important; color: #fff !important; padding: 8px; }
@@ -678,7 +705,7 @@ select option { background: #2F4F4F !important; color: #fff !important; padding:
         margin: 0 -15px;
         padding: 0 15px;
     }
-    table { min-width: 100%; width: fit-content; margin: 0; border-radius: 5%; }
+    table { min-width: 100%; width: fit-content; margin: 0; border-radius: 12px; }
     .container { padding: 10px; margin: 0 auto 40px; }
     .welcome-section h1 { font-size: 2rem; }
     .welcome-section p { font-size: 1rem; }
