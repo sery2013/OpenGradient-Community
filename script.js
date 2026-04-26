@@ -484,11 +484,21 @@ function showTweets(username) {
 }
 
 // - Добавляем обработчики клика на строки таблицы после рендера -
+// - Добавляем обработчики клика на строки таблицы после рендера -
 function addUserClickHandlers() {
     const tbody = document.getElementById("leaderboard-body");
+    if (!tbody) return;
+    
     tbody.querySelectorAll("tr").forEach(tr => {
-        tr.addEventListener("click", () => {
-            const username = tr.children[0].textContent.trim();
+        tr.addEventListener("click", (e) => {
+            // Игнорируем клик на кнопке генерации карточки
+            if (e.target.closest('.generate-card-btn')) return;
+            
+            // Получаем имя пользователя из первой ячейки
+            const nameCell = tr.children[0];
+            const nameSpan = nameCell.querySelector('span');
+            const username = nameSpan ? nameSpan.textContent.trim() : tr.children[0].textContent.trim();
+            
             toggleTweetsRow(tr, username);
         });
     });
@@ -500,11 +510,14 @@ function toggleTweetsRow(tr, username) {
     const isAlreadyOpen = nextRow && nextRow.classList.contains("tweets-row") &&
         nextRow.dataset.username === username;
     
+    // Удаляем все предыдущие аккордеоны и подсветку
     document.querySelectorAll(".tweets-row").forEach(row => row.remove());
     document.querySelectorAll("tbody tr").forEach(row => row.classList.remove("active-row"));
     
+    // Если уже был открыт — просто закрываем
     if (isAlreadyOpen) return;
     
+    // Подсветить текущую строку
     tr.classList.add("active-row");
     
     const tweetsRow = document.createElement("tr");
@@ -513,21 +526,31 @@ function toggleTweetsRow(tr, username) {
     
     const td = document.createElement("td");
     td.colSpan = 6;
+    td.style.padding = "20px";
+    td.style.background = "linear-gradient(135deg, #2F4F4F, #1a2a2a)";
     
+    // Очищаем имя пользователя от @ и приводим к нижнему регистру
+    const cleanUsername = username.toLowerCase().replace(/^@/, '');
+    
+    // Фильтруем твиты пользователя из allTweets
     const userTweets = allTweets.filter(tweet => {
-        const candidate = (tweet.user?.screen_name || tweet.user?.name || "").toLowerCase();
-        return candidate.replace(/^@/, "") === username.toLowerCase().replace(/^@/, "");
+        const tweetUser = (tweet.user?.screen_name || tweet.user?.name || tweet.username || '').toLowerCase().replace(/^@/, '');
+        return tweetUser === cleanUsername;
     });
     
     if (userTweets.length === 0) {
-        td.innerHTML = "<i style='color:#aaa;'>У пользователя нет постов</i>";
+        td.innerHTML = "<i style='color:#a9ddd3;'>У пользователя нет постов в сообществе</i>";
     } else {
         const container = document.createElement("div");
         container.classList.add("tweet-container");
-        userTweets.forEach(tweet => {
+        container.style.cssText = "display:flex;flex-wrap:wrap;gap:15px;justify-content:flex-start;";
+        
+        // Показываем максимум 10 последних твитов
+        userTweets.slice(0, 10).forEach(tweet => {
             const content = tweet.full_text || tweet.text || tweet.content || "";
             const url = tweet.url || (tweet.id_str ? `https://twitter.com/${username}/status/${tweet.id_str}` : "#");
             
+            // Формат даты
             let dateRaw = tweet.created_at || tweet.tweet_created_at || "";
             let date = "";
             if (dateRaw) {
@@ -537,25 +560,40 @@ function toggleTweetsRow(tr, username) {
                     : dateRaw.split(" ")[0];
             }
             
+            // Медиа без дубликатов
             const mediaList = tweet.extended_entities?.media || tweet.entities?.media || tweet.media || [];
             const uniqueMediaUrls = [...new Set(mediaList.map(m => m.media_url_https || m.media_url).filter(Boolean))];
-            let imgTag = uniqueMediaUrls.map(url => `<img src="${url}">`).join("");
+            let imgTag = uniqueMediaUrls.map(u => `<img src="${u}" style="max-width:100%;border-radius:8px;margin-top:10px;">`).join("");
             
+            // Fallback на ссылки в тексте
             if (!imgTag) {
                 const match = content.match(/https?:\/\/\S+\.(jpg|jpeg|png|gif|webp)/i);
-                if (match) imgTag = `<img src="${match[0]}">`;
+                if (match) imgTag = `<img src="${match[0]}" style="max-width:100%;border-radius:8px;margin-top:10px;">`;
             }
             
+            // Создаём карточку твита
             const card = document.createElement("div");
             card.classList.add("tweet-card");
+            card.style.cssText = `
+                background: linear-gradient(135deg, #2F4F4F, #1a2a2a);
+                border: 1px solid rgba(111, 227, 209, 0.2);
+                border-radius: 12px;
+                padding: 15px;
+                width: 400px;
+                color: #fff;
+                transition: all 0.2s;
+            `;
+            card.onmouseenter = () => card.style.transform = 'translateY(-3px)';
+            card.onmouseleave = () => card.style.transform = 'translateY(0)';
+            
             const wordCount = content.trim().split(/\s+/).length;
             if (wordCount <= 3 && !imgTag) card.classList.add("short");
             
             card.innerHTML = `
-                <a href="${url}" target="_blank" style="text-decoration:none; color:inherit;">
-                    <p>${escapeHtml(content)}</p>
+                <a href="${url}" target="_blank" style="text-decoration:none; color:inherit; display:block;">
+                    <p style="margin:0 0 10px 0; line-height:1.4; white-space:pre-wrap;">${escapeHtml(content)}</p>
                     ${imgTag}
-                    <div class="tweet-date">${date}</div>
+                    <div style="margin-top:10px; font-size:0.85rem; color:#a9ddd3; text-align:right;">${date}</div>
                 </a>
             `;
             container.appendChild(card);
