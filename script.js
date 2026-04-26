@@ -230,7 +230,7 @@ async function generateCardCanvas(username, stats) {
     ctx.fillText(`@${username}`, 210, 120);
     ctx.fillStyle = '#6fe3d1';
     ctx.font = '24px Segoe UI, sans-serif';
-    ctx.fillText('RITUAL COMMUNITY LEADERBOARD', 210, 155);
+    ctx.fillText('TWITTER RITUAL COMMUNITY LEADERBOARD', 210, 155);
 
     // 5. Разделительная линия под шапкой
     ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
