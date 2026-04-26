@@ -283,7 +283,7 @@ try {
     const logoImg = new Image();
     logoImg.crossOrigin = 'anonymous';
     // ЗАМЕНИ ССЫЛКУ НА ПРЯМУЮ ССЫЛКУ НА ИЗОБРАЖЕНИЕ
-    logoImg.src = 'https://raw.githubusercontent.com/sery2013/OpenGradient-Community/main/OpenGradient%20Community.png';
+    logoImg.src = 'https://github.com/sery2013/OpenGradient-Community/blob/main/RITUAL.png?raw=true';
     
     console.log('🔄 Загрузка логотипа...');
     
