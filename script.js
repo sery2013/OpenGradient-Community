@@ -282,16 +282,15 @@ async function generateCardCanvas(username, stats) {
 try {
     const logoImg = new Image();
     logoImg.crossOrigin = 'anonymous';
-    // ЗАМЕНИ ССЫЛКУ НА ПРЯМУЮ ССЫЛКУ НА ИЗОБРАЖЕНИЕ
-    logoImg.src = 'https://i.postimg.cc/j524xqkG/RITUAL.png';
+    logoImg.src = 'https://raw.githubusercontent.com/sery2013/OpenGradient-Community/main/RITUAL.png';
     
     console.log('🔄 Загрузка логотипа...');
     
-    // Ждём загрузки с таймаутом 5 секунд
+    // Ждём загрузки
     await Promise.race([
         new Promise((resolve, reject) => {
             logoImg.onload = () => {
-                console.log('✅ Логотип загружен!', logoImg.width, 'x', logoImg.height);
+                console.log('✅ Логотип загружен:', logoImg.width, 'x', logoImg.height);
                 resolve();
             };
             logoImg.onerror = (e) => {
@@ -304,33 +303,23 @@ try {
 
     // Рисуем логотип если загрузился
     if (logoImg.complete && logoImg.naturalWidth !== 0) {
-        const logoWidth = 200;  // Ширина логотипа
-        const logoHeight = 80;  // Высота логотипа
-        const logoX = (W - logoWidth) / 2;  // По центру
-        const logoY = H - 200;  // Позиция по вертикали
+        const logoSize = 45;  // Размер 45x45 пикселей
+        const logoX = (W / 2) - (logoSize / 2) - 180;  // По центру слева от текста
+        const logoY = H - 175;  // Позиция по вертикали
         
-        ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+        ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
         console.log('🎨 Логотип нарисован на позиции:', logoX, logoY);
-    } else {
-        console.warn('⚠️ Логотип не загрузился');
     }
     
 } catch (e) {
     console.error('❌ Ошибка при загрузке логотипа:', e.message);
-    // Рисуем заглушку если логотип не загрузился
-    ctx.fillStyle = 'rgba(111, 227, 209, 0.2)';
-    ctx.fillRect((W - 200) / 2, H - 200, 200, 80);
-    ctx.fillStyle = '#6fe3d1';
-    ctx.font = '14px Segoe UI';
-    ctx.textAlign = 'center';
-    ctx.fillText('LOGO', W / 2, H - 160);
 }
 
-// Текст под логотипом (рисуем ВСЕГДА)
+// Текст (рисуем ВСЕГДА)
 ctx.fillStyle = '#6fe3d1';
 ctx.font = 'bold 32px Segoe UI, sans-serif';
 ctx.textAlign = 'center';
-ctx.fillText('TWITTER RITUAL COMMUNITY', W / 2, H - 140);
+ctx.fillText('TWITTER RITUAL COMMUNITY', W / 2, H - 145);
 ctx.textAlign = 'left';
 // === КОНЕЦ ЛОГОТИПА ===
 
