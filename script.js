@@ -304,8 +304,8 @@ try {
     // Рисуем логотип если загрузился
     if (logoImg.complete && logoImg.naturalWidth !== 0) {
         const logoSize = 55;  // Размер 45x45 пикселей
-        const logoX = (W / 2) - 280;  // СДВИНУЛ ЛЕВЕЕ (было -180, стало -220)
-        const logoY = H - 165;  // ПОДНЯЛ ВЫШЕ (было -175, стало -180)
+        const logoX = (W / 2) - 330;  // СДВИНУЛ ЛЕВЕЕ (было -180, стало -220)
+        const logoY = H - 175;  // ПОДНЯЛ ВЫШЕ (было -175, стало -180)
         
         ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
         console.log('🎨 Логотип нарисован на позиции:', logoX, logoY);
