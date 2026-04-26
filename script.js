@@ -283,7 +283,7 @@ try {
     const logoImg = new Image();
     logoImg.crossOrigin = 'anonymous';
     // ЗАМЕНИ ССЫЛКУ НА ПРЯМУЮ ССЫЛКУ НА ИЗОБРАЖЕНИЕ
-    logoImg.src = 'https://github.com/sery2013/OpenGradient-Community/blob/main/RITUAL.png?raw=true';
+    logoImg.src = 'https://i.postimg.cc/j524xqkG/RITUAL.png';
     
     console.log('🔄 Загрузка логотипа...');
     
@@ -330,7 +330,7 @@ try {
 ctx.fillStyle = '#6fe3d1';
 ctx.font = 'bold 32px Segoe UI, sans-serif';
 ctx.textAlign = 'center';
-ctx.fillText('OpenGradient Community', W / 2, H - 140);
+ctx.fillText('TWITTER RITUAL COMMUNITY', W / 2, H - 140);
 ctx.textAlign = 'left';
 // === КОНЕЦ ЛОГОТИПА ===
 
