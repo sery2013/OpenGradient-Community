@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenGradient Community</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Подключаем ethers.js для работы с блокчейном -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
     <style>
         /* === CENTERED BANNER (1350×100, по центру, кликабельный, просто обновляет страницу) === */
         .centered-banner {
@@ -91,6 +93,150 @@
             font-size: 2rem; /* Увеличивает размер заголовка */
             text-align: center; /* Заголовок можно оставить по центру, как акцент */
         }
+
+        /* === CARD MODAL STYLES === */
+        .card-modal {
+          position: fixed; inset: 0;
+          background: rgba(13, 17, 23, 0.9);
+          backdrop-filter: blur(8px);
+          display: flex; justify-content: center; align-items: center;
+          z-index: 9999;
+        }
+        .card-modal-content {
+          background: linear-gradient(135deg, #2F4F4F, #1a2a2a);
+          border: 2px solid rgba(255, 255, 255, 0.2);
+          border-radius: 16px;
+          padding: 25px;
+          max-width: 640px; width: 90%;
+          text-align: center;
+          position: relative;
+          box-shadow: 0 0 40px rgba(111, 227, 209, 0.15);
+        }
+        .close-modal {
+          position: absolute; top: 10px; right: 15px;
+          background: none; border: none;
+          color: #fff; font-size: 1.8rem; cursor: pointer;
+        }
+        .canvas-wrapper {
+          margin: 20px 0;
+          border-radius: 12px; overflow: hidden;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+          background: #000;
+        }
+        #user-canvas {
+          width: 100%; height: auto; display: block;
+        }
+        .card-actions {
+          display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 15px;
+        }
+        .action-btn {
+          padding: 12px 20px;
+          border: none; border-radius: 8px;
+          font-weight: 700; cursor: pointer;
+          transition: all 0.2s; font-size: 1rem;
+        }
+        .action-btn.download {
+          background: #2F4F4F; color: #fff;
+          border: 1px solid rgba(255,255,255,0.3);
+        }
+        .action-btn.mint {
+          background: linear-gradient(90deg, #6fe3d1, #00a896);
+          color: #0d1117;
+        }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        .action-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .status-text {
+          width: 100%; color: #a9ddd3; font-size: 0.9rem; margin-top: 10px;
+          min-height: 20px; font-family: monospace;
+        }
+
+        /* === NFT GALLERY TAB === */
+        .gallery-header {
+          text-align: center;
+          margin-bottom: 25px;
+        }
+        .gallery-header h2 {
+          font-size: 2rem;
+          margin-bottom: 8px;
+          color: #fff;
+        }
+        .gallery-header p {
+          color: #a9ddd3;
+          margin-bottom: 15px;
+        }
+        .nft-gallery-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 20px;
+          padding: 10px 0;
+        }
+        .nft-gallery-card {
+          background: linear-gradient(135deg, #2F4F4F, #1a2a2a);
+          border: 1px solid rgba(255,255,255,0.15);
+          border-radius: 12px;
+          overflow: hidden;
+          transition: transform 0.2s, box-shadow 0.2s;
+          position: relative;
+        }
+        .nft-gallery-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 8px 25px rgba(111, 227, 209, 0.15);
+          border-color: #6fe3d1;
+        }
+        .nft-gallery-card img {
+          width: 100%;
+          height: 350px;
+          object-fit: cover;
+          display: block;
+          background: #0d1117;
+        }
+        .nft-info {
+          padding: 15px;
+          text-align: left;
+        }
+        .nft-info h4 {
+          margin: 0 0 8px;
+          font-size: 1.2rem;
+          color: #fff;
+        }
+        .nft-info p {
+          margin: 0 0 10px;
+          font-size: 0.85rem;
+          color: #a9ddd3;
+          font-family: monospace;
+        }
+        .nft-stats {
+          display: flex;
+          justify-content: space-between;
+          background: rgba(0,0,0,0.2);
+          padding: 8px 10px;
+          border-radius: 8px;
+          margin-bottom: 12px;
+          font-size: 0.9rem;
+          color: #fff;
+        }
+        .nft-explorer-link {
+          display: block;
+          text-align: center;
+          background: rgba(255,255,255,0.1);
+          color: #6fe3d1;
+          padding: 8px;
+          border-radius: 6px;
+          text-decoration: none;
+          font-weight: 600;
+          transition: background 0.2s;
+        }
+        .nft-explorer-link:hover {
+          background: rgba(111, 227, 209, 0.2);
+        }
+        .gallery-loading, .gallery-empty, .gallery-error {
+          grid-column: 1 / -1;
+          text-align: center;
+          padding: 40px;
+          color: #a9ddd3;
+          font-size: 1.1rem;
+        }
+        .gallery-error { color: #ff6b6b; }
     </style>
 </head>
 <body>
@@ -107,13 +253,9 @@
     <!-- === BANNER (теперь просто обновляет страницу) === -->
     <div class="centered-banner">
         <a href="javascript:location.reload()" class="banner-link"></a>
-        
-        
     </div>
 
     <div class="background"></div>
-
-    <!-- УБРАН: <div class="header-fixed"> <h1>OpenGradient Community</h1> </div> -->
 
     <div class="container">
         <!-- === WELCOME SECTION (теперь в рамке) === -->
@@ -123,20 +265,21 @@
             <p id="welcome-desc-2">If your posts are not published through <a href="https://x.com/i/communities/1978779669693362400" target="_blank">OpenGradient Community</a>, they will not be visible on the leaderboard.</p>
             <p id="welcome-desc-3">By clicking on any participant, you can view their works directly on the website.</p>
             <p id="welcome-desc-4">By clicking on any metric (for example, views), you can filter by it.</p>
-            <!-- --- ИЗМЕНЕНИЕ: Добавлен span id="last-updated" --- -->
-<p><strong>Last updated:</strong> <span id="manual-last-updated">10 Apr, 2026</span></p>        </div>
+            <p><strong>Last updated:</strong> <span id="manual-last-updated">10 Apr, 2026</span></p>
+        </div>
 
         <!-- Новый объединённый блок (вкладки и follow developer в одной строке) -->
         <div class="combined-bottom-block">
             <div class="tabs">
                 <button class="tab-btn active" data-tab="leaderboard" id="tab-leaderboard-btn">Leaderboard</button>
                 <button class="tab-btn" data-tab="analytics" id="tab-analytics-btn">Analytics</button>
+                <!-- НОВАЯ ВКЛАДКА NFT GALLERY -->
+                <button class="tab-btn" data-tab="nft-gallery" id="tab-nft-gallery-btn">🖼️ NFT Gallery</button>
             </div>
             <div class="team-box">
                 <p id="follow-dev-text">Follow Developer - <a href="https://x.com/kaye_moni" target="_blank" id="follow-dev-link" style="color: white; text-decoration: underline;">@kaye_moni</a></p>
             </div>
         </div>
-        <!-- ... остальной код ... -->
 
         <!-- wrapper for leaderboard content so we can toggle visibility -->
         <div id="leaderboard-wrapper" class="tab-content active">
@@ -162,7 +305,6 @@
                         <option value="30" id="time-30">Last 30 days</option>
                         <option value="all" id="time-all" selected>All time</option>
                     </select>
-                    <!-- --- ИЗМЕНЕНИЕ: Кнопка Refresh удалена --- -->
                 </div>
             </div>
 
@@ -312,102 +454,89 @@
                 </div>
             </section>
         </div>
+
+        <!-- НОВАЯ ВКЛАДКА NFT GALLERY -->
+        <div id="tab-nft-gallery" class="tab-content" style="display:none;">
+            <div class="gallery-header">
+                <h2>Minted Leaderboard Cards</h2>
+                <p>All NFTs generated and minted directly from this site on Ritual Testnet.</p>
+                <button id="refresh-nft-btn" class="action-btn download">🔄 Refresh Gallery</button>
+            </div>
+            <div id="nft-gallery-grid" class="nft-gallery-grid">
+                <p class="gallery-loading">Connect wallet or wait for auto-load...</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ГЕНЕРАЦИИ КАРТОЧКИ -->
+    <div id="card-modal" class="card-modal" style="display:none;">
+      <div class="card-modal-content">
+        <button class="close-modal" onclick="closeCardModal()">✕</button>
+        <h3 id="card-modal-title">User Card</h3>
+        
+        <!-- Сюда Canvas отрисует картинку -->
+        <div class="canvas-wrapper">
+          <canvas id="user-canvas" width="600" height="800"></canvas>
+        </div>
+        
+        <!-- Кнопки управления -->
+        <div class="card-actions">
+          <button id="btn-download" class="action-btn download">📥 Скачать PNG</button>
+          <button id="btn-mint" class="action-btn mint">🔥 Mint NFT (0.001 RITUAL)</button>
+          <p id="mint-status" class="status-text"></p>
+        </div>
+      </div>
     </div>
 
     <!-- Chart.js CDN for analytics charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
 
-  <!-- ... ваш существующий HTML до </body> ... -->
+    <style>
+    /* === НАСТРОЙКИ ФОНА === */
+    html, body {
+        background-color: #080c14 !important;
+        background-image: linear-gradient(rgba(8, 12, 20, 0.55), rgba(8, 12, 20, 0.55)), url('https://github.com/sery2013/Ritual-Community/blob/main/%E2%80%94Pngtree%E2%80%94turquoise%20beautiful%20background%20with%20lights_1243717.jpg?raw=true');
+        background-size: cover !important;
+        background-position: center !important;
+        background-repeat: no-repeat !important;
+        background-attachment: fixed !important;
+        min-height: 100%;
+        margin: 0;
+        padding: 0;
+    }
 
+    .container {
+        background-color: transparent !important;
+        min-height: 100vh;
+    }
 
+    .background {
+        display: none !important;
+    }
+    </style>
 
+    <footer style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 40px 0; font-family: sans-serif; color: #ffffff;">
+      
+      <!-- Копирайт сайта -->
+      <div style="margin-bottom: 10px;">
+        &copy; <a href="https://opengradient.ai" target="_blank" style="color: #ffffff; text-decoration: none; font-weight: 500;">opengradient.ai</a>
+      </div>
 
+      <!-- Блок разработчика -->
+      <div style="display: flex; align-items: center; gap: 6px; font-size: 14px; opacity: 0.9;">
+        <span>developer:</span>
+        <a href="https://x.com/kaye_moni" target="_blank" style="display: flex; align-items: center; gap: 4px; color: #ffffff; text-decoration: none;">
+          <!-- SVG иконка X (Twitter) -->
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932L18.901 1.153ZM17.61 20.644h2.039L6.486 3.24H4.298l13.312 17.404Z" fill="white"/>
+          </svg>
+          <span style="border-bottom: 1px solid rgba(255,255,255,0.3);">@kaye_moni</span>
+        </a>
+      </div>
 
-
-<style>
-/* === НАСТРОЙКИ ФОНА === */
-html, body {
-    /* 1. Цвет-подстраховка (если картинка не загрузится) */
-    background-color: #080c14 !important;
+    </footer>
     
-    /* 2. Картинка + Темная маска поверх неё (чтобы текст читался) */
-    /* Замените ССЫЛКА_НА_ВАШУ_КАРТИНКУ на реальный URL */
-    background-image: linear-gradient(rgba(8, 12, 20, 0.55), rgba(8, 12, 20, 0.55)), url('https://github.com/sery2013/Ritual-Community/blob/main/%E2%80%94Pngtree%E2%80%94turquoise%20beautiful%20background%20with%20lights_1243717.jpg?raw=true');
-    
-    /* 3. Растягивание на весь экран */
-    background-size: cover !important;
-    background-position: center !important;
-    background-repeat: no-repeat !important;
-    background-attachment: fixed !important;
-    
-    /* 4. Гарантия, что фон будет на всю высоту (убирает полосу внизу) */
-    min-height: 100%;
-    margin: 0;
-    padding: 0;
-}
-
-/* Убираем фон у контейнера, чтобы просвечивал основной фон */
-.container {
-    background-color: transparent !important;
-    min-height: 100vh;
-}
-
-/* Скрываем старый элемент фона, если он остался */
-.background {
-    display: none !important;
-}
-</style>
-
-
-
-
-<footer style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 40px 0; font-family: sans-serif; color: #ffffff;">
-  
-  <!-- Копирайт сайта -->
-  <div style="margin-bottom: 10px;">
-    &copy; <a href="https://opengradient.ai" target="_blank" style="color: #ffffff; text-decoration: none; font-weight: 500;">opengradient.ai</a>
-  </div>
-
-  <!-- Блок разработчика -->
-  <div style="display: flex; align-items: center; gap: 6px; font-size: 14px; opacity: 0.9;">
-    <span>developer:</span>
-    <a href="https://x.com/kaye_moni" target="_blank" style="display: flex; align-items: center; gap: 4px; color: #ffffff; text-decoration: none;">
-      <!-- SVG иконка X (Twitter) -->
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932L18.901 1.153ZM17.61 20.644h2.039L6.486 3.24H4.298l13.312 17.404Z" fill="white"/>
-      </svg>
-      <span style="border-bottom: 1px solid rgba(255,255,255,0.3);">@kaye_moni</span>
-    </a>
-  </div>
-
-</footer>
-    
- 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
