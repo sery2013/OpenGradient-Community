@@ -277,38 +277,42 @@ async function generateCardCanvas(username, stats) {
     });
 
     ctx.textAlign = 'left';
-// === ДОБАВЛЕНИЕ ЛОГОТИПА И ТЕКСТА (ВАШ ЗАПРОС) ===
+
+    // === ДОБАВЛЕНИЕ ЛОГОТИПА И ТЕКСТА (ПОСЛЕ МЕТРИК, ПЕРЕД ФУТЕРОМ) ===
+    // Разделительная линия перед логотипом
+    ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(40, H - 180);
+    ctx.lineTo(W - 40, H - 180);
+    ctx.stroke();
+
+    // Логотип компании
     const logoImg = new Image();
     logoImg.crossOrigin = 'anonymous';
-    logoImg.src = 'https://github.com/sery2013/OpenGradient-Community/blob/main/RITUAL.png?raw=true'; // Укажи здесь путь к файлу логотипа
+    logoImg.src = 'https://github.com/sery2013/OpenGradient-Community/blob/main/OpenGradient%20Community.png?raw=true';
 
-    await new Promise(res => { 
-        logoImg.onload = res; 
-        logoImg.onerror = res; 
+    // Ждем загрузки
+    await new Promise(resolve => {
+        logoImg.onload = resolve;
+        logoImg.onerror = resolve;
     });
 
-    if (logoImg.complete && logoImg.naturalWidth > 0) {
-        const logoSize = 40; // Размер логотипа
-        const padding = 15;
-        const textToDisplay = "RITUAL COMMUNITY"; // Твой текст
-        
-        ctx.font = 'bold 28px Segoe UI, sans-serif';
-        const textWidth = ctx.measureText(textToDisplay).width;
-        
-        // Вычисляем центр для всей конструкции (лого + отступ + текст)
-        const totalWidth = logoSize + padding + textWidth;
-        const startX = (W - totalWidth) / 2;
-        const centerY = 470; // Координата Y (внутри твоей красной рамки)
+    // Рисуем логотип по центру
+    const logoWidth = 150;
+    const logoHeight = 50;
+    const logoX = (W - logoWidth) / 2;
+    const logoY = H - 165;
 
-        // Рисуем логотип
-        ctx.drawImage(logoImg, startX, centerY - (logoSize / 2), logoSize, logoSize);
-        
-        // Рисуем текст
-        ctx.fillStyle = '#6fe3d1';
-        ctx.textAlign = 'left';
-        ctx.fillText(textToDisplay, startX + logoSize + padding, centerY + 10);
-    }
-    // === КОНЕЦ ВСТАВКИ ===
+    ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+
+    // Текст под логотипом
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.font = '16px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('OpenGradient Community', W / 2, H - 135);
+    // === КОНЕЦ ДОБАВЛЕНИЯ ===
+
     // 7. Нижняя разделительная линия
     ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
     ctx.lineWidth = 2;
@@ -514,7 +518,6 @@ function showTweets(username) {
     });
 }
 
-// - Добавляем обработчики клика на строки таблицы после рендера -
 // - Добавляем обработчики клика на строки таблицы после рендера -
 function addUserClickHandlers() {
     const tbody = document.getElementById("leaderboard-body");
