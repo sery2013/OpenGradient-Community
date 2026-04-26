@@ -290,7 +290,7 @@ async function generateCardCanvas(username, stats) {
     // Логотип компании
     const logoImg = new Image();
     logoImg.crossOrigin = 'anonymous';
-    logoImg.src = 'https://github.com/sery2013/OpenGradient-Community/blob/main/OpenGradient%20Community.png?raw=true';
+    logoImg.src = 'https://github.com/sery2013/OpenGradient-Community/blob/main/RITUAL.png?raw=true';
 
     // Ждем загрузки
     await new Promise(resolve => {
@@ -310,7 +310,7 @@ async function generateCardCanvas(username, stats) {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     ctx.font = '16px Segoe UI, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('OpenGradient Community', W / 2, H - 135);
+    ctx.fillText(' Ritual Community', W / 2, H - 135);
     // === КОНЕЦ ДОБАВЛЕНИЯ ===
 
     // 7. Нижняя разделительная линия
