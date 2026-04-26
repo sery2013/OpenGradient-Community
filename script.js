@@ -51,7 +51,6 @@ async function fetchTweets() {
         } else {
             allTweets = [];
         }
-        console.log("✅ Загружено all_tweets.json, всего твитов:", allTweets.length);
         if (typeof renderAnalytics === "function") renderAnalytics();
     } catch (err) {
         console.error("Failed to fetch all tweets:", err);
@@ -174,7 +173,7 @@ function closeCardModal() {
     document.getElementById('card-modal').style.display = 'none';
 }
 
-// === NFT CARD: ГЕНЕРАЦИЯ CANVAS (1200x675 - Twitter Format) ===
+// === NFT CARD: ГЕНЕРАЦИЯ CANVAS (1200x675 - Twitter Format, как на скрине 1) ===
 async function generateCardCanvas(username, stats) {
     const canvas = document.getElementById('user-canvas');
     const ctx = canvas.getContext('2d');
@@ -209,6 +208,7 @@ async function generateCardCanvas(username, stats) {
         img.crossOrigin = 'anonymous';
         img.src = avatarUrl;
         await new Promise(res => { img.onload = res; img.onerror = res; });
+        
         ctx.shadowColor = 'rgba(111, 227, 209, 0.4)';
         ctx.shadowBlur = 20;
         ctx.save();
@@ -219,6 +219,7 @@ async function generateCardCanvas(username, stats) {
         ctx.drawImage(img, 60, 70, 120, 120);
         ctx.restore();
         ctx.shadowBlur = 0;
+        
         ctx.beginPath();
         ctx.arc(120, 130, 60, 0, Math.PI * 2);
         ctx.lineWidth = 4;
@@ -230,6 +231,7 @@ async function generateCardCanvas(username, stats) {
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 48px Segoe UI, sans-serif';
     ctx.fillText(`@${username}`, 210, 120);
+    
     ctx.fillStyle = '#6fe3d1';
     ctx.font = '24px Segoe UI, sans-serif';
     ctx.fillText('RITUAL COMMUNITY LEADERBOARD', 210, 155);
@@ -242,7 +244,7 @@ async function generateCardCanvas(username, stats) {
     ctx.lineTo(W - 40, 185);
     ctx.stroke();
 
-    // 6. Метрики в рамках/ячейках (как на скрине)
+    // 6. Метрики в рамках/ячейках (5 боксов в ряд)
     const metrics = [
         { label: 'Posts', val: stats.posts || 0, icon: '📝' },
         { label: 'Likes', val: stats.likes || 0, icon: '❤️' },
@@ -258,27 +260,31 @@ async function generateCardCanvas(username, stats) {
     metrics.forEach((m, i) => {
         const x = 60 + i * cellW;
         const y = startY;
+
         // Фон ячейки
         ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
         ctx.roundRect(x, y, cellW - 12, cellH, 12);
         ctx.fill();
+
         // Рамка ячейки
         ctx.strokeStyle = 'rgba(111, 227, 209, 0.2)';
         ctx.lineWidth = 1.5;
         ctx.roundRect(x, y, cellW - 12, cellH, 12);
         ctx.stroke();
+
         // Иконка и название
         ctx.fillStyle = '#a9ddd3';
         ctx.font = '22px Segoe UI, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(`${m.icon} ${m.label}`, x + (cellW - 12) / 2, y + 45);
+
         // Значение
         ctx.fillStyle = '#6fe3d1';
         ctx.font = 'bold 36px Segoe UI, sans-serif';
         ctx.fillText(Number(m.val).toLocaleString(), x + (cellW - 12) / 2, y + 100);
     });
 
-    ctx.textAlign = 'left';
+    ctx.textAlign = 'left'; // Возвращаем выравнивание
 
     // 7. Нижняя разделительная линия
     ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
@@ -293,6 +299,7 @@ async function generateCardCanvas(username, stats) {
     ctx.font = '20px Segoe UI, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('MINTED ON RITUAL TESTNET', W / 2, H - 60);
+    
     ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
     ctx.font = '16px Segoe UI, sans-serif';
     ctx.fillText('Generated ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), W / 2, H - 35);
@@ -494,7 +501,7 @@ function addUserClickHandlers() {
     });
 }
 
-// - Создание аккордеона твитов -
+// - Создание аккордеона твитов (ИСПРАВЛЕН ПОИСК) -
 function toggleTweetsRow(tr, username) {
     const nextRow = tr.nextElementSibling;
     const isAlreadyOpen = nextRow && nextRow.classList.contains("tweets-row") &&
@@ -514,27 +521,25 @@ function toggleTweetsRow(tr, username) {
     const td = document.createElement("td");
     td.colSpan = 6;
     
-    // Отладка: выводим username для поиска
-    console.log("🔍 Ищем твиты для пользователя:", username);
-    console.log("📊 Всего твитов в allTweets:", allTweets.length);
+    // Очистка имени от @ и пробелов для поиска
+    const cleanUsername = username.toLowerCase().replace(/^@/, "").trim();
     
+    // Фильтрация твитов: проверяем совпадение имен без @
     const userTweets = allTweets.filter(tweet => {
-        const candidate = (tweet.user?.screen_name || tweet.user?.name || tweet.username || "").toLowerCase();
-        const match = candidate.replace(/^@/, "") === username.toLowerCase().replace(/^@/, "");
-        if (match) console.log("✅ Найден твит:", candidate);
-        return match;
+        const candidate = (tweet.user?.screen_name || tweet.user?.name || "").toLowerCase();
+        const cleanCandidate = candidate.replace(/^@/, "").trim();
+        return cleanCandidate === cleanUsername;
     });
     
-    console.log("📝 Найдено твитов:", userTweets.length);
-    
     if (userTweets.length === 0) {
-        td.innerHTML = "<i style='color:#aaa;'>У пользователя нет постов (или данные еще не загружены)</i>";
+        td.innerHTML = "<i style='color:#aaa;'>У пользователя нет постов</i>";
     } else {
         const container = document.createElement("div");
         container.classList.add("tweet-container");
         userTweets.forEach(tweet => {
             const content = tweet.full_text || tweet.text || tweet.content || "";
             const url = tweet.url || (tweet.id_str ? `https://twitter.com/${username}/status/${tweet.id_str}` : "#");
+            
             let dateRaw = tweet.created_at || tweet.tweet_created_at || "";
             let date = "";
             if (dateRaw) {
@@ -543,17 +548,21 @@ function toggleTweetsRow(tr, username) {
                     ? parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
                     : dateRaw.split(" ")[0];
             }
+            
             const mediaList = tweet.extended_entities?.media || tweet.entities?.media || tweet.media || [];
             const uniqueMediaUrls = [...new Set(mediaList.map(m => m.media_url_https || m.media_url).filter(Boolean))];
             let imgTag = uniqueMediaUrls.map(url => `<img src="${url}">`).join("");
+            
             if (!imgTag) {
                 const match = content.match(/https?:\/\/\S+\.(jpg|jpeg|png|gif|webp)/i);
                 if (match) imgTag = `<img src="${match[0]}">`;
             }
+            
             const card = document.createElement("div");
             card.classList.add("tweet-card");
             const wordCount = content.trim().split(/\s+/).length;
             if (wordCount <= 3 && !imgTag) card.classList.add("short");
+            
             card.innerHTML = `
                 <a href="${url}" target="_blank" style="text-decoration:none; color:inherit;">
                     <p>${escapeHtml(content)}</p>
@@ -646,7 +655,7 @@ async function loadNFTGallery() {
             }
         }
         nfts.sort((a, b) => b.mintedAt - a.mintedAt);
-        localStorage.setItem('ritual_nft_gallery', JSON.stringify({ data: nfts, timestamp: Date.now() }));
+        localStorage.setItem('ritual_nft_gallery', JSON.stringify({  nfts, timestamp: Date.now() }));
         renderNFTCards(nfts);
     } catch (err) {
         console.error("Gallery load error:", err);
@@ -1030,53 +1039,48 @@ function setLanguage(lang) {
     localStorage.setItem('lang', lang);
     const langEn = document.getElementById('lang-en');
     const langRu = document.getElementById('lang-ru');
-    if (langEn) {
-        langEn.classList.toggle('active', lang === 'en');
-        langEn.classList.toggle('inactive', lang !== 'en');
-    }
-    if (langRu) {
-        langRu.classList.toggle('active', lang === 'ru');
-        langRu.classList.toggle('inactive', lang !== 'ru');
-    }
+    if (langEn) { langEn.classList.toggle('active', lang === 'en'); langEn.classList.toggle('inactive', lang !== 'en'); }
+    if (langRu) { langRu.classList.toggle('active', lang === 'ru'); langRu.classList.toggle('inactive', lang !== 'ru'); }
     const h1 = document.getElementById('welcome-title');
-    if (h1) h1.textContent = lang === 'en' ? 'WELCOME OPENGRADIENTS!' : 'ДОБРО ПОЖАЛОВАТЬ, Опенградиенты!';
+    if (h1) h1.textContent = lang === 'en' ? 'WELCOME RITUALISTS!' : 'ДОБРО ПОЖАЛОВАТЬ, Ритуалисты!';
 }
 
 // === DOMContentLoaded: ИНИЦИАЛИЗАЦИЯ ===
 document.addEventListener('DOMContentLoaded', () => {
     const langEn = document.getElementById('lang-en');
     const langRu = document.getElementById('lang-ru');
-    if (langEn) {
-        langEn.addEventListener('click', () => {
-            if (currentLang !== 'en') {
-                setLanguage('en');
-            }
-        });
-    }
-    if (langRu) {
-        langRu.addEventListener('click', () => {
-            if (currentLang !== 'ru') {
-                setLanguage('ru');
-            }
-        });
-    }
+    if (langEn) langEn.addEventListener('click', () => { if (currentLang !== 'en') setLanguage('en'); });
+    if (langRu) langRu.addEventListener('click', () => { if (currentLang !== 'ru') setLanguage('ru'); });
     const savedLang = localStorage.getItem('lang');
-    if (savedLang && (savedLang === 'en' || savedLang === 'ru')) {
-        setLanguage(savedLang);
-    } else {
-        setLanguage('en');
-    }
+    if (savedLang && (savedLang === 'en' || savedLang === 'ru')) { setLanguage(savedLang); }
+    else { setLanguage('en'); }
     
-    // NFT Mint: Привязка кнопки
-    const mintBtn = document.getElementById('btn-mint');
-    if (mintBtn) mintBtn.addEventListener('click', mintCardNFT);
-    
-    // NFT Gallery: Кнопка обновления
     const refreshBtn = document.getElementById('refresh-nft-btn');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', () => {
             localStorage.removeItem('ritual_nft_gallery');
             loadNFTGallery();
         });
+    }
+    
+    const mintBtn = document.getElementById('btn-mint');
+    if (mintBtn) mintBtn.addEventListener('click', mintCardNFT);
+    
+    const snowContainer = document.getElementById('snowContainer');
+    if (snowContainer) {
+        const snowflakeCount = 50;
+        const containerRect = snowContainer.getBoundingClientRect();
+        for (let i = 0; i < snowflakeCount; i++) {
+            const flake = document.createElement('div');
+            flake.classList.add('snowflake');
+            const size = Math.random() * 4 + 2;
+            flake.style.width = `${size}px`;
+            flake.style.height = `${size}px`;
+            flake.style.left = `${Math.random() * containerRect.width}px`;
+            flake.style.top = `${Math.random() * -containerRect.height}px`;
+            flake.style.animationDuration = `${Math.random() * 10 + 5}s, ${Math.random() * 4 + 3}s`;
+            flake.style.animationDelay = `${Math.random() * 5}s`;
+            snowContainer.appendChild(flake);
+        }
     }
 });
