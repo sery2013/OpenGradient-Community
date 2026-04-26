@@ -282,7 +282,7 @@ async function generateCardCanvas(username, stats) {
 try {
     const logoImg = new Image();
     logoImg.crossOrigin = 'anonymous';
-    logoImg.src = 'https://i.postimg.cc/j524xqkG/RITUAL.png';
+    logoImg.src = 'https://i.postimg.cc/prn7dJ1c/Gemini-Generated-Image-nq0xe5nq0xe5nq0x-(1).png';
     
     console.log('🔄 Загрузка логотипа...');
     
@@ -303,7 +303,7 @@ try {
 
     // Рисуем логотип если загрузился
     if (logoImg.complete && logoImg.naturalWidth !== 0) {
-        const logoSize = 45;  // Размер 45x45 пикселей
+        const logoSize = 55;  // Размер 45x45 пикселей
         const logoX = (W / 2) - 280;  // СДВИНУЛ ЛЕВЕЕ (было -180, стало -220)
         const logoY = H - 165;  // ПОДНЯЛ ВЫШЕ (было -175, стало -180)
         
@@ -317,7 +317,7 @@ try {
 
 // Текст (рисуем ВСЕГДА)
 ctx.fillStyle = '#6fe3d1';
-ctx.font = 'bold 32px Segoe UI, sans-serif';
+ctx.font = 'bold 40px Segoe UI, sans-serif';
 ctx.textAlign = 'center';
 ctx.fillText('TWITTER RITUAL COMMUNITY', W / 2, H - 135);  // ОПУСТИЛ НИЖЕ (было -145, стало -135)
 ctx.textAlign = 'left';
