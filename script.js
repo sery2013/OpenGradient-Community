@@ -314,9 +314,9 @@ try {
     
     // Текст под логотипом (БОЛЬШОЙ ШРИФТ)
     ctx.fillStyle = '#6fe3d1';  // Бирюзовый цвет
-    ctx.font = 'bold 32px Segoe UI, sans-serif';  // УВЕЛИЧИЛ с 16px до 32px
+    ctx.font = 'bold 45px Segoe UI, sans-serif';  // УВЕЛИЧИЛ с 16px до 32px
     ctx.textAlign = 'center';
-    ctx.fillText('OpenGradient Community', W / 2, H - 140);  // Текст
+    ctx.fillText('RITUAL COMMUNITY', W / 2, H - 140);  // Текст
     ctx.textAlign = 'left';
     
 } catch (e) {
