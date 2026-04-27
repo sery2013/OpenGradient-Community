@@ -857,13 +857,13 @@ async function fetchAvatarUrl(username) {
     return tweet?.user?.profile_image_url_https || null;
 }
 
-// === NFT MINT: МИНТ ЧЕРЕЗ RITUAL TESTNET (ИСПРАВЛЕНО: отключение ENS) ===
+// === NFT MINT: МИНТ ЧЕРЕЗ CRATD2C TESTNET (ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ) ===
 async function mintCardNFT() {
     const status = document.getElementById('mint-status');
     const btn = document.getElementById('btn-mint');
     
     if (!window.ethereum) { 
-        status.textContent = '❌ Установи MetaMask'; 
+        status.textContent = '❌ Установи MetaMask/Rabby'; 
         return; 
     }
     
@@ -871,39 +871,40 @@ async function mintCardNFT() {
     status.textContent = '⏳ Подключение к кошельку...';
     
     try {
-        // 1. Проверяем и переключаем сеть, если нужно
+        // 1. Проверяем текущую сеть
         const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
         const currentChainId = parseInt(chainIdHex, 16);
         
         if (currentChainId !== 1979) {
-            status.textContent = '🔄 Переключаю на Ritual Testnet...';
+            status.textContent = '🔄 Переключаю на CratD2C Testnet...';
             await window.ethereum.request({
                 method: 'wallet_switchEthereumChain',
                 params: [{ chainId: '0x7BB' }]
             });
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 1500));
         }
         
-        // 2. 🔥 СОЗДАЁМ PROVIDER С ЯВНЫМ УКАЗАНИЕМ СЕТИ (отключаем ENS)
-        const provider = new ethers.BrowserProvider(window.ethereum, {
-            chainId: 1979,
-            name: "ritual-testnet"
-        });
+        // 2. 🔥 СОЗДАЁМ ПРОВАЙДЕР С staticNetwork (отключаем ENS и авто-детект)
+        const provider = new ethers.JsonRpcProvider(
+            "https://rpc.ritualfoundation.org",
+            {
+                chainId: 1979,
+                name: "cratd2c-testnet"
+            },
+            { staticNetwork: true }  // ← КЛЮЧЕВОЙ ПАРАМЕТР: отключает проверки ENS
+        );
         
-        const signer = await provider.getSigner();
-        const address = await signer.getAddress();
+        // 3. Получаем signer из браузера (для подписи транзакций)
+        const browserProvider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await browserProvider.getSigner();
         
-        // 3. Финальная проверка
-        const network = await provider.getNetwork();
-        if (network.chainId !== 1979n) {
-            throw new Error('Пожалуйста, вручную переключись на Ritual Testnet в кошельке');
-        }
-        
+        // 4. Создаём контракт с нашим signer
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+        
         status.textContent = '⏳ Подтверди транзакцию в кошельке...';
         
         const tx = await contract.mintCard(
-            address,
+            await signer.getAddress(),
             currentCardData.username,
             currentCardData.stats.posts || 0,
             currentCardData.stats.likes || 0,
@@ -911,7 +912,7 @@ async function mintCardNFT() {
             currentCardData.stats.comments || 0,
             currentCardData.stats.views || 0,
             currentCardData.imageData,
-            { value: ethers.parseEther("0.0001") }
+            { value: ethers.parseEther("0.0001") }  // 0.0001 CRAT (не RITUAL!)
         );
         
         status.textContent = '⛓️ Транзакция отправлена. Ожидание подтверждения...';
@@ -920,7 +921,7 @@ async function mintCardNFT() {
         status.textContent = '✅ NFT успешно заминчен! Проверь кошелёк.';
         status.style.color = '#4ade80';
         
-        // Обновляем галерею после успешного минта
+        // Обновляем галерею
         if (typeof loadNFTGallery === 'function') {
             localStorage.removeItem('ritual_nft_gallery');
             loadNFTGallery();
@@ -929,11 +930,12 @@ async function mintCardNFT() {
     } catch (err) {
         console.error(err);
         
-        // 🔥 Обрабатываем ошибку ENS и сети отдельно
         if (err.code === 'UNSUPPORTED_OPERATION' && err.operation === 'getEnsAddress') {
-            status.textContent = '❌ Ошибка сети. Убедись, что в кошельке выбран Ritual Testnet.';
+            status.textContent = '❌ Ошибка сети. Обнови страницу и убедись, что выбран CratD2C Testnet.';
         } else if (err.code === 'NETWORK_ERROR' || err.message?.includes('network changed')) {
             status.textContent = '🔄 Сеть изменилась. Обнови страницу и попробуй снова.';
+        } else if (err.message?.includes('insufficient funds')) {
+            status.textContent = '❌ Недостаточно CRAT для оплаты газа. Запроси токены в фаусете.';
         } else {
             status.textContent = `❌ Ошибка: ${err.message || err.reason || err}`;
         }
