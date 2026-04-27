@@ -17,13 +17,6 @@ TWEETS_FILE = "all_tweets.json"
 LEADERBOARD_FILE = "leaderboard.json"
 
 # === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
-def load_json(path):
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return []
-
 def save_json(path, data):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
@@ -60,23 +53,18 @@ def parse_tweet_date(tweet):
         except:
             return None
 
-# === ОСНОВНАЯ ЛОГИКА (ТОЛЬКО 30 ДНЕЙ) ===
+# === ОСНОВНАЯ ЛОГИКА (ПРОСТАЯ: СБРОС + СБОР 30 ДНЕЙ) ===
 def collect_all_tweets():
-    # 1. Загружаем существующие твиты
-    logging.info("📂 Загрузка существующих данных...")
-    all_tweets = load_json(TWEETS_FILE)
-    existing_ids = set(t.get("id_str") for t in all_tweets if t.get("id_str"))
-    logging.info(f"💾 В базе уже {len(existing_ids)} твитов")
-
-    # 2. Определяем дату 30 дней назад
+    # 1. Определяем дату 30 дней назад
     cutoff_date = datetime.now().replace(tzinfo=None) - timedelta(days=30)
     logging.info(f"📅 Собираем твиты с {cutoff_date.strftime('%Y-%m-%d')} (последние 30 дней)")
-
-    cursor = None
-    total_new = 0
-    old_tweets_count = 0
     
-    # 3. Цикл сбора
+    all_tweets = []
+    cursor = None
+    total_collected = 0
+    old_reached = False
+    
+    # 2. Цикл сбора с начала (от новых к старым)
     while True:
         data = fetch_tweets(cursor)
         tweets = data.get("tweets", [])
@@ -86,45 +74,35 @@ def collect_all_tweets():
             logging.info("🏁 API вернул пустую страницу. Сбор завершен.")
             break
 
-        page_new_count = 0
-        stop_collection = False
-
         for t in tweets:
-            tid = t.get("id_str")
             tweet_date = parse_tweet_date(t)
             
-            # Проверяем дату твита
+            # Проверяем дату: если старше 30 дней — останавливаемся
             if tweet_date and tweet_date.replace(tzinfo=None) < cutoff_date:
-                old_tweets_count += 1
-                stop_collection = True
-                break  # Достигли твитов старше 30 дней
+                old_reached = True
+                break
             
-            # Проверяем дубликаты
-            if tid and tid not in existing_ids:
-                all_tweets.append(t)
-                existing_ids.add(tid)
-                page_new_count += 1
-                total_new += 1
+            all_tweets.append(t)
+            total_collected += 1
         
-        if page_new_count > 0:
-            logging.info(f"✅ +{page_new_count} новых (всего в базе: {len(all_tweets)})")
+        if total_collected % 100 == 0:
+            logging.info(f"📥 Загружено {total_collected} твитов...")
         
         # Остановка если достигли старых твитов или кончился курсор
-        if stop_collection:
-            logging.info(f" Достигли твитов старше 30 дней. Остановка.")
+        if old_reached:
+            logging.info(f"🛑 Достигли твитов старше 30 дней. Остановка.")
             break
             
         if not cursor:
             logging.info("🏁 Курсор закончился. Сбор завершен.")
             break
 
-        time.sleep(2)  # Пауза между запросами
+        time.sleep(1)  # Пауза между запросами
 
-    # 4. Сохраняем результат
+    # 3. Сохраняем результат (перезаписываем файл полностью)
     save_json(TWEETS_FILE, all_tweets)
-    logging.info(f"\n✅ Готово! Добавлено {total_new} новых твитов.")
-    logging.info(f"📊 Пропущено старых твитов (>30 дней): {old_tweets_count}")
-    logging.info(f"💾 Всего твитов в базе: {len(all_tweets)}")
+    logging.info(f"\n✅ Готово! Собрано {total_collected} твитов за последние 30 дней.")
+    logging.info(f"💾 Файл {TWEETS_FILE} обновлён.")
     
     return all_tweets
 
@@ -159,14 +137,15 @@ def build_leaderboard(tweets):
 
     leaderboard_list = [[user, stats] for user, stats in leaderboard.items()]
     save_json(LEADERBOARD_FILE, leaderboard_list)
-    logging.info(f" Лидерборд обновлён ({len(leaderboard_list)} участников).")
+    logging.info(f"📊 Лидерборд обновлён ({len(leaderboard_list)} участников).")
 
 
+# === ЗАПУСК ===
 if __name__ == "__main__":
     if not API_KEY:
         logging.error("❌ ОШИБКА: Переменная API_KEY не найдена!")
     else:
-        logging.info("🔑 Ключ найден. Запуск сбора за последние 30 дней...")
+        logging.info("🔑 Ключ найден. Запуск простого сбора за 30 дней...")
         tweets = collect_all_tweets()
         build_leaderboard(tweets)
         logging.info("✅ Воркфлоу успешно завершен.")
