@@ -857,27 +857,49 @@ async function fetchAvatarUrl(username) {
     return tweet?.user?.profile_image_url_https || null;
 }
 
-// === NFT MINT: МИНТ ЧЕРЕЗ RITUAL TESTNET ===
+// === NFT MINT: МИНТ ЧЕРЕЗ RITUAL TESTNET (ИСПРАВЛЕНО) ===
 async function mintCardNFT() {
     const status = document.getElementById('mint-status');
     const btn = document.getElementById('btn-mint');
-    if (!window.ethereum) { status.textContent = '❌ Установи MetaMask'; return; }
+    
+    if (!window.ethereum) { 
+        status.textContent = '❌ Установи MetaMask'; 
+        return; 
+    }
+    
     btn.disabled = true;
     status.textContent = '⏳ Подключение к кошельку...';
+    
     try {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const address = await signer.getAddress();
-        const network = await provider.getNetwork();
-        if (network.chainId !== 1979n) {
+        // 1. Сначала проверяем сеть ДО создания провайдера
+        const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
+        const currentChainId = parseInt(chainIdHex, 16);
+        
+        // 2. Если не Ritual — переключаем и ЖДЁМ обновления
+        if (currentChainId !== 1979) {
             status.textContent = '🔄 Переключаю на Ritual Testnet...';
             await window.ethereum.request({
                 method: 'wallet_switchEthereumChain',
                 params: [{ chainId: '0x7BB' }]
             });
+            // ⚠️ Важная пауза, чтобы браузер и кошелёк успели применить смену сети
+            await new Promise(resolve => setTimeout(resolve, 1000));
         }
+        
+        // 3. ТОЛЬКО ПОСЛЕ этого создаём provider/signer (они будут на правильной сети)
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const address = await signer.getAddress();
+        
+        // 4. Финальная проверка сети
+        const network = await provider.getNetwork();
+        if (network.chainId !== 1979n) {
+            throw new Error('Пожалуйста, вручную переключись на Ritual Testnet в кошельке');
+        }
+        
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-        status.textContent = '⏳ Подтверди транзакцию в MetaMask...';
+        status.textContent = '⏳ Подтверди транзакцию в кошельке...';
+        
         const tx = await contract.mintCard(
             address,
             currentCardData.username,
@@ -889,13 +911,27 @@ async function mintCardNFT() {
             currentCardData.imageData,
             { value: ethers.parseEther("0.0001") }
         );
+        
         status.textContent = '⛓️ Транзакция отправлена. Ожидание подтверждения...';
         await tx.wait();
+        
         status.textContent = '✅ NFT успешно заминчен! Проверь кошелёк.';
         status.style.color = '#4ade80';
+        
+        // Обновляем галерею после успешного минта
+        if (typeof loadNFTGallery === 'function') {
+            localStorage.removeItem('ritual_nft_gallery');
+            loadNFTGallery();
+        }
+        
     } catch (err) {
         console.error(err);
-        status.textContent = `❌ Ошибка: ${err.message || err}`;
+        // Обрабатываем ошибку смены сети отдельно
+        if (err.code === 'NETWORK_ERROR' || err.message?.includes('network changed')) {
+            status.textContent = '🔄 Сеть изменилась. Обнови страницу и попробуй снова.';
+        } else {
+            status.textContent = `❌ Ошибка: ${err.message || err.reason || err}`;
+        }
         status.style.color = '#ff6b6b';
     } finally {
         btn.disabled = false;
