@@ -894,7 +894,7 @@ async function mintCardNFT() {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         const from = accounts[0];
         
-        // 3. Кодируем данные (ethers.Interface НЕ создаёт провайдер)
+        // 3. 🔥 Кодируем данные: ПОСЛЕДНИЙ ПАРАМЕТР — ПУСТАЯ СТРОКА (не отправляем картинку!)
         const iface = new ethers.Interface(CONTRACT_ABI);
         const data = iface.encodeFunctionData('mintCard', [
             from,
@@ -904,7 +904,7 @@ async function mintCardNFT() {
             BigInt(currentCardData.stats.retweets || 0),
             BigInt(currentCardData.stats.comments || 0),
             BigInt(currentCardData.stats.views || 0),
-            currentCardData.imageData
+            ""  // ← ПУСТАЯ СТРОКА вместо картинки!
         ]);
         
         // 4. Отправляем транзакцию НАПРЯМУЮ через кошелек
@@ -1163,7 +1163,7 @@ function toggleTweetsRow(tr, username) {
             if (dateRaw) {
                 const parsed = new Date(dateRaw);
                 date = !isNaN(parsed)
-                    ? parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+                    ? parsed.toLocaleDateString("en-GB", { day: "2-digit", month: 'short', year: "numeric" })
                     : dateRaw.split(" ")[0];
             }
             
@@ -1279,7 +1279,7 @@ async function loadNFTGallery() {
                     retweets: card.retweets.toString(),
                     comments: card.comments.toString(),
                     views: card.views.toString(),
-                    imageData: card.imageData,
+                    imageData: card.imageData, // будет пустая строка
                     mintedAt: card.mintedAt.toString(),
                     owner: event.args.to
                 });
@@ -1296,6 +1296,50 @@ async function loadNFTGallery() {
     }
 }
 
+// 🔥 НОВАЯ ФУНКЦИЯ: Генерация мини-превью карточки для галереи
+function generateGalleryPreview(username, stats) {
+    const canvas = document.createElement('canvas');
+    const W = 400, H = 225; // Уменьшенный размер для галереи
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // Фон
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#0f1f1f');
+    grad.addColorStop(0.5, '#1a3333');
+    grad.addColorStop(1, '#0d1a1a');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Рамка
+    ctx.strokeStyle = 'rgba(111, 227, 209, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.roundRect(8, 8, W - 16, H - 16, 12);
+    ctx.stroke();
+
+    // Никнейм
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 18px Segoe UI, sans-serif';
+    ctx.fillText(`@${username}`, 15, 35);
+
+    // Метрики (упрощённо)
+    ctx.fillStyle = '#6fe3d1';
+    ctx.font = '14px Segoe UI, sans-serif';
+    ctx.fillText(`📝 ${stats.posts} posts`, 15, 70);
+    ctx.fillText(`❤️ ${stats.likes} likes`, 15, 95);
+    ctx.fillText(`👁️ ${stats.views} views`, 15, 120);
+
+    // Логотип/текст внизу
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.font = '12px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('MINTED ON RITUAL', W / 2, H - 20);
+    ctx.textAlign = 'left';
+
+    return canvas.toDataURL('image/png');
+}
+
 function renderNFTCards(nfts) {
     const grid = document.getElementById('nft-gallery-grid');
     if (!grid) return;
@@ -1307,8 +1351,21 @@ function renderNFTCards(nfts) {
     nfts.forEach(nft => {
         const card = document.createElement('div');
         card.className = 'nft-gallery-card';
+        
+        // 🔥 ГЕНЕРАЦИЯ ПРЕВЬЮ: если imageData пустая — рисуем из статистики
+        let previewSrc;
+        if (!nft.imageData || nft.imageData === "") {
+            previewSrc = generateGalleryPreview(nft.username, {
+                posts: Number(nft.posts),
+                likes: Number(nft.likes),
+                views: Number(nft.views)
+            });
+        } else {
+            previewSrc = `image/png;base64,${nft.imageData}`;
+        }
+        
         card.innerHTML = `
-            <img src="image/png;base64,${nft.imageData}" alt="Card ${nft.username}" loading="lazy">
+            <img src="${previewSrc}" alt="Card ${nft.username}" loading="lazy">
             <div class="nft-info">
                 <h4>@${nft.username}</h4>
                 <p>Token ID: #${nft.tokenId}</p>
