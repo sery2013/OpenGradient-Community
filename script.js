@@ -21,7 +21,7 @@ let analyticsHourFilter = "all";
 let currentLang = 'en';
 
 // === NFT MINT: ГЛОБАЛЬНЫЕ НАСТРОЙКИ ===
-const CONTRACT_ADDRESS = "0x30412DD5eAf58a8491b2f728140dDeb3CDCF83C26";
+const CONTRACT_ADDRESS = "0x30412DD5eAf58a8491b2f728140dEb3CDCF83C26";
 const CONTRACT_ABI = [
 	{
 		"inputs": [],
