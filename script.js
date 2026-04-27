@@ -389,7 +389,7 @@ async function mintCardNFT() {
             currentCardData.stats.comments || 0,
             currentCardData.stats.views || 0,
             currentCardData.imageData,
-            { value: ethers.parseEther("0.001") }
+            { value: ethers.parseEther("0.0001") }
         );
         status.textContent = '⛓️ Транзакция отправлена. Ожидание подтверждения...';
         await tx.wait();
