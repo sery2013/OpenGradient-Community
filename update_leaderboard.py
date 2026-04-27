@@ -53,16 +53,17 @@ def parse_tweet_date(tweet):
         except:
             return None
 
-# === ОСНОВНАЯ ЛОГИКА (ПРОСТАЯ: СБРОС + СБОР 30 ДНЕЙ) ===
+# === ОСНОВНАЯ ЛОГИКА (С ЗАЩИТОЙ ОТ ДУБЛИКАТОВ) ===
 def collect_all_tweets():
     # 1. Определяем дату 30 дней назад
     cutoff_date = datetime.now().replace(tzinfo=None) - timedelta(days=30)
     logging.info(f"📅 Собираем твиты с {cutoff_date.strftime('%Y-%m-%d')} (последние 30 дней)")
     
     all_tweets = []
+    seen_ids = set()  # 🔥 ДЛЯ ОТСЕЧЕНИЯ ДУБЛИКАТОВ
     cursor = None
     total_collected = 0
-    old_reached = False
+    duplicates_skipped = 0
     
     # 2. Цикл сбора с начала (от новых к старым)
     while True:
@@ -74,22 +75,34 @@ def collect_all_tweets():
             logging.info("🏁 API вернул пустую страницу. Сбор завершен.")
             break
 
+        should_stop = False
         for t in tweets:
+            tid = t.get("id_str")
             tweet_date = parse_tweet_date(t)
             
             # Проверяем дату: если старше 30 дней — останавливаемся
             if tweet_date and tweet_date.replace(tzinfo=None) < cutoff_date:
-                old_reached = True
+                should_stop = True
                 break
+            
+            # 🔥 Пропускаем дубликаты по ID
+            if tid in seen_ids:
+                duplicates_skipped += 1
+                continue
+            seen_ids.add(tid)
+            
+            # (Опционально) Игнорировать ретвиты, чтобы считать только оригинальные посты
+            # Раскомментируй строку ниже, если хочешь убрать ретвиты из подсчёта:
+            # if t.get("retweeted_status"): continue
             
             all_tweets.append(t)
             total_collected += 1
         
-        if total_collected % 100 == 0:
-            logging.info(f"📥 Загружено {total_collected} твитов...")
+        if total_collected % 200 == 0:
+            logging.info(f"📥 Загружено {total_collected} уникальных твитов... (пропущено дублей: {duplicates_skipped})")
         
         # Остановка если достигли старых твитов или кончился курсор
-        if old_reached:
+        if should_stop:
             logging.info(f"🛑 Достигли твитов старше 30 дней. Остановка.")
             break
             
@@ -101,7 +114,8 @@ def collect_all_tweets():
 
     # 3. Сохраняем результат (перезаписываем файл полностью)
     save_json(TWEETS_FILE, all_tweets)
-    logging.info(f"\n✅ Готово! Собрано {total_collected} твитов за последние 30 дней.")
+    logging.info(f"\n✅ Готово! Собрано {total_collected} уникальных твитов.")
+    logging.info(f"🗑️ Пропущено дубликатов: {duplicates_skipped}")
     logging.info(f"💾 Файл {TWEETS_FILE} обновлён.")
     
     return all_tweets
@@ -145,7 +159,7 @@ if __name__ == "__main__":
     if not API_KEY:
         logging.error("❌ ОШИБКА: Переменная API_KEY не найдена!")
     else:
-        logging.info("🔑 Ключ найден. Запуск простого сбора за 30 дней...")
+        logging.info("🔑 Ключ найден. Запуск сбора с защитой от дубликатов...")
         tweets = collect_all_tweets()
         build_leaderboard(tweets)
         logging.info("✅ Воркфлоу успешно завершен.")
