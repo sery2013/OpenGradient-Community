@@ -424,12 +424,13 @@ async function mintCardNFT() {
         const txParams = {
             from: address,
             to: CONTRACT_ADDRESS,
-            data: callData,
-            value: ethers.parseEther("0.0001").toString(), // Цена минта
-            gasLimit: ethers.toQuantity(300000), // Увеличил лимит на всякий случай
+            data: callData, // Было:  callData
+            value: ethers.toQuantity(ethers.parseEther("0.0001")), // Цена минта
+            gasLimit: ethers.toQuantity(800000), // Увеличил на всякий случай
             gasPrice: ethers.toQuantity(ethers.parseUnits("1", "gwei")), // Явно указываем gasPrice для Legacy
+            // --- ЯВНО УКАЗЫВАЕМ ТИП ТРАНЗАКЦИИ ---
+            type: '0x0', // 🔥 Это ключевое изменение!
             // --- УБРАТЬ ВСЁ, ЧТО ОТНОСИТСЯ К EIP-1559 ---
-            // type: '0x0', // Можно попробовать явно указать, но часто кошелёк сам решает
             // maxFeePerGas: undefined,
             // maxPriorityFeePerGas: undefined,
             // chainId: '0x7BB', // Уже проверили выше, не обязательно
