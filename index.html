@@ -1,62 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="https://cdn.jsdelivr.net/npm/@ethereumjs/util@8.1.0/dist/index.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@ethereumjs/tx@4.1.0/dist/index.min.js"></script>
-<script>
-    // Переопределяем глобальные объекты, чтобы ethereumjs работал
-    const Util = ethereumjsUtil;
-    const Tx = ethereumjsTx;
-</script>
-<meta charset="UTF-8">
+   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ritual Community</title>
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
 </head>
 <body>
-    <!-- ⚠️ ВРЕМЕННО: Поле для ввода приватного ключа -->
-<div id="pk-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;color:white;">
-  <div style="background:#1a1a1a;padding:20px;border-radius:10px;border:1px solid #6fe3d1;max-width:500px;width:90%;">
-    <h3>⚠️ ВРЕМЕННЫЙ ВВОД ПРИВАТНОГО КЛЮЧА</h3>
-    <p>Введите приватный ключ от кошелька, который подключен к Ritual Testnet (только для теста!)</p>
-    <input type="password" id="pk-input" placeholder="0x..." style="width:100%;padding:10px;margin-bottom:10px;background:#222;color:white;border:1px solid #6fe3d1;">
-    <div style="display:flex;gap:10px;">
-      <button onclick="setupWallet()" style="flex:1;padding:10px;background:#6fe3d1;color:black;border:none;border-radius:5px;cursor:pointer;">Установить</button>
-      <button onclick="document.getElementById('pk-overlay').style.display='none'" style="flex:1;padding:10px;background:#ff6b6b;color:white;border:none;border-radius:5px;cursor:pointer;">Отмена</button>
-    </div>
-    <p style="font-size:12px;color:#aaa;margin-top:10px;">Ключ хранится локально в браузере. После теста очистите его.</p>
-  </div>
-</div>
-
-<script>
-let globalWallet = null;
-
-function setupWallet() {
-    const pkInput = document.getElementById('pk-input');
-    const pk = pkInput.value.trim();
-    pkInput.value = ''; // Очищаем поле сразу
-
-    if (!pk) {
-        alert('Пустой приватный ключ!');
-        return;
-    }
-
-    try {
-        // Убираем 0x, если есть
-        const cleanPk = pk.startsWith('0x') ? pk.substring(2) : pk;
-        globalWallet = new ethers.Wallet(cleanPk);
-        console.log('Wallet set. Address:', globalWallet.address);
-        document.getElementById('pk-overlay').style.display = 'none';
-        alert('Кошелёк установлен! Адрес: ' + globalWallet.address);
-    } catch (e) {
-        console.error('Invalid Private Key:', e);
-        alert('Неверный формат приватного ключа!');
-    }
-}
-// Показываем окно при загрузке (временно)
-// window.onload = function() { document.getElementById('pk-overlay').style.display = 'flex'; };
-</script>
+    
 <!-- === ЛОГОТИП КОМПАНИИ (ПЕРЕД ЗАГОЛОВКОМ) === -->
 <div class="header-wrapper">
     <img src="https://github.com/sery2013/OpenGradient-Community/blob/main/RITUAL.png?raw=true" alt="Logo" class="company-logo">
