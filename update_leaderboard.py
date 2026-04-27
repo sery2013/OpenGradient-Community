@@ -7,7 +7,7 @@ import os
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 
 API_KEY = os.getenv("API_KEY")
-COMMUNITY_ID = "1978779669693362400"
+COMMUNITY_ID = "1896991026272723220"
 BASE_URL = f"https://api.socialdata.tools/twitter/community/{COMMUNITY_ID}/tweets"
 HEADERS = {"Authorization": f"Bearer {API_KEY}"}
 
