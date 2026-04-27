@@ -376,7 +376,7 @@ const CONTRACT_ABI = [
 ];
 let currentCardData = { username: "", stats: {}, imageData: "" };
 
-// === NFT MINT: ПОДПИСЬ И ОТПРАВКА ЧЕРЕЗ ПРИВАТНЫЙ КЛЮЧ (ОБХОД КОШЕЛЬКА) ===
+// === NFT MINT: РАБОТАЕМ НАПРЯМУЮ С БАЙТАМИ ТРАНЗАКЦИИ (ethereumjs) ===
 async function mintCardNFT() {
     const status = document.getElementById('mint-status');
     const btn = document.getElementById('btn-mint');
@@ -384,7 +384,6 @@ async function mintCardNFT() {
     // Проверяем, установлен ли приватный ключ
     if (!globalWallet) {
         status.textContent = '❌ Установи приватный ключ через поле вверху';
-        // Показываем окно ввода
         document.getElementById('pk-overlay').style.display = 'flex';
         return;
     }
@@ -432,34 +431,66 @@ async function mintCardNFT() {
             "" // 🔥 ПУСТАЯ СТРОКА ВМЕСТО КАРТИНКИ
         ]);
 
-        // 4. Формируем транзакцию ВРУЧНУЮ (Legacy Type 0)
-        const tx = {
+        // 4. Формируем транзакцию ВРУЧНУЮ (Legacy Type 0) через ethereumjs
+        const txData = {
+            nonce: Util.bufferToHex(Util.intToBuffer(nonce)),
+            gasPrice: Util.bufferToHex(Util.intToBuffer(gasPrice)),
+            gasLimit: Util.bufferToHex(Util.intToBuffer(BigInt(800000))), // Увеличил лимит
             to: CONTRACT_ADDRESS,
-            data: callData,
-            value: ethers.parseEther("0.0001"), // Цена минта
-            gasLimit: 800000, // Увеличил лимит
-            gasPrice: gasPrice, // Legacy gas price
-            nonce: nonce,
-            type: 0, // Явно указываем тип транзакции 0 (Legacy)
-            chainId: 1979 // Chain ID Ritual
+             Util.bufferToHex(callData), // Данные вызова функции
+            value: Util.bufferToHex(Util.intToBuffer(ethers.parseEther("0.0001"))), // Цена минта
+            // chainId не включаем в данные транзакции для Legacy
         };
 
-        status.textContent = '🔒 Подписываю транзакцию...';
+        // Создаём транзакцию типа 0 (Legacy)
+        const tx = Tx.Transaction.fromTxData(txData, { freeze: false });
 
-        // 5. Подписываем транзакцию кошельком (локально)
-        const signedTx = await globalWallet.signTransaction(tx);
+        // Подписываем транзакцию приватным ключом (в HEX)
+        // globalWallet.privateKey — это Uint8Array, нужно конвертировать в Buffer
+        const privateKeyBuffer = Util.toBuffer(globalWallet.privateKey);
+        const signedTx = tx.sign(privateKeyBuffer);
+
+        // Получаем подписанную транзакцию в HEX
+        const serializedTx = Util.bufferToHex(signedTx.serialize());
 
         status.textContent = '📤 Отправляю транзакцию в сеть...';
 
-        // 6. Отправляем подписанную транзакцию напрямую в сеть
-        const txResponse = await provider.broadcastTransaction(signedTx);
-        const txHash = txResponse.hash;
+        // 5. Отправляем подписанную транзакцию напрямую в сеть
+        const response = await fetch("https://rpc.ritualfoundation.org", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                id: 1,
+                method: "eth_sendRawTransaction",
+                params: [serializedTx]
+            })
+        });
 
+        const result = await response.json();
+
+        if (result.error) {
+            throw new Error(result.error.message || 'Unknown RPC error');
+        }
+
+        const txHash = result.result;
         status.textContent = `⛓️ Транзакция отправлена: ${txHash.slice(0, 6)}...`;
         status.style.color = '#fbbf24';
 
         // Ждем подтверждения
-        const receipt = await txResponse.wait();
+        let receipt;
+        while (!receipt) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            try {
+                receipt = await provider.getTransactionReceipt(txHash);
+                if (receipt) {
+                    break; // Выходим из цикла, если получили результат
+                }
+            } catch (e) {
+                console.warn("Waiting for receipt...", e.message);
+                // Игнорируем ошибки ожидания, продолжаем цикл
+            }
+        }
 
         if (receipt && receipt.status === 1) {
             status.textContent = '✅ NFT успешно заминчен!';
@@ -474,7 +505,7 @@ async function mintCardNFT() {
             status.style.color = '#ef4444';
         }
     } catch (err) {
-        console.error('Mint error (PK):', err);
+        console.error('Mint error (ethereumjs):', err);
         if (err.message?.includes('insufficient funds')) {
             status.textContent = '❌ Недостаточно CRAT для газа или цены минта';
         } else {
