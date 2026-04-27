@@ -382,7 +382,7 @@ async function mintCardNFT() {
     const btn = document.getElementById('btn-mint');
 
     if (!window.ethereum) {
-        status.textContent = '❌ Установи MetaMask';
+        status.textContent = '❌ Установи MetaMask / Rabby';
         return;
     }
 
@@ -395,12 +395,12 @@ async function mintCardNFT() {
         const currentChainId = parseInt(chainIdHex, 16);
 
         if (currentChainId !== 1979) {
-            status.textContent = '🔄 Переключаю на Ritual Testnet...';
+            status.textContent = '🔄 Переключаю на CratD2C Testnet...';
             await window.ethereum.request({
                 method: 'wallet_switchEthereumChain',
                 params: [{ chainId: '0x7BB' }]
             });
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Пауза для стабильности
+            await new Promise(resolve => setTimeout(resolve, 1500)); // Пауза для стабильности
         }
 
         // 2. Получаем адрес
@@ -420,20 +420,27 @@ async function mintCardNFT() {
             "" // 🔥 ПУСТАЯ СТРОКА ВМЕСТО КАРТИНКИ
         ]);
 
-        // 4. Формируем транзакцию ВРУЧНУЮ (Legacy Type 0)
+        // 4. Формируем ТОЛЬКО Legacy транзакцию ВРУЧНУЮ
         const txParams = {
             from: address,
             to: CONTRACT_ADDRESS,
             data: callData,
             value: ethers.parseEther("0.0001").toString(), // Цена минта
-            gasLimit: ethers.toQuantity(500000), // Примерный лимит
-            gasPrice: ethers.toQuantity(ethers.parseUnits("1", "gwei")) // Устанавливаем явно legacy gas price
+            gasLimit: ethers.toQuantity(300000), // Увеличил лимит на всякий случай
+            gasPrice: ethers.toQuantity(ethers.parseUnits("1", "gwei")), // Явно указываем gasPrice для Legacy
+            // --- УБРАТЬ ВСЁ, ЧТО ОТНОСИТСЯ К EIP-1559 ---
+            // type: '0x0', // Можно попробовать явно указать, но часто кошелёк сам решает
+            // maxFeePerGas: undefined,
+            // maxPriorityFeePerGas: undefined,
+            // chainId: '0x7BB', // Уже проверили выше, не обязательно
         };
 
         status.textContent = '🔗 Подготовка транзакции...';
+
+        // 5. Отправляем через RPC напрямую
         const txHash = await window.ethereum.request({
             method: 'eth_sendTransaction',
-            params: [txParams] // Передаём объект транзакции напрямую
+            params: [txParams]
         });
 
         status.textContent = `⛓️ Транзакция отправлена: ${txHash.slice(0, 6)}...`;
@@ -444,11 +451,19 @@ async function mintCardNFT() {
         while (!receipt) {
             await new Promise(resolve => setTimeout(resolve, 2000));
             try {
-                receipt = await new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org").getTransactionReceipt(txHash);
-            } catch (e) { /* ignore */ }
+                // Используем JsonRpcProvider для получения результата
+                const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
+                receipt = await provider.getTransactionReceipt(txHash);
+                if (receipt) {
+                    break; // Выходим из цикла, если получили результат
+                }
+            } catch (e) {
+                console.warn("Waiting for receipt...", e.message);
+                // Игнорируем ошибки ожидания, продолжаем цикл
+            }
         }
 
-        if (receipt.status === 1) {
+        if (receipt && receipt.status === 1) {
             status.textContent = '✅ NFT успешно заминчен!';
             status.style.color = '#4ade80';
             // Обновляем галерею
@@ -462,10 +477,12 @@ async function mintCardNFT() {
         }
     } catch (err) {
         console.error('Mint error:', err);
-        if (err.code === 4001) {
+        if (err.code === 4001 || err.message?.includes('User rejected')) {
             status.textContent = '❌ Пользователь отменил транзакцию';
         } else if (err.message?.includes('insufficient funds')) {
-            status.textContent = '❌ Недостаточно средств (баланс < 0.001 CRAT)';
+            status.textContent = '❌ Недостаточно CRAT для газа или цены минта';
+        } else if (err.message?.includes('transaction type not supported')) {
+            status.textContent = '❌ Ошибка сети: транзакция не поддерживается (EIP-1559?)';
         } else {
             status.textContent = `❌ Ошибка: ${err.message || 'Неизвестная ошибка'}`;
         }
