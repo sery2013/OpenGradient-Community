@@ -1,3 +1,11 @@
+// === 🔥 FIX: ОТКЛЮЧАЕМ ENS В ETHERS V6 ДЛЯ КАСТОМНЫХ СЕТЕЙ ===
+try {
+    if (typeof ethers !== 'undefined' && ethers.Provider) {
+        ethers.Provider.prototype.getResolver = async () => null;
+        ethers.Provider.prototype.resolveName = async () => null;
+    }
+} catch(e) { console.warn('ENS patch skipped', e); }
+// ============================================================
 // === ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ===
 let rawData = [];
 let data = [];
@@ -857,7 +865,7 @@ async function fetchAvatarUrl(username) {
     return tweet?.user?.profile_image_url_https || null;
 }
 
-// === NFT MINT: МИНТ ЧЕРЕЗ RAW ETHEREUM.REQUEST (БЕЗ ENS-ПРОБЛЕМ) ===
+// === NFT MINT: МИНТ ЧЕРЕЗ RAW ETHEREUM (БЕЗ ETHERS-ПРОВЕРОК) ===
 async function mintCardNFT() {
     const status = document.getElementById('mint-status');
     const btn = document.getElementById('btn-mint');
@@ -868,31 +876,28 @@ async function mintCardNFT() {
     }
     
     btn.disabled = true;
-    status.textContent = '⏳ Подключение к кошельку...';
+    status.textContent = '⏳ Подключение...';
     
     try {
-        // 1. Проверяем и переключаем сеть
+        // 1. Проверяем сеть
         const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
-        const currentChainId = parseInt(chainIdHex, 16);
-        
-        if (currentChainId !== 1979) {
-            status.textContent = '🔄 Переключаю на CratD2C Testnet...';
+        if (parseInt(chainIdHex, 16) !== 1979) {
+            status.textContent = '🔄 Переключаю на CratD2C...';
             await window.ethereum.request({
                 method: 'wallet_switchEthereumChain',
                 params: [{ chainId: '0x7BB' }]
             });
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await new Promise(r => setTimeout(r, 1500));
         }
         
-        // 2. Получаем адрес пользователя
+        // 2. Получаем адрес
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const address = accounts[0];
+        const from = accounts[0];
         
-        // 3. 🔥 КОДИРУЕМ ВЫЗОВ ФУНКЦИИ ВРУЧНУЮ (без ethers.Contract)
-        // Сигнатура: mintCard(address,string,uint256,uint256,uint256,uint256,uint256,string)
+        // 3. Кодируем данные (ethers.Interface НЕ создаёт провайдер)
         const iface = new ethers.Interface(CONTRACT_ABI);
         const data = iface.encodeFunctionData('mintCard', [
-            address,
+            from,
             currentCardData.username,
             BigInt(currentCardData.stats.posts || 0),
             BigInt(currentCardData.stats.likes || 0),
@@ -902,66 +907,58 @@ async function mintCardNFT() {
             currentCardData.imageData
         ]);
         
-        // 4. 🔥 ОТПРАВЛЯЕМ ТРАНЗАКЦИЮ НАПРЯМУЮ (никаких ENS-проверок!)
-        status.textContent = '⏳ Подтверди транзакцию в кошельке...';
-        
+        // 4. Отправляем транзакцию НАПРЯМУЮ через кошелек
+        status.textContent = '⏳ Подтверди в кошельке...';
         const txHash = await window.ethereum.request({
             method: 'eth_sendTransaction',
             params: [{
-                from: address,
+                from,
                 to: CONTRACT_ADDRESS,
-                value: '0x184f03e93c4000', // 0.0001 CRAT в wei (hex)
-                data: data,
+                value: '0x5af3107a4000', // 0.0001 CRAT в hex
+                data,
                 chainId: '0x7BB'
             }]
         });
         
-        status.textContent = '⛓️ Транзакция отправлена. Ожидание подтверждения...';
+        status.textContent = '⛓️ Ожидание подтверждения...';
         
-        // 5. Ждём подтверждения
+        // 5. Ждём receipt
         await new Promise((resolve, reject) => {
-            const checkTx = async () => {
+            const check = async () => {
                 try {
-                    const receipt = await window.ethereum.request({
-                        method: 'eth_getTransactionReceipt',
-                        params: [txHash]
+                    const receipt = await window.ethereum.request({ 
+                        method: 'eth_getTransactionReceipt', 
+                        params: [txHash] 
                     });
                     if (receipt) {
-                        if (receipt.status === '0x1') {
-                            resolve();
-                        } else {
-                            reject(new Error('Транзакция отклонена'));
-                        }
+                        receipt.status === '0x1' ? resolve() : reject(new Error('Reverted'));
                     } else {
-                        setTimeout(checkTx, 2000);
+                        setTimeout(check, 2000);
                     }
-                } catch (e) {
-                    reject(e);
-                }
+                } catch (e) { reject(e); }
             };
-            checkTx();
+            check();
         });
         
-        status.textContent = '✅ NFT успешно заминчен! Проверь кошелёк.';
+        status.textContent = '✅ NFT заминчен! Проверь кошелёк.';
         status.style.color = '#4ade80';
         
-        // Обновляем галерею
-        if (typeof loadNFTGallery === 'function') {
-            localStorage.removeItem('ritual_nft_gallery');
-            loadNFTGallery();
-        }
+        // Безопасно обновляем галерею
+        try { 
+            localStorage.removeItem('ritual_nft_gallery'); 
+            if (typeof loadNFTGallery === 'function') loadNFTGallery(); 
+        } catch(e) {}
         
     } catch (err) {
         console.error('Mint error:', err);
-        
-        if (err.message?.includes('insufficient funds')) {
-            status.textContent = '❌ Недостаточно CRAT для оплаты газа. Запроси токены в фаусете.';
-        } else if (err.message?.includes('User rejected')) {
-            status.textContent = '❌ Транзакция отменена пользователем.';
-        } else if (err.code === -32603 || err.message?.includes('execution reverted')) {
-            status.textContent = '❌ Ошибка контракта. Проверь цену и параметры.';
+        if (err.code === 4001 || err.message?.includes('User denied')) {
+            status.textContent = '❌ Отменено пользователем';
+        } else if (err.message?.includes('insufficient funds')) {
+            status.textContent = '❌ Нет CRAT на газ';
+        } else if (err.message?.includes('execution reverted')) {
+            status.textContent = '❌ Контракт отклонил транзакцию';
         } else {
-            status.textContent = `❌ Ошибка: ${err.message || err}`;
+            status.textContent = `❌ ${err.shortMessage || err.message || err}`;
         }
         status.style.color = '#ff6b6b';
     } finally {
