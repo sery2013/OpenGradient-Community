@@ -1,11 +1,26 @@
-// === 🔥 FIX: ОТКЛЮЧАЕМ ENS В ETHERS V6 ДЛЯ КАСТОМНЫХ СЕТЕЙ ===
-try {
-    if (typeof ethers !== 'undefined' && ethers.Provider) {
-        ethers.Provider.prototype.getResolver = async () => null;
-        ethers.Provider.prototype.resolveName = async () => null;
-    }
-} catch(e) { console.warn('ENS patch skipped', e); }
-// ============================================================
+// === 🔥 ПОДКЛЮЧЕНИЕ VIEM ЧЕРЕЗ CDN ===
+// Viem загружается глобально как 'viem'
+// Документация: https://viem.sh
+
+// === Кастомная конфигурация сети CratD2C Testnet ===
+const cratD2CTestnet = {
+    id: 1979,
+    name: 'CratD2C Testnet',
+    nativeCurrency: {
+        decimals: 18,
+        name: 'CRAT',
+        symbol: 'CRAT',
+    },
+    rpcUrls: {
+        default: { http: ['https://rpc.ritualfoundation.org'] },
+        public: { http: ['https://rpc.ritualfoundation.org'] },
+    },
+    blockExplorers: {
+        default: { name: 'Explorer', url: 'https://explorer.ritualfoundation.org' },
+    },
+    testnet: true,
+};
+
 // === ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ===
 let rawData = [];
 let data = [];
@@ -31,24 +46,9 @@ const CONTRACT_ABI = [
 	{
 		"anonymous": false,
 		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "owner",
-				"type": "address"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "approved",
-				"type": "address"
-			},
-			{
-				"indexed": true,
-				"internalType": "uint256",
-				"name": "tokenId",
-				"type": "uint256"
-			}
+			{ "indexed": true, "internalType": "address", "name": "owner", "type": "address" },
+			{ "indexed": true, "internalType": "address", "name": "approved", "type": "address" },
+			{ "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" }
 		],
 		"name": "Approval",
 		"type": "event"
@@ -56,24 +56,9 @@ const CONTRACT_ABI = [
 	{
 		"anonymous": false,
 		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "owner",
-				"type": "address"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "operator",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "bool",
-				"name": "approved",
-				"type": "bool"
-			}
+			{ "indexed": true, "internalType": "address", "name": "owner", "type": "address" },
+			{ "indexed": true, "internalType": "address", "name": "operator", "type": "address" },
+			{ "indexed": false, "internalType": "bool", "name": "approved", "type": "bool" }
 		],
 		"name": "ApprovalForAll",
 		"type": "event"
@@ -81,18 +66,8 @@ const CONTRACT_ABI = [
 	{
 		"anonymous": false,
 		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "previousOwner",
-				"type": "address"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "newOwner",
-				"type": "address"
-			}
+			{ "indexed": true, "internalType": "address", "name": "previousOwner", "type": "address" },
+			{ "indexed": true, "internalType": "address", "name": "newOwner", "type": "address" }
 		],
 		"name": "OwnershipTransferred",
 		"type": "event"
@@ -100,40 +75,17 @@ const CONTRACT_ABI = [
 	{
 		"anonymous": false,
 		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "from",
-				"type": "address"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "to",
-				"type": "address"
-			},
-			{
-				"indexed": true,
-				"internalType": "uint256",
-				"name": "tokenId",
-				"type": "uint256"
-			}
+			{ "indexed": true, "internalType": "address", "name": "from", "type": "address" },
+			{ "indexed": true, "internalType": "address", "name": "to", "type": "address" },
+			{ "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" }
 		],
 		"name": "Transfer",
 		"type": "event"
 	},
 	{
 		"inputs": [
-			{
-				"internalType": "address",
-				"name": "to",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "tokenId",
-				"type": "uint256"
-			}
+			{ "internalType": "address", "name": "to", "type": "address" },
+			{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }
 		],
 		"name": "approve",
 		"outputs": [],
@@ -141,158 +93,54 @@ const CONTRACT_ABI = [
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "owner",
-				"type": "address"
-			}
-		],
+		"inputs": [{ "internalType": "address", "name": "owner", "type": "address" }],
 		"name": "balanceOf",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
+		"outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "tokenId",
-				"type": "uint256"
-			}
-		],
+		"inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }],
 		"name": "cards",
 		"outputs": [
-			{
-				"internalType": "string",
-				"name": "username",
-				"type": "string"
-			},
-			{
-				"internalType": "uint256",
-				"name": "posts",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "likes",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "retweets",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "comments",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "views",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string",
-				"name": "imageData",
-				"type": "string"
-			}
+			{ "internalType": "string", "name": "username", "type": "string" },
+			{ "internalType": "uint256", "name": "posts", "type": "uint256" },
+			{ "internalType": "uint256", "name": "likes", "type": "uint256" },
+			{ "internalType": "uint256", "name": "retweets", "type": "uint256" },
+			{ "internalType": "uint256", "name": "comments", "type": "uint256" },
+			{ "internalType": "uint256", "name": "views", "type": "uint256" },
+			{ "internalType": "string", "name": "imageData", "type": "string" }
 		],
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "tokenId",
-				"type": "uint256"
-			}
-		],
+		"inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }],
 		"name": "getApproved",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
+		"outputs": [{ "internalType": "address", "name": "", "type": "address" }],
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
 		"inputs": [
-			{
-				"internalType": "address",
-				"name": "owner",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "operator",
-				"type": "address"
-			}
+			{ "internalType": "address", "name": "owner", "type": "address" },
+			{ "internalType": "address", "name": "operator", "type": "address" }
 		],
 		"name": "isApprovedForAll",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
+		"outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
 		"inputs": [
-			{
-				"internalType": "address",
-				"name": "to",
-				"type": "address"
-			},
-			{
-				"internalType": "string",
-				"name": "_username",
-				"type": "string"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_posts",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_likes",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_retweets",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_comments",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_views",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string",
-				"name": "_imageData",
-				"type": "string"
-			}
+			{ "internalType": "address", "name": "to", "type": "address" },
+			{ "internalType": "string", "name": "_username", "type": "string" },
+			{ "internalType": "uint256", "name": "_posts", "type": "uint256" },
+			{ "internalType": "uint256", "name": "_likes", "type": "uint256" },
+			{ "internalType": "uint256", "name": "_retweets", "type": "uint256" },
+			{ "internalType": "uint256", "name": "_comments", "type": "uint256" },
+			{ "internalType": "uint256", "name": "_views", "type": "uint256" },
+			{ "internalType": "string", "name": "_imageData", "type": "string" }
 		],
 		"name": "mintCard",
 		"outputs": [],
@@ -302,58 +150,28 @@ const CONTRACT_ABI = [
 	{
 		"inputs": [],
 		"name": "name",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			}
-		],
+		"outputs": [{ "internalType": "string", "name": "", "type": "string" }],
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
 		"inputs": [],
 		"name": "nextTokenId",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
+		"outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
 		"inputs": [],
 		"name": "owner",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
+		"outputs": [{ "internalType": "address", "name": "", "type": "address" }],
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "tokenId",
-				"type": "uint256"
-			}
-		],
+		"inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }],
 		"name": "ownerOf",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
+		"outputs": [{ "internalType": "address", "name": "", "type": "address" }],
 		"stateMutability": "view",
 		"type": "function"
 	},
@@ -366,21 +184,9 @@ const CONTRACT_ABI = [
 	},
 	{
 		"inputs": [
-			{
-				"internalType": "address",
-				"name": "from",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "to",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "tokenId",
-				"type": "uint256"
-			}
+			{ "internalType": "address", "name": "from", "type": "address" },
+			{ "internalType": "address", "name": "to", "type": "address" },
+			{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }
 		],
 		"name": "safeTransferFrom",
 		"outputs": [],
@@ -389,26 +195,10 @@ const CONTRACT_ABI = [
 	},
 	{
 		"inputs": [
-			{
-				"internalType": "address",
-				"name": "from",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "to",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "tokenId",
-				"type": "uint256"
-			},
-			{
-				"internalType": "bytes",
-				"name": "data",
-				"type": "bytes"
-			}
+			{ "internalType": "address", "name": "from", "type": "address" },
+			{ "internalType": "address", "name": "to", "type": "address" },
+			{ "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+			{ "internalType": "bytes", "name": "data", "type": "bytes" }
 		],
 		"name": "safeTransferFrom",
 		"outputs": [],
@@ -417,16 +207,8 @@ const CONTRACT_ABI = [
 	},
 	{
 		"inputs": [
-			{
-				"internalType": "address",
-				"name": "operator",
-				"type": "address"
-			},
-			{
-				"internalType": "bool",
-				"name": "approved",
-				"type": "bool"
-			}
+			{ "internalType": "address", "name": "operator", "type": "address" },
+			{ "internalType": "bool", "name": "approved", "type": "bool" }
 		],
 		"name": "setApprovalForAll",
 		"outputs": [],
@@ -434,73 +216,31 @@ const CONTRACT_ABI = [
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "bytes4",
-				"name": "interfaceId",
-				"type": "bytes4"
-			}
-		],
+		"inputs": [{ "internalType": "bytes4", "name": "interfaceId", "type": "bytes4" }],
 		"name": "supportsInterface",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
+		"outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
 		"inputs": [],
 		"name": "symbol",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			}
-		],
+		"outputs": [{ "internalType": "string", "name": "", "type": "string" }],
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "tokenId",
-				"type": "uint256"
-			}
-		],
+		"inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }],
 		"name": "tokenURI",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			}
-		],
+		"outputs": [{ "internalType": "string", "name": "", "type": "string" }],
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
 		"inputs": [
-			{
-				"internalType": "address",
-				"name": "from",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "to",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "tokenId",
-				"type": "uint256"
-			}
+			{ "internalType": "address", "name": "from", "type": "address" },
+			{ "internalType": "address", "name": "to", "type": "address" },
+			{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }
 		],
 		"name": "transferFrom",
 		"outputs": [],
@@ -508,13 +248,7 @@ const CONTRACT_ABI = [
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "newOwner",
-				"type": "address"
-			}
-		],
+		"inputs": [{ "internalType": "address", "name": "newOwner", "type": "address" }],
 		"name": "transferOwnership",
 		"outputs": [],
 		"stateMutability": "nonpayable",
@@ -809,9 +543,9 @@ try {
 
     // Рисуем логотип если загрузился
     if (logoImg.complete && logoImg.naturalWidth !== 0) {
-        const logoSize = 55;  // Размер 45x45 пикселей
-        const logoX = (W / 2) - 350;  // СДВИНУЛ ЛЕВЕЕ (было -180, стало -220)
-        const logoY = H - 176;  // ПОДНЯЛ ВЫШЕ (было -175, стало -180)
+        const logoSize = 55;
+        const logoX = (W / 2) - 350;
+        const logoY = H - 176;
         
         ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
         console.log('🎨 Логотип нарисован на позиции:', logoX, logoY);
@@ -825,7 +559,7 @@ try {
 ctx.fillStyle = '#6fe3d1';
 ctx.font = 'bold 40px Segoe UI, sans-serif';
 ctx.textAlign = 'center';
-ctx.fillText('TWITTER RITUAL COMMUNITY', W / 2, H - 135);  // ОПУСТИЛ НИЖЕ (было -145, стало -135)
+ctx.fillText('TWITTER RITUAL COMMUNITY', W / 2, H - 135);
 ctx.textAlign = 'left';
 // === КОНЕЦ ЛОГОТИПА ===
 
@@ -865,7 +599,7 @@ async function fetchAvatarUrl(username) {
     return tweet?.user?.profile_image_url_https || null;
 }
 
-// === NFT MINT: МИНТ ЧЕРЕЗ RAW ETHEREUM (БЕЗ ETHERS-ПРОВЕРОК) ===
+// === 🔥 NFT MINT: МИНТ ЧЕРЕЗ VIEM (БЕЗ ENS-ПРОБЛЕМ) ===
 async function mintCardNFT() {
     const status = document.getElementById('mint-status');
     const btn = document.getElementById('btn-mint');
@@ -890,60 +624,51 @@ async function mintCardNFT() {
             await new Promise(r => setTimeout(r, 1500));
         }
         
-        // 2. Получаем адрес
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const from = accounts[0];
+        // 2. 🔥 НАСТРОЙКА VIEM КЛИЕНТОВ
+        const { createWalletClient, custom, parseEther, parseAbi } = viem;
         
-        // 3. 🔥 Кодируем данные: ПОСЛЕДНИЙ ПАРАМЕТР — ПУСТАЯ СТРОКА (не отправляем картинку!)
-        const iface = new ethers.Interface(CONTRACT_ABI);
-        const data = iface.encodeFunctionData('mintCard', [
-            from,
-            currentCardData.username,
-            BigInt(currentCardData.stats.posts || 0),
-            BigInt(currentCardData.stats.likes || 0),
-            BigInt(currentCardData.stats.retweets || 0),
-            BigInt(currentCardData.stats.comments || 0),
-            BigInt(currentCardData.stats.views || 0),
-            ""  // ← ПУСТАЯ СТРОКА вместо картинки!
-        ]);
+        const walletClient = createWalletClient({
+            chain: cratD2CTestnet,
+            transport: custom(window.ethereum)
+        });
         
-        // 4. Отправляем транзакцию НАПРЯМУЮ через кошелек
+        const [account] = await walletClient.getAddresses();
+        
+        // 3. 🔥 ОТПРАВЛЯЕМ ТРАНЗАКЦИЮ ЧЕРЕЗ VIEM
         status.textContent = '⏳ Подтверди в кошельке...';
-        const txHash = await window.ethereum.request({
-            method: 'eth_sendTransaction',
-            params: [{
-                from,
-                to: CONTRACT_ADDRESS,
-                value: '0x5af3107a4000', // 0.0001 CRAT в hex
-                data,
-                chainId: '0x7BB'
-            }]
+        
+        const hash = await walletClient.writeContract({
+            address: CONTRACT_ADDRESS,
+            abi: parseAbi(CONTRACT_ABI),
+            functionName: 'mintCard',
+            args: [
+                account,
+                currentCardData.username,
+                BigInt(currentCardData.stats.posts || 0),
+                BigInt(currentCardData.stats.likes || 0),
+                BigInt(currentCardData.stats.retweets || 0),
+                BigInt(currentCardData.stats.comments || 0),
+                BigInt(currentCardData.stats.views || 0),
+                ""  // ← ПУСТАЯ СТРОКА вместо картинки!
+            ],
+            value: parseEther('0.0001') // 0.0001 CRAT
         });
         
         status.textContent = '⛓️ Ожидание подтверждения...';
         
-        // 5. Ждём receipt
-        await new Promise((resolve, reject) => {
-            const check = async () => {
-                try {
-                    const receipt = await window.ethereum.request({ 
-                        method: 'eth_getTransactionReceipt', 
-                        params: [txHash] 
-                    });
-                    if (receipt) {
-                        receipt.status === '0x1' ? resolve() : reject(new Error('Reverted'));
-                    } else {
-                        setTimeout(check, 2000);
-                    }
-                } catch (e) { reject(e); }
-            };
-            check();
+        // 4. Ждём подтверждения (через публичный клиент)
+        const { createPublicClient, http } = viem;
+        const publicClient = createPublicClient({
+            chain: cratD2CTestnet,
+            transport: http()
         });
+        
+        await publicClient.waitForTransactionReceipt({ hash });
         
         status.textContent = '✅ NFT заминчен! Проверь кошелёк.';
         status.style.color = '#4ade80';
         
-        // Безопасно обновляем галерею
+        // Обновляем галерею
         try { 
             localStorage.removeItem('ritual_nft_gallery'); 
             if (typeof loadNFTGallery === 'function') loadNFTGallery(); 
@@ -951,11 +676,11 @@ async function mintCardNFT() {
         
     } catch (err) {
         console.error('Mint error:', err);
-        if (err.code === 4001 || err.message?.includes('User denied')) {
+        if (err.code === 4001 || err.message?.includes('User denied') || err.message?.includes('User rejected')) {
             status.textContent = '❌ Отменено пользователем';
         } else if (err.message?.includes('insufficient funds')) {
             status.textContent = '❌ Нет CRAT на газ';
-        } else if (err.message?.includes('execution reverted')) {
+        } else if (err.message?.includes('execution reverted') || err.message?.includes('reverted')) {
             status.textContent = '❌ Контракт отклонил транзакцию';
         } else {
             status.textContent = `❌ ${err.shortMessage || err.message || err}`;
@@ -1091,21 +816,16 @@ function showTweets(username) {
 }
 
 // - Добавляем обработчики клика на строки таблицы после рендера -
-// - Добавляем обработчики клика на строки таблицы после рендера -
 function addUserClickHandlers() {
     const tbody = document.getElementById("leaderboard-body");
     if (!tbody) return;
     
     tbody.querySelectorAll("tr").forEach(tr => {
         tr.addEventListener("click", (e) => {
-            // Игнорируем клик на кнопке генерации карточки
             if (e.target.closest('.generate-card-btn')) return;
-            
-            // Получаем имя пользователя из первой ячейки
             const nameCell = tr.children[0];
             const nameSpan = nameCell.querySelector('span');
             const username = nameSpan ? nameSpan.textContent.trim() : tr.children[0].textContent.trim();
-            
             toggleTweetsRow(tr, username);
         });
     });
@@ -1117,14 +837,11 @@ function toggleTweetsRow(tr, username) {
     const isAlreadyOpen = nextRow && nextRow.classList.contains("tweets-row") &&
         nextRow.dataset.username === username;
     
-    // Удаляем все предыдущие аккордеоны и подсветку
     document.querySelectorAll(".tweets-row").forEach(row => row.remove());
     document.querySelectorAll("tbody tr").forEach(row => row.classList.remove("active-row"));
     
-    // Если уже был открыт — просто закрываем
     if (isAlreadyOpen) return;
     
-    // Подсветить текущую строку
     tr.classList.add("active-row");
     
     const tweetsRow = document.createElement("tr");
@@ -1136,10 +853,8 @@ function toggleTweetsRow(tr, username) {
     td.style.padding = "20px";
     td.style.background = "linear-gradient(135deg, #2F4F4F, #1a2a2a)";
     
-    // Очищаем имя пользователя от @ и приводим к нижнему регистру
     const cleanUsername = username.toLowerCase().replace(/^@/, '');
     
-    // Фильтруем твиты пользователя из allTweets
     const userTweets = allTweets.filter(tweet => {
         const tweetUser = (tweet.user?.screen_name || tweet.user?.name || tweet.username || '').toLowerCase().replace(/^@/, '');
         return tweetUser === cleanUsername;
@@ -1152,12 +867,10 @@ function toggleTweetsRow(tr, username) {
         container.classList.add("tweet-container");
         container.style.cssText = "display:flex;flex-wrap:wrap;gap:15px;justify-content:flex-start;";
         
-        // Показываем максимум 10 последних твитов
         userTweets.slice(0, 10).forEach(tweet => {
             const content = tweet.full_text || tweet.text || tweet.content || "";
             const url = tweet.url || (tweet.id_str ? `https://twitter.com/${username}/status/${tweet.id_str}` : "#");
             
-            // Формат даты
             let dateRaw = tweet.created_at || tweet.tweet_created_at || "";
             let date = "";
             if (dateRaw) {
@@ -1167,18 +880,15 @@ function toggleTweetsRow(tr, username) {
                     : dateRaw.split(" ")[0];
             }
             
-            // Медиа без дубликатов
             const mediaList = tweet.extended_entities?.media || tweet.entities?.media || tweet.media || [];
             const uniqueMediaUrls = [...new Set(mediaList.map(m => m.media_url_https || m.media_url).filter(Boolean))];
             let imgTag = uniqueMediaUrls.map(u => `<img src="${u}" style="max-width:100%;border-radius:8px;margin-top:10px;">`).join("");
             
-            // Fallback на ссылки в тексте
             if (!imgTag) {
                 const match = content.match(/https?:\/\/\S+\.(jpg|jpeg|png|gif|webp)/i);
                 if (match) imgTag = `<img src="${match[0]}" style="max-width:100%;border-radius:8px;margin-top:10px;">`;
             }
             
-            // Создаём карточку твита
             const card = document.createElement("div");
             card.classList.add("tweet-card");
             card.style.cssText = `
@@ -1247,7 +957,7 @@ function setupTabs() {
 async function loadNFTGallery() {
     const grid = document.getElementById('nft-gallery-grid');
     if (!grid) return;
-    grid.innerHTML = '<p class="gallery-loading">⏳ Загрузка данных из Ritual Testnet...</p>';
+    grid.innerHTML = '<p class="gallery-loading">⏳ Загрузка данных из CratD2C Testnet...</p>';
     const cached = localStorage.getItem('ritual_nft_gallery');
     if (cached) {
         const { data, timestamp } = JSON.parse(cached);
@@ -1257,39 +967,60 @@ async function loadNFTGallery() {
         }
     }
     try {
-        const provider = window.ethereum
-            ? new ethers.BrowserProvider(window.ethereum)
-            : new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
-        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-        const filter = contract.filters.Transfer(ethers.ZeroAddress);
-        const events = await contract.queryFilter(filter);
+        const { createPublicClient, http, parseAbi } = viem;
+        
+        const publicClient = createPublicClient({
+            chain: cratD2CTestnet,
+            transport: http()
+        });
+        
+        // Получаем все события Transfer от нулевого адреса (минты)
+        const events = await publicClient.getLogs({
+            address: CONTRACT_ADDRESS,
+            event: parseAbi(['event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)'])[0],
+            args: { from: '0x0000000000000000000000000000000000000000' },
+            fromBlock: 0n,
+            toBlock: 'latest'
+        });
+        
         const nfts = [];
         const seenIds = new Set();
+        
         for (const event of events) {
             const tokenId = event.args.tokenId.toString();
             if (seenIds.has(tokenId)) continue;
             seenIds.add(tokenId);
+            
             try {
-                const card = await contract.cards(tokenId);
+                // Читаем данные карточки из контракта
+                const card = await publicClient.readContract({
+                    address: CONTRACT_ADDRESS,
+                    abi: parseAbi(CONTRACT_ABI),
+                    functionName: 'cards',
+                    args: [BigInt(tokenId)]
+                });
+                
                 nfts.push({
                     tokenId,
-                    username: card.username,
-                    posts: card.posts.toString(),
-                    likes: card.likes.toString(),
-                    retweets: card.retweets.toString(),
-                    comments: card.comments.toString(),
-                    views: card.views.toString(),
-                    imageData: card.imageData, // будет пустая строка
-                    mintedAt: card.mintedAt.toString(),
+                    username: card[0],
+                    posts: card[1].toString(),
+                    likes: card[2].toString(),
+                    retweets: card[3].toString(),
+                    comments: card[4].toString(),
+                    views: card[5].toString(),
+                    imageData: card[6], // будет пустая строка
+                    mintedAt: Date.now(), // упрощённо
                     owner: event.args.to
                 });
             } catch (e) {
                 console.warn(`Failed to fetch token ${tokenId}`, e);
             }
         }
+        
         nfts.sort((a, b) => b.mintedAt - a.mintedAt);
-        localStorage.setItem('ritual_nft_gallery', JSON.stringify({  nfts, timestamp: Date.now() }));
+        localStorage.setItem('ritual_nft_gallery', JSON.stringify({ nfts, timestamp: Date.now() }));
         renderNFTCards(nfts);
+        
     } catch (err) {
         console.error("Gallery load error:", err);
         grid.innerHTML = `<p class="gallery-error">❌ Ошибка загрузки. Проверьте консоль или попробуйте позже.<br><small>${err.message}</small></p>`;
@@ -1299,7 +1030,7 @@ async function loadNFTGallery() {
 // 🔥 НОВАЯ ФУНКЦИЯ: Генерация мини-превью карточки для галереи
 function generateGalleryPreview(username, stats) {
     const canvas = document.createElement('canvas');
-    const W = 400, H = 225; // Уменьшенный размер для галереи
+    const W = 400, H = 225;
     canvas.width = W;
     canvas.height = H;
     const ctx = canvas.getContext('2d');
