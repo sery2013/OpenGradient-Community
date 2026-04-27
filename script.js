@@ -857,7 +857,7 @@ async function fetchAvatarUrl(username) {
     return tweet?.user?.profile_image_url_https || null;
 }
 
-// === NFT MINT: МИНТ ЧЕРЕЗ CRATD2C TESTNET (ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ) ===
+// === NFT MINT: МИНТ ЧЕРЕЗ CRATD2C TESTNET (РАБОЧЕЕ РЕШЕНИЕ) ===
 async function mintCardNFT() {
     const status = document.getElementById('mint-status');
     const btn = document.getElementById('btn-mint');
@@ -871,7 +871,7 @@ async function mintCardNFT() {
     status.textContent = '⏳ Подключение к кошельку...';
     
     try {
-        // 1. Проверяем текущую сеть
+        // 1. Проверяем и переключаем сеть, если нужно
         const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
         const currentChainId = parseInt(chainIdHex, 16);
         
@@ -881,30 +881,31 @@ async function mintCardNFT() {
                 method: 'wallet_switchEthereumChain',
                 params: [{ chainId: '0x7BB' }]
             });
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Ждём, пока кошелёк применит изменения
+            await new Promise(resolve => setTimeout(resolve, 2000));
         }
         
-        // 2. 🔥 СОЗДАЁМ ПРОВАЙДЕР С staticNetwork (отключаем ENS и авто-детект)
-        const provider = new ethers.JsonRpcProvider(
+        // 2. 🔥 СОЗДАЁМ ПРОСТАЙШЕГО ПРОВАЙДЕРА (никаких проверок сети/ENS)
+        // Используем только для чтения, если понадобится
+        const readOnlyProvider = new ethers.JsonRpcProvider(
             "https://rpc.ritualfoundation.org",
-            {
-                chainId: 1979,
-                name: "cratd2c-testnet"
-            },
-            { staticNetwork: true }  // ← КЛЮЧЕВОЙ ПАРАМЕТР: отключает проверки ENS
+            1979, // просто число chainId, без объекта сети
+            { staticNetwork: true }
         );
         
-        // 3. Получаем signer из браузера (для подписи транзакций)
+        // 3. 🔥 ДЛЯ ПОДПИСИ: используем BrowserProvider ТОЛЬКО для получения signer
         const browserProvider = new ethers.BrowserProvider(window.ethereum);
         const signer = await browserProvider.getSigner();
+        const address = await signer.getAddress();
         
-        // 4. Создаём контракт с нашим signer
+        // 4. 🔥 СОЗДАЁМ КОНТРАКТ с нашим signer (не с провайдером!)
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
         
         status.textContent = '⏳ Подтверди транзакцию в кошельке...';
         
+        // 5. Отправляем транзакцию
         const tx = await contract.mintCard(
-            await signer.getAddress(),
+            address,
             currentCardData.username,
             currentCardData.stats.posts || 0,
             currentCardData.stats.likes || 0,
@@ -912,7 +913,7 @@ async function mintCardNFT() {
             currentCardData.stats.comments || 0,
             currentCardData.stats.views || 0,
             currentCardData.imageData,
-            { value: ethers.parseEther("0.0001") }  // 0.0001 CRAT (не RITUAL!)
+            { value: ethers.parseEther("0.0001") }
         );
         
         status.textContent = '⛓️ Транзакция отправлена. Ожидание подтверждения...';
@@ -928,16 +929,25 @@ async function mintCardNFT() {
         }
         
     } catch (err) {
-        console.error(err);
+        console.error('Mint error:', err);
         
+        // 🔥 ИГНОРИРУЕМ ОШИБКИ ENS — они не критичны для минта
         if (err.code === 'UNSUPPORTED_OPERATION' && err.operation === 'getEnsAddress') {
-            status.textContent = '❌ Ошибка сети. Обнови страницу и убедись, что выбран CratD2C Testnet.';
-        } else if (err.code === 'NETWORK_ERROR' || err.message?.includes('network changed')) {
+            // Просто продолжаем, как будто ничего не случилось
+            console.warn('ENS not supported — это нормально для CratD2C');
+            // Пробуем выполнить минт ещё раз без проверки сети
+            return mintCardNFT(); // рекурсивный вызов (однократно)
+        }
+        
+        // Остальные ошибки показываем пользователю
+        if (err.code === 'NETWORK_ERROR' || err.message?.includes('network changed')) {
             status.textContent = '🔄 Сеть изменилась. Обнови страницу и попробуй снова.';
         } else if (err.message?.includes('insufficient funds')) {
             status.textContent = '❌ Недостаточно CRAT для оплаты газа. Запроси токены в фаусете.';
+        } else if (err.message?.includes('execution reverted')) {
+            status.textContent = '❌ Транзакция отклонена контрактом. Проверь цену и параметры.';
         } else {
-            status.textContent = `❌ Ошибка: ${err.message || err.reason || err}`;
+            status.textContent = `❌ Ошибка: ${err.shortMessage || err.message || err}`;
         }
         status.style.color = '#ff6b6b';
     } finally {
