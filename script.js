@@ -400,7 +400,7 @@ async function mintCardNFT() {
                 method: 'wallet_switchEthereumChain',
                 params: [{ chainId: '0x7BB' }]
             });
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Пауза для стабильности
         }
 
         // 2. Получаем адрес
@@ -424,16 +424,16 @@ async function mintCardNFT() {
         const txParams = {
             from: address,
             to: CONTRACT_ADDRESS,
-            data: callData, // Было: callData
+            data: callData,
             value: ethers.parseEther("0.0001").toString(), // Цена минта
-            gasLimit: ethers.toQuantity(500000),
+            gasLimit: ethers.toQuantity(500000), // Примерный лимит
             gasPrice: ethers.toQuantity(ethers.parseUnits("1", "gwei")) // Устанавливаем явно legacy gas price
         };
 
         status.textContent = '🔗 Подготовка транзакции...';
         const txHash = await window.ethereum.request({
             method: 'eth_sendTransaction',
-            params: [txParams]
+            params: [txParams] // Передаём объект транзакции напрямую
         });
 
         status.textContent = `⛓️ Транзакция отправлена: ${txHash.slice(0, 6)}...`;
@@ -465,7 +465,7 @@ async function mintCardNFT() {
         if (err.code === 4001) {
             status.textContent = '❌ Пользователь отменил транзакцию';
         } else if (err.message?.includes('insufficient funds')) {
-            status.textContent = '❌ Недостаточно средств (баланс < 0.001 RITUAL)';
+            status.textContent = '❌ Недостаточно средств (баланс < 0.001 CRAT)';
         } else {
             status.textContent = `❌ Ошибка: ${err.message || 'Неизвестная ошибка'}`;
         }
