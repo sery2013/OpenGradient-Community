@@ -22,358 +22,24 @@ let analyticsHourFilter = "all";
 let currentLang = 'en';
 
 // === NFT MINT: ГЛОБАЛЬНЫЕ НАСТРОЙКИ ===
-const CONTRACT_ADDRESS = "0x30412DD5eAf58a8491b2f728140dEb3CDCF83C26";
+const CONTRACT_ADDRESS = "0x30412DD5eAf58a8491b2f728140dDeb3CDCF83C26";
 const CONTRACT_ABI = [
-  {
-    "inputs": [],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "string",
-        "name": "username",
-        "type": "string"
-      },
-      {
-        "internalType": "uint256",
-        "name": "posts",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "likes",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "retweets",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "comments",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "views",
-        "type": "uint256"
-      },
-      {
-        "internalType": "string",
-        "name": "imageData",
-        "type": "string"
-      }
-    ],
-    "name": "mintCard",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "cards",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      },
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      }
-    ],
-    "name": "balanceOf",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "ownerOf",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "from",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "safeTransferFrom",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "from",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes",
-        "name": "data",
-        "type": "bytes"
-      }
-    ],
-    "name": "safeTransferFrom",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "operator",
-        "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "approved",
-        "type": "bool"
-      }
-    ],
-    "name": "setApprovalForAll",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes4",
-        "name": "interfaceId",
-        "type": "bytes4"
-      }
-    ],
-    "name": "supportsInterface",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "totalSupply",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "from",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "transferFrom",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "approved",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "Approval",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "operator",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "approved",
-        "type": "bool"
-      }
-    ],
-    "name": "ApprovalForAll",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "from",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "Transfer",
-    "type": "event"
-  }
+  // --- ВСТАВЬ СЮДА СКОПИРОВАННЫЙ ABI ИЗ REMIX ---
+  // Пример (удали это и вставь реальный):
+  // {
+  //   "inputs": [
+  //     {"internalType": "address", "name": "to", "type": "address"},
+  //     {"internalType": "string", "name": "username", "type": "string"},
+  //     ...
+  //   ],
+  //   "name": "mintCard",
+  //   "outputs": [],
+  //   "stateMutability": "payable",
+  //   "type": "function"
+  // }
+  // ... и так далее, весь массив
 ];
+let currentCardData = { username: "", stats: {}, imageData: "" };
 
 // === NFT MINT: ИСПОЛЬЗУЕМ window.ethereum НАПРЯМУЮ (LEGACY TX) ===
 async function mintCardNFT() {
@@ -406,7 +72,7 @@ async function mintCardNFT() {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         const address = accounts[0];
 
-        // 3. Подготавливаем вызов функции
+        // 3. Подготавливаем вызов функции (imageData = "")
         const iface = new ethers.Interface(CONTRACT_ABI);
         const callData = iface.encodeFunctionData('mintCard', [
             address,
@@ -416,15 +82,15 @@ async function mintCardNFT() {
             BigInt(currentCardData.stats.retweets || 0),
             BigInt(currentCardData.stats.comments || 0),
             BigInt(currentCardData.stats.views || 0),
-            currentCardData.imageData // Теперь отправляем реальную картинку
+            "" // 🔥 ПУСТАЯ СТРОКА ВМЕСТО КАРТИНКИ
         ]);
 
         // 4. Формируем транзакцию ВРУЧНУЮ (Legacy Type 0)
         const txParams = {
             from: address,
             to: CONTRACT_ADDRESS,
-            data: callData,
-            value: ethers.parseEther("0.0001").toString(),
+            data: callData, // Было: callData
+            value: ethers.parseEther("0.0001").toString(), // Цена минта
             gasLimit: ethers.toQuantity(500000),
             gasPrice: ethers.toQuantity(ethers.parseUnits("1", "gwei")) // Устанавливаем явно legacy gas price
         };
@@ -472,7 +138,6 @@ async function mintCardNFT() {
         btn.disabled = false;
     }
 }
-
 
 // === NFT GALLERY: ЗАГРУЗКА С ОГРАНИЧЕНИЕМ ДИАПАЗОНА БЛОКОВ ===
 async function loadNFTGallery() {
@@ -523,7 +188,7 @@ async function loadNFTGallery() {
                     retweets: card.retweets.toString(),
                     comments: card.comments.toString(),
                     views: card.views.toString(),
-                    imageData: card.imageData,
+                    imageData: card.imageData, // Тут пока пусто (см. минт)
                     mintedAt: card.mintedAt.toString(),
                     owner: event.args.to
                 });
@@ -541,7 +206,7 @@ async function loadNFTGallery() {
     }
 }
 
-// === NFT GALLERY: РЕНДЕР КАРТОЧЕК (без изменений) ===
+// === NFT GALLERY: РЕНДЕР КАРТОЧЕК (с генерацией превью) ===
 function renderNFTCards(nfts) {
     const grid = document.getElementById('nft-gallery-grid');
     if (!grid) return;
@@ -553,11 +218,49 @@ function renderNFTCards(nfts) {
     nfts.forEach(nft => {
         const card = document.createElement('div');
         card.className = 'nft-gallery-card';
-        // --- ИСПРАВЛЕНИЕ: Добавляем префикс data:image/png;base64, ---
-        const fullImageData = nft.imageData.startsWith('data:image') ? nft.imageData : `data:image/png;base64,${nft.imageData}`;
-        // ---
+
+        // 🔥 ГЕНЕРИРУЕМ КАРТИНКУ ИЗ СТАТИСТИКИ (т.к. imageData пустая)
+        const canvas = document.createElement('canvas');
+        canvas.width = 400; // Уменьшенный размер для галереи
+        canvas.height = 225;
+        const ctx = canvas.getContext('2d');
+
+        // Фон
+        const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        grad.addColorStop(0, "#0f172a");
+        grad.addColorStop(1, "#1e293b");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Логотип (условный прямоугольник)
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 20px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("RITUAL", canvas.width / 2, 40);
+
+        // Username
+        ctx.fillStyle = "#6fe3d1";
+        ctx.font = "bold 18px Arial";
+        ctx.fillText("@" + nft.username, canvas.width / 2, 70);
+
+        // Метрики
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "16px Arial";
+        ctx.textAlign = "left";
+        ctx.fillText("📝 Posts: " + nft.posts, 50, 110);
+        ctx.fillText("❤️ Likes: " + nft.likes, 50, 140);
+        ctx.fillText("👁️ Views: " + nft.views, 50, 170);
+
+        // Подпись
+        ctx.fillStyle = "#888";
+        ctx.font = "12px Arial";
+        ctx.fillText("Generated Preview", canvas.width / 2, 210);
+
+        // Преобразуем в data URL
+        const previewImageSrc = canvas.toDataURL('image/png');
+
         card.innerHTML = `
-            <img src="${fullImageData}" alt="Card ${nft.username}" loading="lazy">
+            <img src="${previewImageSrc}" alt="Card ${nft.username}" loading="lazy">
             <div class="nft-info">
                 <h4>@${nft.username}</h4>
                 <p>Token ID: #${nft.tokenId}</p>
