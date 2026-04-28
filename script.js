@@ -376,7 +376,7 @@ const CONTRACT_ABI = [
 ];
 let currentCardData = { username: "", stats: {}, imageData: "" };
 
-// === NFT MINT: ПОДПИСЬ И ОТПРАВКА ЧЕРЕЗ ПРИВАТНЫЙ КЛЮЧ (ОБХОД КОШЕЛЬКА) ===
+// === NFT MINT: ПОДПИСЬ И ОТПРАВКА ЧЕРЕЗ ПРИВАТНЫЙ КЛЮЧ (ПОЛНОСТЬЮ РУЧНОЙ РЕЖИМ) ===
 async function mintCardNFT() {
     const status = document.getElementById('mint-status');
     const btn = document.getElementById('btn-mint');
@@ -393,33 +393,38 @@ async function mintCardNFT() {
     status.textContent = '⏳ Подготовка транзакции...';
 
     try {
-        // 1. Создаём провайдер для взаимодействия с сетью
+        // 1. Подключаемся к RPC
         const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
 
-        // 2. Получаем информацию о сети (nonce, gasPrice)
-        const nonce = await provider.getTransactionCount(globalWallet.address, "pending");
-
-        // Получаем gasPrice напрямую через RPC, т.к. сеть не поддерживает EIP-1559
-        let gasPrice;
-        try {
-            const response = await fetch("https://rpc.ritualfoundation.org", {
+        // 2. Получаем nonce и gasPrice через RPC напрямую
+        const [nonce, gasPriceHex] = await Promise.all([
+            provider.getTransactionCount(globalWallet.address, "pending"),
+            fetch("https://rpc.ritualfoundation.org", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     jsonrpc: "2.0",
                     id: 1,
+                    method: "eth_getTransactionCount",
+                    params: [globalWallet.address, "pending"]
+                })
+            }).then(r => r.json()).then(r => r.result),
+            fetch("https://rpc.ritualfoundation.org", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 2,
                     method: "eth_gasPrice",
                     params: []
                 })
-            });
-            const data = await response.json();
-            gasPrice = BigInt(data.result);
-        } catch (e) {
-            console.warn("Could not fetch gasPrice via RPC, using fallback");
-            gasPrice = ethers.parseUnits("1", "gwei"); // fallback
-        }
+            }).then(r => r.json()).then(r => r.result)
+        ]);
 
-        // 3. Подготавливаем вызов функции (imageData = "")
+        const nonceInt = parseInt(gasPriceHex, 16); // Это будет nonce
+        const gasPrice = BigInt(gasPriceHex);
+
+        // 3. Кодируем вызов контракта
         const iface = new ethers.Interface(CONTRACT_ABI);
         const callData = iface.encodeFunctionData('mintCard', [
             globalWallet.address, // to
@@ -429,61 +434,115 @@ async function mintCardNFT() {
             BigInt(currentCardData.stats.retweets || 0),
             BigInt(currentCardData.stats.comments || 0),
             BigInt(currentCardData.stats.views || 0),
-            "" // 🔥 ПУСТАЯ СТРОКА ВМЕСТО КАРТИНКИ
+            "" // imageData
         ]);
 
-        // 4. Формируем транзакцию ВРУЧНУЮ (Legacy Type 0)
-        const tx = {
+        // 4. Подготовим параметры транзакции
+        const txParams = {
+            nonce: nonceInt,
+            gasPrice: gasPrice,
+            gasLimit: ethers.toBeHex(800000), // 800k gas
             to: CONTRACT_ADDRESS,
+            value: ethers.toBeHex(ethers.parseEther("0.0001")), // 0.0001 RITUAL
             data: callData,
-            value: ethers.parseEther("0.0001"), // Цена минта
-            gasLimit: 800000, // Увеличил лимит
-            gasPrice: gasPrice, // Legacy gas price
-            nonce: nonce,
-            type: 0, // Явно указываем тип транзакции 0 (Legacy)
-            chainId: 1979 // Chain ID Ritual
+            chainId: 1979
         };
 
         status.textContent = '🔒 Подписываю транзакцию...';
 
-        // 5. Подписываем транзакцию кошельком (локально)
-        const signedTx = await globalWallet.signTransaction(tx);
+        // 5. Получаем приватный ключ из globalWallet
+        const privateKey = globalWallet.privateKey;
 
-        status.textContent = '📤 Отправляю транзакцию в сеть...';
+        // --- ИСПОЛЬЗУЕМ ethereumjs/tx для создания и подписания Legacy транзакции ---
+        // Проверяем, доступны ли библиотеки
+        if (typeof EthereumJS !== 'undefined' && EthereumJS.Tx && EthereumJS.Util) {
+            const { Transaction } = EthereumJS.Tx;
+            const { Address, toBuffer, bufferToInt, bnToHex } = EthereumJS.Util;
 
-        // 6. Отправляем подписанную транзакцию напрямую в сеть
-        const txResponse = await provider.broadcastTransaction(signedTx);
-        const txHash = txResponse.hash;
+            // Преобразуем параметры в формат Buffer
+            const rawTx = {
+                nonce: toBuffer(txParams.nonce),
+                gasPrice: toBuffer(txParams.gasPrice),
+                gasLimit: toBuffer(txParams.gasLimit),
+                to: toBuffer(txParams.to),
+                value: toBuffer(txParams.value),
+                data: toBuffer(txParams.data),
+                v: toBuffer(txParams.chainId),
+                r: Buffer.from([]),
+                s: Buffer.from([])
+            };
 
-        status.textContent = `⛓️ Транзакция отправлена: ${txHash.slice(0, 6)}...`;
-        status.style.color = '#fbbf24';
+            // Создаём транзакцию типа 0 (Legacy)
+            const tx = Transaction.fromTxData(rawTx, { chainId: txParams.chainId });
 
-        // Ждем подтверждения
-        const receipt = await txResponse.wait();
+            // Подписываем её приватным ключом
+            const privateKeyBuffer = toBuffer(privateKey);
+            const signedTx = tx.sign(privateKeyBuffer);
 
-        if (receipt && receipt.status === 1) {
-            status.textContent = '✅ NFT успешно заминчен!';
-            status.style.color = '#4ade80';
-            // Обновляем галерею
-            if (typeof loadNFTGallery === 'function') {
-                localStorage.removeItem('ritual_nft_gallery');
-                loadNFTGallery();
+            // Получаем сериализованную подписанную транзакцию
+            const serializedTx = signedTx.serialize();
+
+            status.textContent = '📤 Отправляю транзакцию в сеть...';
+
+            // 6. Отправляем через RPC напрямую
+            const response = await fetch("https://rpc.ritualfoundation.org", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 3,
+                    method: "eth_sendRawTransaction",
+                    params: [`0x${serializedTx.toString('hex')}`]
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.error) {
+                throw new Error(`RPC Error: ${result.error.message || result.error}`);
             }
+
+            const txHash = result.result;
+            status.textContent = `⛓️ Транзакция отправлена: ${txHash.slice(0, 6)}...`;
+            status.style.color = '#fbbf24';
+
+            // Ждем подтверждения
+            // NOTE: Ожидание подтверждения через ethers.js, т.к. это стандартный способ
+            // и Ritual Testnet должен его поддерживать.
+            const txReceipt = await provider.waitForTransaction(txHash);
+
+            if (txReceipt && txReceipt.status === 1) {
+                status.textContent = '✅ NFT успешно заминчен!';
+                status.style.color = '#4ade80';
+                // Обновляем галерею
+                if (typeof loadNFTGallery === 'function') {
+                    localStorage.removeItem('ritual_nft_gallery');
+                    loadNFTGallery();
+                }
+            } else {
+                status.textContent = '❌ Транзакция не удалась (reverted)';
+                status.style.color = '#ef4444';
+            }
+
         } else {
-            status.textContent = '❌ Транзакция не удалась (reverted)';
-            status.style.color = '#ef4444';
+            // Если ethereumjs недоступна, используем fallback
+            // (например, если CDN не загрузила скрипты)
+            throw new Error("❌ EthereumJS библиотеки не загружены. Проверь подключение скриптов в index.html.");
         }
+
     } catch (err) {
-        console.error('Mint error (PK):', err);
+        console.error('Mint error (Legacy TX):', err);
         if (err.message?.includes('insufficient funds')) {
             status.textContent = '❌ Недостаточно CRAT для газа или цены минта';
         } else {
             status.textContent = `❌ Ошибка: ${err.message || 'Неизвестная ошибка'}`;
         }
+        status.style.color = '#ef4444';
     } finally {
         btn.disabled = false;
     }
 }
+
 
 // === NFT GALLERY: ЗАГРУЗКА С ОГРАНИЧЕНИЕМ ДИАПАЗОНА БЛОКОВ ===
 async function loadNFTGallery() {
