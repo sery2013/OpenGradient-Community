@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
+</head>
+<body>
+  <button onclick="mint()">MINT TEST</button>
+  <div id="status"></div>
+
+  <script>
+    async function mint() {
+      const status = document.getElementById('status');
+      status.textContent = 'Connecting...';
+
+      if (!window.ethereum) return status.textContent = 'No wallet';
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
+      const signer = new ethers.BrowserProvider(window.ethereum).getSigner();
+
+      const CONTRACT_ADDR = "0x30412DD5eAf58a8491b2f728140dEb3CDCF83C26";
+      const ABI = [/* вставь здесь только функцию mintCard */];
+      const iface = new ethers.Interface(ABI);
+
+      const tx = {
+        to: CONTRACT_ADDR,
+        data: iface.encodeFunctionData('mintCard', [
+          await signer.getAddress(),
+          "test",
+          1n, 1n, 1n, 1n, 1n,
+          ""
+        ]),
+        value: ethers.parseEther("0.0001"),
+        gasLimit: 800000,
+        gasPrice: (await provider.getGasPrice()).toString(), // строка
+        nonce: await provider.getTransactionCount(await signer.getAddress(), "pending"),
+        chainId: 1979,
+        type: 0 // Legacy
+      };
+
+      status.textContent = 'Signing...';
+      const signed = await signer.signTransaction(tx);
+      status.textContent = 'Sending...';
+      const res = await provider.broadcastTransaction(signed);
+      status.textContent = 'Sent: ' + res.hash;
+    }
+  </script>
+</body>
+</html>
