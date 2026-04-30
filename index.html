@@ -12,11 +12,11 @@
   <header class="header">
     <div class="logo-container">
       <img src="https://ritual.net/favicon.ico" alt="Ritual Logo" width="32" height="32">
+      <span class="header-title">
+        <span class="welcome-text">WELCOME</span><br>
+        <span class="ritualists-text">RITUALISTS!</span>
+      </span>
     </div>
-    <h1 class="header-title">
-      <span class="welcome-text">WELCOME</span><br>
-      <span class="ritualists-text">RITUALISTS!</span>
-    </h1>
     <p class="header-subtitle">
       Analyze community metrics on the Ritual Testnet.<br>
       Generate your personal stats card and mint it as an NFT.
@@ -51,9 +51,7 @@
               <th>CARD</th>
             </tr>
           </thead>
-          <tbody id="leaderboard-body">
-            <!-- будет заполнено JS -->
-          </tbody>
+          <tbody id="leaderboard-body"></tbody>
         </table>
       </div>
     </div>
@@ -80,34 +78,32 @@
     <!-- GALLERY TAB -->
     <div id="gallery-tab" class="tab-content">
       <h2>NFT Gallery</h2>
-      <div id="nft-gallery" class="gallery-grid">
-        <!-- будет заполнено JS -->
-      </div>
+      <div id="nft-gallery" class="gallery-grid"></div>
     </div>
   </main>
 
   <!-- CARD MODAL -->
   <div id="card-modal" style="display:none;">
-  <div class="card-modal-content">
-    <canvas id="user-canvas" width="1200" height="675"></canvas>
-    <div class="card-actions">
-      <button id="btn-download">📥 Download PNG</button>
-      <button id="btn-mint">🔥 Mint NFT (0.001 RITUAL)</button>
-      <p id="mint-status"></p>
+    <div class="card-modal-content">
+      <canvas id="user-canvas" width="1200" height="675"></canvas>
+      <div class="card-actions">
+        <button id="btn-download">📥 Download PNG</button>
+        <button id="btn-mint">🔥 Mint NFT (0.001 RITUAL)</button>
+        <p id="mint-status"></p>
+      </div>
     </div>
   </div>
-</div>
 
   <!-- FOOTER -->
   <footer class="footer">
     <div>
-      <a href="https://ritual.net" target="_blank" style="color:#6fe3d1;">ritual.net</a>
+      <a href="https://ritual.net" target="_blank">ritual.net</a>
       • developer: 
-      <a href="https://x.com/kaye_moni" target="_blank" style="display:flex; align-items:center; gap:4px; color:#6fe3d1;">
+      <a href="https://x.com/kaye_moni" target="_blank" style="display:flex; align-items:center; gap:4px;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M18.901 1.153h3.68l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.244 2.25H8.05l4.713 6.932L18.901 1.153ZM17.61 20.644h2.039L6.486 3.24H4.298l13.312 17.404Z" fill="white"/>
         </svg>
-        <span>@kaye_moni</span>
+        <span style="border-bottom:1px solid rgba(255,255,255,0.3);">@kaye_moni</span>
       </a>
     </div>
     <p>© 2024 RITUAL FOUNDATION</p>
