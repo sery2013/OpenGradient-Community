@@ -543,7 +543,6 @@ async function mintCardNFT() {
     }
 }
 
-
 // === NFT GALLERY: ЗАГРУЗКА С ОГРАНИЧЕНИЕМ ДИАПАЗОНА БЛОКОВ ===
 async function loadNFTGallery() {
     const grid = document.getElementById('nft-gallery-grid');
@@ -805,9 +804,9 @@ function normalizeData(json) {
 function updateTotals() {
     const totalPosts = data.reduce((sum, s) => sum + (Number(s.posts) || 0), 0);
     const totalViews = data.reduce((sum, s) => sum + (Number(s.views) || 0), 0);
-    document.getElementById("total-posts").textContent = `Total Posts: ${totalPosts}`;
-    document.getElementById("total-users").textContent = `Total Users: ${data.length}`;
-    document.getElementById("total-views").textContent = `Total Views: ${totalViews}`;
+    document.getElementById("total-posts").textContent = `Posts: ${totalPosts}`;
+    document.getElementById("total-users").textContent = `Users: ${data.length}`;
+    document.getElementById("total-views").textContent = `Views: ${totalViews}`;
 }
 
 // - Sort, Filter, Render -
@@ -945,6 +944,53 @@ async function generateCardCanvas(username, stats) {
         ctx.fillText(Number(m.val).toLocaleString(), x + (cellW - 12) / 2, y + 100);
     });
 
+    ctx.textAlign = 'left';
+
+    // === ЛОГОТИП И ТЕКСТ ===
+    try {
+        const logoImg = new Image();
+        logoImg.crossOrigin = 'anonymous';
+        logoImg.src = 'https://i.postimg.cc/prn7dJ1c/Gemini-Generated-Image-nq0xe5nq0xe5nq0x-(1).png';
+        
+        console.log('🔄 Загрузка логотипа...');
+        
+        // Ждём загрузки
+        await Promise.race([
+            new Promise((resolve, reject) => {
+                logoImg.onload = () => {
+                    console.log('✅ Логотип загружен:', logoImg.width, 'x', logoImg.height);
+                    resolve();
+                };
+                logoImg.onerror = (e) => {
+                    console.error('❌ Ошибка загрузки логотипа:', e);
+                    reject(new Error('Logo failed to load'));
+                };
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+        ]);
+
+        // Рисуем логотип если загрузился
+        if (logoImg.complete && logoImg.naturalWidth !== 0) {
+            const logoSize = 55;  // Размер 45x45 пикселей
+            const logoX = (W / 2) - 350;  // СДВИНУЛ ЛЕВЕЕ (было -180, стало -220)
+            const logoY = H - 176;  // ПОДНЯЛ ВЫШЕ (было -175, стало -180)
+            
+            ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+            console.log('🎨 Логотип нарисован на позиции:', logoX, logoY);
+        }
+        
+    } catch (e) {
+        console.error('❌ Ошибка при загрузке логотипа:', e.message);
+    }
+
+    // Текст (рисуем ВСЕГДА)
+    ctx.fillStyle = '#6fe3d1';
+    ctx.font = 'bold 40px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('TWITTER RITUAL COMMUNITY', W / 2, H - 135);  // ОПУСТИЛ НИЖЕ (было -145, стало -135)
+    ctx.textAlign = 'left';
+    // === КОНЕЦ ЛОГОТИПА ===
+
     // 7. Нижняя разделительная линия
     ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
     ctx.lineWidth = 2;
@@ -953,7 +999,7 @@ async function generateCardCanvas(username, stats) {
     ctx.lineTo(W - 40, H - 100);
     ctx.stroke();
 
-    // 8. Футер
+    // 8. Футер (рисуем ВСЕГДА)
     ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
     ctx.font = '20px Segoe UI, sans-serif';
     ctx.textAlign = 'center';
@@ -1016,9 +1062,9 @@ function renderTable() {
         nameCell.appendChild(nameContainer);
         tr.appendChild(nameCell);
         tr.insertAdjacentHTML('beforeend', `<td>${Number(stats.posts || 0)}</td>`);
-        tr.insertAdjacentHTML('beforeend', `<td>${Number(stats.likes || 0)}</td>`);
         tr.insertAdjacentHTML('beforeend', `<td>${Number(stats.retweets || 0)}</td>`);
         tr.insertAdjacentHTML('beforeend', `<td>${Number(stats.comments || 0)}</td>`);
+        tr.insertAdjacentHTML('beforeend', `<td>${Number(stats.likes || 0)}</td>`);
         tr.insertAdjacentHTML('beforeend', `<td>${Number(stats.views || 0)}</td>`);
         tbody.appendChild(tr);
     });
@@ -1067,7 +1113,7 @@ document.getElementById("next-page").onclick = () => {
 document.getElementById("search").addEventListener("input", () => { currentPage = 1; renderTable(); });
 
 // - Sorting headers click -
-["posts","likes","retweets","comments","views"].forEach(key => {
+["posts", "retweets", "comments", "likes", "views"].forEach(key => {
     const el = document.getElementById(key === "views" ? "views-col-header" : key+"-header");
     if(el) el.addEventListener("click", () => updateSort(key));
 });
@@ -1172,7 +1218,7 @@ function toggleTweetsRow(tr, username) {
             const url = tweet.url || (tweet.id_str ? `https://twitter.com/${username}/status/${tweet.id_str}` : "#");
             
             // Формат даты
-            let dateRaw = tweet.tweet_created_at || tweet.created_at || "";
+            let dateRaw = tweet.created_at || tweet.tweet_created_at || "";
             let date = "";
             if (dateRaw) {
                 const parsed = new Date(dateRaw);
@@ -1195,7 +1241,15 @@ function toggleTweetsRow(tr, username) {
             // Создаём карточку твита
             const card = document.createElement("div");
             card.classList.add("tweet-card");
-            card.style.cssText = `background: linear-gradient(135deg, #2F4F4F, #1a2a2a); border: 1px solid rgba(111, 227, 209, 0.2); border-radius: 12px; padding: 15px; width: 400px; color: #fff; transition: all 0.2s;`;
+            card.style.cssText = `
+                background: linear-gradient(135deg, #2F4F4F, #1a2a2a);
+                border: 1px solid rgba(111, 227, 209, 0.2);
+                border-radius: 12px;
+                padding: 15px;
+                width: 400px;
+                color: #fff;
+                transition: all 0.2s;
+            `;
             card.onmouseenter = () => card.style.transform = 'translateY(-3px)';
             card.onmouseleave = () => card.style.transform = 'translateY(0)';
             
@@ -1255,7 +1309,7 @@ function renderHeatmap(tweets) {
     if (!container) return;
     const heatmap = Array(7).fill().map(() => Array(24).fill(0));
     tweets.forEach(t => {
-        const created = t.tweet_created_at || t.created_at || t.created;
+        const created = t.tweet_created_at || t.created_at || t.created || null;
         if (!created) return;
         const d = new Date(created);
         if (isNaN(d)) return;
@@ -1282,360 +1336,4 @@ function renderHeatmap(tweets) {
                 const b = Math.floor(209 * intensity + 255 * (1 - intensity));
                 cell.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
             }
-            container.appendChild(cell);
-        }
-    }
-}
-
-// - Функция для скачивания файла -
-function downloadFile(filename, content, mimeType = 'text/plain') {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
-// - Функция экспорта в CSV -
-function exportToCSV() {
-    const users = window._analyticsFilteredData?.users || {};
-    const rows = [];
-    rows.push(['Username', 'Posts', 'Likes', 'Views'].join(','));
-    for (const [username, stats] of Object.entries(users)) {
-        rows.push([username, stats.posts, stats.likes, stats.views].map(v => `"${v}"`).join(','));
-    }
-    const csvContent = rows.join('\n');
-    downloadFile('leaderboard-export.csv', csvContent, 'text/csv');
-}
-
-// - Функция экспорта в JSON -
-function exportToJSON() {
-    const data = window._analyticsFilteredData || {};
-    const jsonContent = JSON.stringify(data, null, 2);
-    downloadFile('leaderboard-export.json', jsonContent, 'application/json');
-}
-
-// - Функция привязки кнопок экспорта -
-function bindExportButtons() {
-    const csvBtn = document.getElementById('export-csv');
-    const jsonBtn = document.getElementById('export-json');
-    if (csvBtn && !csvBtn._bound) {
-        csvBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            exportToCSV();
-        });
-        csvBtn._bound = true;
-    }
-    if (jsonBtn && !jsonBtn._bound) {
-        jsonBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            exportToJSON();
-        });
-        jsonBtn._bound = true;
-    }
-}
-
-function renderAnalytics() {
-    let tweets = Array.isArray(allTweets) ? allTweets : [];
-    const now = new Date();
-    const period = analyticsPeriod;
-    if (period !== 'all') {
-        const days = Number(period);
-        if (days > 0) {
-            tweets = tweets.filter(t => {
-                const created = t.tweet_created_at || t.created_at || t.created || null;
-                if (!created) return false;
-                const d = new Date(created);
-                if (isNaN(d)) return false;
-                const diffDays = (now - d) / (1000 * 60 * 60 * 24);
-                return diffDays <= days;
-            });
-        }
-    }
-    if (analyticsHourFilter !== 'all') {
-        const targetHour = Number(analyticsHourFilter);
-        if (!isNaN(targetHour) && targetHour >= 0 && targetHour <= 23) {
-            tweets = tweets.filter(t => {
-                const created = t.tweet_created_at || t.created_at || t.created || null;
-                if (!created) return false;
-                const d = new Date(created);
-                if (isNaN(d)) return false;
-                const hour = d.getUTCHours();
-                return hour === targetHour;
-            });
-        }
-    }
-    const users = {};
-    tweets.forEach(t => {
-        const u = (t.user && (t.user.screen_name || t.user.name)) || t.username || "";
-        const uname = String(u).toLowerCase().replace(/^@/, "");
-        if (!uname) return;
-        const likes = Number(t.favorite_count || t.likes || t.like_count || 0) || 0;
-        const views = Number(t.views_count || t.views || 0) || 0;
-        if (!users[uname]) users[uname] = { posts: 0, likes: 0, views: 0 };
-        users[uname].posts += 1;
-        users[uname].likes += likes;
-        users[uname].views += views;
-    });
-    const uniqueUsers = Object.keys(users).length;
-    const totalPosts = tweets.length;
-    const totalLikes = Object.values(users).reduce((s,u)=>s+u.likes,0);
-    const totalViews = Object.values(users).reduce((s,u)=>s+u.views,0);
-    const avgPosts = uniqueUsers ? (totalPosts/uniqueUsers) : 0;
-    const avgLikes = uniqueUsers ? (totalLikes/uniqueUsers) : 0;
-    const avgViews = uniqueUsers ? (totalViews/uniqueUsers) : 0;
-    const elAvgPosts = document.getElementById('avg-posts');
-    const elAvgLikes = document.getElementById('avg-likes');
-    const elAvgViews = document.getElementById('avg-views');
-    if (elAvgPosts) elAvgPosts.textContent = `Avg Posts: ${avgPosts.toFixed(2)}`;
-    if (elAvgLikes) elAvgLikes.textContent = `Avg Likes: ${avgLikes.toFixed(2)}`;
-    if (elAvgViews) elAvgViews.textContent = `Avg Views: ${avgViews.toFixed(2)}`;
-    window._analyticsFilteredData = { tweets, users, period };
-
-    function renderTopAuthors(metric) {
-        const listEl = document.getElementById('top-authors-list');
-        if (!listEl) return;
-        const data = window._analyticsFilteredData || { users: {} };
-        const arr = Object.entries(data.users).map(([name,stats]) => ({ name, value: Number(stats[metric]||0), stats }));
-        arr.sort((a,b)=> b.value - a.value);
-        const top = arr.slice(0,10);
-        listEl.innerHTML = '';
-        if (top.length === 0) { listEl.innerHTML = '<li>Нет данных</li>'; return; }
-        top.forEach((it, idx) => {
-            const li = document.createElement('li');
-            li.className = 'top-author-item';
-            const postsStr = `<span class="metric-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="display:inline; margin-right: 2px;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87.69 6.89L12 21.5l-5.69-1.48.69-6.89-5-4.87 6.81-1.01L12 2z"/></svg>${it.stats.posts} posts</span>`;
-            const likesStr = `<span class="metric-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="display:inline; margin-right: 2px;"><path d="M12 21.35l-1.45-1.45C5.4 15.56 2 12.12 2 8.5c0-1.74.67-3.35 1.96-4.64A23.85 23.85 0 0112 0c8.25 0 15.5 5.5 15.5 15.5 0 1.74-.67 3.35-1.96 4.64l-1.45 1.45C19.5 21.35 16.5 24 12 24z"/></svg>${it.stats.likes} likes</span>`;
-            const retweetsStr = `<span class="metric-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="display:inline; margin-right: 2px;"><path d="M17 7h-4v2h4v6h-4v2h4v2H7v-2h4V9H7V7h10z"/></svg>${it.stats.retweets} retweets</span>`;
-            const viewsStr = `<span class="metric-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="display:inline; margin-right: 2px;"><path d="M12 6c3.76 0 7.08 2.06 9.07 5.33 1.99 3.27 1.99 7.24 0 10.51C19.08 25.14 15.76 27.2 12 27.2s-7.08-2.06-9.07-5.33c-1.99-3.27-1.99-7.24 0-10.51C4.92 8.06 8.24 6 12 6zm0 2c-1.66 0-3.18.7-4.25 1.81L12 14l4.25-4.19C15.18 8.7 13.66 8 12 8zm0 12c1.66 0 3.18-.7 4.25-1.81L12 18l-4.25 4.19C8.82 23.3 10.34 24 12 24z"/></svg>${it.stats.views} views</span>`;
-            li.innerHTML = `
-                <div class="author-info">
-                    <span class="author-rank">${idx + 1}.</span>
-                    <strong class="author-name">${escapeHtml(it.name)}</strong>
-                    <div class="author-metrics">
-                        ${postsStr} ${likesStr} ${retweetsStr} ${viewsStr}
-                    </div>
-                </div>
-                <div class="author-sort-value">
-                    ${it.value} ${metric === 'posts' ? 'posts' : metric === 'likes' ? 'likes' : 'views'}
-                </div>
-            `;
-            listEl.appendChild(li);
-        });
-    }
-
-    function renderTopPosts(metric) {
-        const listEl = document.getElementById('top-posts-list');
-        if (!listEl) return;
-        const data = window._analyticsFilteredData || { tweets: [] };
-        const postsArr = data.tweets.map(t => {
-            const likes = Number(t.favorite_count || t.likes || t.like_count || 0) || 0;
-            const views = Number(t.views_count || t.views || 0) || 0;
-            const text = (t.full_text || t.text || t.content || '').slice(0,200);
-            const author = (t.user && (t.user.screen_name || t.user.name)) || t.username || '';
-            const url = t.url || (t.id_str && author ? `https://twitter.com/${author}/status/${t.id_str}` : '#');
-            return { t, likes, views, text, author, url };
-        });
-        postsArr.sort((a,b) => (b[metric]||0) - (a[metric]||0));
-        const top = postsArr.slice(0,10);
-        listEl.innerHTML = '';
-        if (top.length === 0) { listEl.innerHTML = '<li>Нет данных</li>'; return; }
-        top.forEach((p, idx) => {
-            const li = document.createElement('li');
-            li.className = 'top-post-item';
-            const excerpt = document.createElement('div');
-            excerpt.className = 'excerpt';
-            excerpt.innerHTML = `<a href="${p.url}" target="_blank">${escapeHtml(p.text || '(no text)')}</a>`;
-            const meta = document.createElement('div');
-            meta.className = 'meta';
-            meta.innerHTML = `<div class="author">${escapeHtml(p.author || '(unknown)')}</div><div class="metric">${p[metric] || 0}</div>`;
-            li.appendChild(excerpt);
-            li.appendChild(meta);
-            listEl.appendChild(li);
-        });
-    }
-
-    const perDay = {};
-    const chartDays = period === 'all' ? 60 : (period === '7' ? 7 : (period === '14' ? 14 : 30));
-    tweets.forEach(t => {
-        const created = t.tweet_created_at || t.created_at || t.created || null;
-        if (!created) return;
-        const d = new Date(created);
-        if (isNaN(d)) return;
-        const key = d.toISOString().slice(0,10);
-        perDay[key] = (perDay[key] || 0) + 1;
-    });
-    const labels = [];
-    const counts = [];
-    for (let i = chartDays - 1; i >= 0; i--) {
-        const d = new Date(now);
-        d.setDate(now.getDate() - i);
-        const key = d.toISOString().slice(0,10);
-        labels.push(key);
-        counts.push(perDay[key] || 0);
-    }
-    try {
-        const ctx = document.getElementById('analytics-chart');
-        if (ctx) {
-            if (analyticsChart) {
-                analyticsChart.data.labels = labels;
-                analyticsChart.data.datasets[0].data = counts;
-                analyticsChart.update();
-            } else if (window.Chart) {
-                analyticsChart = new Chart(ctx.getContext('2d'), {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Tweets per day',
-                            data: counts,
-                            fill: false,
-                            borderColor: '#ffffff',
-                            borderWidth: 2,
-                            pointBackgroundColor: '#ffffff',
-                            pointBorderColor: '#ffffff',
-                            pointBorderWidth: 2,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            tension: 0.3
-                        }]
-                    },
-                    options: {
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                mode: 'index',
-                                intersect: false,
-                                callbacks: {
-                                    label: function(context) { return `Tweets: ${context.raw}`; }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                                ticks: { maxRotation: 0, minRotation: 0, color: '#ffffff' }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                                ticks: { color: '#ffffff' }
-                            }
-                        }
-                    }
-                });
-            }
-        }
-    } catch (err) { console.warn('Chart render failed', err); }
-
-    const authorMetricSelect = document.getElementById('author-metric-select');
-    const postMetricSelect = document.getElementById('post-metric-select');
-    const authorMetric = authorMetricSelect ? authorMetricSelect.value : 'posts';
-    const postMetric = postMetricSelect ? postMetricSelect.value : 'likes';
-    renderTopAuthors(authorMetric);
-    renderTopPosts(postMetric);
-
-    if (authorMetricSelect && !authorMetricSelect._bound) {
-        authorMetricSelect.addEventListener('change', e => renderTopAuthors(e.target.value));
-        authorMetricSelect._bound = true;
-    }
-    if (postMetricSelect && !postMetricSelect._bound) {
-        postMetricSelect.addEventListener('change', e => renderTopPosts(e.target.value));
-        postMetricSelect._bound = true;
-    }
-    renderHeatmap(tweets);
-    bindExportButtons();
-}
-
-// Analytics time period filter
-const analyticsTimeSelect = document.getElementById('analytics-time-select');
-if (analyticsTimeSelect) {
-    analyticsTimeSelect.addEventListener('change', e => {
-        analyticsPeriod = e.target.value || 'all';
-        renderAnalytics();
-    });
-}
-const hourSelect = document.getElementById('hour-select');
-if (hourSelect) {
-    hourSelect.addEventListener('change', e => {
-        analyticsHourFilter = e.target.value || 'all';
-        renderAnalytics();
-    });
-}
-
-// Nested analytics tabs setup
-function setupAnalyticsTabs() {
-    const btns = document.querySelectorAll('.analytics-tab-btn');
-    btns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            btns.forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.analytics-nested-content').forEach(s => s.classList.remove('active'));
-            btn.classList.add('active');
-            const section = btn.dataset.analyticsTab;
-            const sectionEl = document.querySelector(`[data-analytics-section="${section}"]`);
-            if (sectionEl) sectionEl.classList.add('active');
-        });
-    });
-}
-
-// Инициализация табов
-try { setupTabs(); setupAnalyticsTabs(); } catch(e) { console.warn('Tabs init failed', e); }
-
-// === LANGUAGE SWITCHER ===
-function setLanguage(lang) {
-    currentLang = lang;
-    localStorage.setItem('lang', lang);
-    const langEn = document.getElementById('lang-en');
-    const langRu = document.getElementById('lang-ru');
-    if (langEn) { langEn.classList.toggle('active', lang === 'en'); langEn.classList.toggle('inactive', lang !== 'en'); }
-    if (langRu) { langRu.classList.toggle('active', lang === 'ru'); langRu.classList.toggle('inactive', lang !== 'ru'); }
-    const h1 = document.getElementById('welcome-title');
-    if (h1) h1.textContent = lang === 'en' ? 'WELCOME RITUALISTS!' : 'ДОБРО ПОЖАЛОВАТЬ, Ритуалисты!';
-}
-
-// === DOMContentLoaded: ИНИЦИАЛИЗАЦИЯ ===
-document.addEventListener('DOMContentLoaded', () => {
-    const langEn = document.getElementById('lang-en');
-    const langRu = document.getElementById('lang-ru');
-    if (langEn) langEn.addEventListener('click', () => { if (currentLang !== 'en') setLanguage('en'); });
-    if (langRu) langRu.addEventListener('click', () => { if (currentLang !== 'ru') setLanguage('ru'); });
-    const savedLang = localStorage.getItem('lang');
-    if (savedLang && (savedLang === 'en' || savedLang === 'ru')) { setLanguage(savedLang); }
-    else { setLanguage('en'); }
-    
-    const refreshBtn = document.getElementById('refresh-nft-btn');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', () => {
-            localStorage.removeItem('ritual_nft_gallery');
-            loadNFTGallery();
-        });
-    }
-    
-    const mintBtn = document.getElementById('btn-mint');
-    if (mintBtn) mintBtn.addEventListener('click', mintCardNFT);
-    
-    const snowContainer = document.getElementById('snowContainer');
-    if (snowContainer) {
-        const snowflakeCount = 50;
-        const containerRect = snowContainer.getBoundingClientRect();
-        for (let i = 0; i < snowflakeCount; i++) {
-            const flake = document.createElement('div');
-            flake.classList.add('snowflake');
-            const size = Math.random() * 4 + 2;
-            flake.style.width = `${size}px`;
-            flake.style.height = `${size}px`;
-            flake.style.left = `${Math.random() * containerRect.width}px`;
-            flake.style.top = `${Math.random() * -containerRect.height}px`;
-            flake.style.animationDuration = `${Math.random() * 10 + 5}s, ${Math.random() * 4 + 3}s`;
-            flake.style.animationDelay = `${Math.random() * 5}s`;
-            snowContainer.appendChild(flake);
-        }
-    }
-});
+            container.appendChild.appendChild
