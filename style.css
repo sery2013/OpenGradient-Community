@@ -36,23 +36,6 @@ body {
   max-width: 1000px;
   margin: 0 auto;
 }
-.logo-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-.company-logo {
-  width: 100px;
-  height: auto;
-}
-.logo-text {
-  font-size: 1.1rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
 .welcome-title {
   font-size: 4.2rem;
   font-weight: 800;
