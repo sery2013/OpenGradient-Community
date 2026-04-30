@@ -29,41 +29,62 @@ body {
   filter: brightness(0.35) blur(2px);
 }
 
-/* === WELCOME HEADER === */
-.welcome-header {
+/* === HEADER BAR === */
+.header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  height: 60px;
+  background: rgba(13, 17, 23, 0.9);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.logo-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.logo-title svg {
+  width: 24px;
+  height: 24px;
+}
+.header-text {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #fff;
+}
+.wallet-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.wallet-address {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(111, 227, 209, 0.3);
+  border-radius: 8px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  color: #a9ddd3;
+}
+
+/* === BANNER === */
+.banner {
   text-align: center;
   padding: 40px 20px 20px;
   max-width: 1000px;
   margin: 0 auto;
 }
-.logo-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
+.banner-title {
   margin-bottom: 16px;
 }
-.company-logo {
-  width: 100px;
-  height: auto;
-}
-.logo-text {
-  font-size: 1.1rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.welcome-title {
-  margin-bottom: 16px;
-}
-.welcome-main {
+.banner-main {
   font-size: 4.2rem;
   font-weight: 800;
   color: #fff;
-  text-shadow: 0 0 16px rgba(255, 255, 255, 0.5);
   display: block;
 }
-.welcome-sub {
+.banner-sub {
   font-size: 3.8rem;
   font-weight: 800;
   background: linear-gradient(90deg, #fff, var(--accent));
@@ -73,14 +94,13 @@ body {
   text-shadow: 0 0 16px rgba(111, 227, 209, 0.7);
   display: block;
 }
-.welcome-desc {
+.banner-desc {
   color: var(--text-secondary);
   max-width: 700px;
   margin: 0 auto 32px;
   font-size: 1.1rem;
   line-height: 1.6;
 }
-
 .main-buttons {
   display: flex;
   gap: 16px;
@@ -125,24 +145,59 @@ body {
 /* === SEARCH & STATS === */
 .search-stats-bar {
   display: flex;
-  flex-wrap: wrap;
   gap: 16px;
-  margin-bottom: 32px;
-  justify-content: center;
+  margin-bottom: 24px;
+  justify-content: space-between;
+  padding: 0 20px;
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
 }
-.search-input, .time-select {
-  padding: 12px 20px;
+.search-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--border);
   border-radius: 8px;
+  padding: 8px 16px;
+  width: 100%;
+  max-width: 600px;
+}
+.search-wrapper svg {
+  width: 16px;
+  height: 16px;
+  fill: var(--text-secondary);
+}
+.search-input {
+  background: transparent;
+  border: none;
   color: var(--text);
   font-size: 1rem;
-  min-width: 220px;
+  flex: 1;
+  outline: none;
+}
+.btn-update {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--accent);
+  border: 1px solid var(--border);
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.btn-update:hover {
+  background: rgba(111, 227, 209, 0.1);
+  box-shadow: 0 0 12px rgba(111, 227, 209, 0.4);
 }
 .stats-summary {
   display: flex;
-  gap: 24px;
+  gap: 32px;
+  justify-content: center;
   font-size: 1.1rem;
+  margin-bottom: 32px;
+  padding: 0 20px;
 }
 .stat-box {
   color: var(--text-secondary);
@@ -156,7 +211,7 @@ body {
 #leaderboard {
   width: 100%;
   border-collapse: collapse;
-  background: #2F4F4F;
+  background: var(--card-bg);
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
@@ -178,12 +233,19 @@ body {
 #leaderboard tr:hover {
   background: rgba(111, 227, 209, 0.05);
 }
-#leaderboard .user-cell {
-  display: flex;
+.user-avatar {
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #2F4F4F;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 14px;
+  margin-right: 8px;
 }
-#leaderboard .generate-btn {
+.generate-btn {
   background: #2F4F4F;
   color: var(--accent);
   border: 1px solid var(--border);
@@ -193,7 +255,7 @@ body {
   cursor: pointer;
   transition: all 0.25s ease;
 }
-#leaderboard .generate-btn:hover {
+.generate-btn:hover {
   background: #3a4f5c;
   box-shadow: 0 0 12px rgba(111, 227, 209, 0.6);
 }
@@ -216,38 +278,6 @@ body {
 }
 .pagination span {
   color: var(--text-secondary);
-}
-
-/* === TWEETS ACCORDION === */
-.tweets-row td {
-  padding: 24px !important;
-  background: linear-gradient(135deg, #1a2a3a, #0d1725);
-}
-.tweet-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
-}
-.tweet-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
-  color: var(--text);
-  transition: all 0.3s ease;
-}
-.tweet-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(111, 227, 209, 0.2);
-}
-.tweet-card a {
-  color: var(--accent);
-  text-decoration: none;
-}
-.tweet-card img {
-  width: 100%;
-  border-radius: 8px;
-  margin-top: 12px;
 }
 
 /* === CARD MODAL === */
@@ -326,17 +356,43 @@ footer {
   margin-top: 40px;
   color: var(--text-secondary);
 }
-footer a {
-  color: var(--accent);
+.dev-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.dev-link a {
+  color: #fff;
   text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.dev-link svg {
+  width: 14px;
+  height: 14px;
+}
+.dev-link span {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
-  .welcome-main { font-size: 3.2rem; }
-  .welcome-sub { font-size: 2.8rem; }
-  .welcome-desc { font-size: 1rem; }
+  .header-bar {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+  .banner-main { font-size: 3.2rem; }
+  .banner-sub { font-size: 2.8rem; }
+  .banner-desc { font-size: 1rem; }
   .main-buttons { flex-direction: column; align-items: center; }
-  .search-stats-bar { flex-direction: column; }
+  .search-stats-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .stats-summary { flex-wrap: wrap; }
   #leaderboard { font-size: 0.85rem; }
 }
