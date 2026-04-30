@@ -3,200 +3,116 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ritual Community</title>
+  <title>Ritual Community Tracker</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
 </head>
 <body>
-  <!-- === HEADER: LOGO + TITLE === -->
-  <div class="header-bar">
-    <div class="logo-title">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M18.901 1.153h3.68l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.244 2.25H8.05l4.713 6.932L18.901 1.153ZM17.61 20.644h2.039L6.486 3.24H4.298l13.312 17.404Z" fill="#6fe3d1"/>
-      </svg>
-      <span class="header-text">RITUAL COMMUNITY</span>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo-container">
+      <img src="https://ritual.net/favicon.ico" alt="Ritual Logo" width="32" height="32">
     </div>
-    <div class="wallet-info">
-      <div class="wallet-address">0xeb76...17a4</div>
-    </div>
+    <h1 class="header-title">
+      <span class="welcome-text">WELCOME</span><br>
+      <span class="ritualists-text">RITUALISTS!</span>
+    </h1>
+    <p class="header-subtitle">
+      Analyze community metrics on the Ritual Testnet.<br>
+      Generate your personal stats card and mint it as an NFT.
+    </p>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="leaderboard">🏆 LEADERBOARD</button>
+    <button class="tab-btn" data-tab="analytics">📊 ANALYTICS</button>
+    <button class="tab-btn" data-tab="gallery">🖼️ GALLERY</button>
   </div>
 
-  <div class="background"></div>
-  <div class="container">
-    <!-- === BANNER === -->
-    <div class="banner">
-      <h1 class="banner-title">
-        <span class="banner-main">WELCOME</span>
-        <span class="banner-sub">RITUALISTS!</span>
-      </h1>
-      <p class="banner-desc">Analyze community metrics on the Ritual Testnet. Generate your personal stats card and mint it as an NFT.</p>
-      
-      <div class="main-buttons">
-        <button class="btn-primary" id="btn-leaderboard">🏆 LEADERBOARD</button>
-        <button class="btn-outline" id="btn-analytics">📊 ANALYTICS</button>
-        <button class="btn-outline" id="btn-gallery">🖼️ GALLERY</button>
+  <!-- CONTENT -->
+  <main class="content">
+    <!-- LEADERBOARD TAB -->
+    <div id="leaderboard-tab" class="tab-content active">
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="Search by username...">
+        <button id="search-btn">🔍</button>
+      </div>
+      <div class="table-container">
+        <table id="leaderboard-table">
+          <thead>
+            <tr>
+              <th>USER</th>
+              <th>POSTS</th>
+              <th>RETWEETS</th>
+              <th>COMMENTS</th>
+              <th>LIKES</th>
+              <th>VIEWS</th>
+              <th>CARD</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-body">
+            <!-- будет заполнено JS -->
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <!-- === SEARCH & STATS === -->
-    <div class="search-stats-bar">
-      <div class="search-wrapper">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M18.901 1.153h3.68l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.244 2.25H8.05l4.713 6.932L18.901 1.153ZM17.61 20.644h2.039L6.486 3.24H4.298l13.312 17.404Z" fill="#a9ddd3"/>
-        </svg>
-        <input type="text" id="search" placeholder="Search by username..." class="search-input">
-      </div>
-      <button class="btn-update" id="btn-update">🔄 DASHBOARD UPDATED</button>
-    </div>
-
-    <div class="stats-summary">
-      <div class="stat-box">Posts: <span id="total-posts">4876</span></div>
-      <div class="stat-box">Users: <span id="total-users">539</span></div>
-      <div class="stat-box">Views: <span id="total-views">1958079</span></div>
-    </div>
-
-    <!-- Leaderboard wrapper -->
-    <div id="leaderboard-wrapper" class="tab-content active">
-      <table id="leaderboard">
-        <thead>
-          <tr>
-            <th>USER</th>
-            <th>POSTS</th>
-            <th>RETWEETS</th>
-            <th>COMMENTS</th>
-            <th>LIKES</th>
-            <th>VIEWS</th>
-            <th>CARD</th>
-          </tr>
-        </thead>
-        <tbody id="leaderboard-body">
-          <tr>
-            <td><span class="user-avatar">R</span> @ritual_fan</td>
-            <td>42</td>
-            <td>12</td>
-            <td>8</td>
-            <td>150</td>
-            <td>2 500</td>
-            <td><button class="generate-btn">GENERATE</button></td>
-          </tr>
-          <tr>
-            <td><span class="user-avatar">W</span> @web3_explorer</td>
-            <td>28</td>
-            <td>5</td>
-            <td>12</td>
-            <td>85</td>
-            <td>1 200</td>
-            <td><button class="generate-btn">GENERATE</button></td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="pagination">
-        <button id="prev-page">← Prev</button>
-        <span id="page-info">Page 1 / 1</span>
-        <button id="next-page">Next →</button>
-      </div>
-      <div id="tweets-container" style="margin-top: 20px;"></div>
-    </div>
-
-    <!-- Analytics tab -->
-    <div id="tab-analytics" class="tab-content" style="display:none;">
-      <h2>Analytics</h2>
-      <div class="analytics-filters">
+    <!-- ANALYTICS TAB -->
+    <div id="analytics-tab" class="tab-content">
+      <div class="filters">
         <label>Filter by time:</label>
-        <select id="analytics-time-select">
-          <option value="all">All time</option>
-          <option value="30" selected>Last 30 days</option>
-          <option value="14">Last 14 days</option>
-          <option value="7">Last 7 days</option>
-        </select>
-        <label>Filter by hour:</label>
-        <select id="hour-select">
-          <option value="all">All hours</option>
-          <option value="0">00:00</option>
-          <option value="1">01:00</option>
-          <option value="2">02:00</option>
-          <option value="3">03:00</option>
-          <option value="4">04:00</option>
-          <option value="5">05:00</option>
-          <option value="6">06:00</option>
-          <option value="7">07:00</option>
-          <option value="8">08:00</option>
-          <option value="9">09:00</option>
-          <option value="10">10:00</option>
-          <option value="11">11:00</option>
-          <option value="12">12:00</option>
-          <option value="13">13:00</option>
-          <option value="14">14:00</option>
-          <option value="15">15:00</option>
-          <option value="16">16:00</option>
-          <option value="17">17:00</option>
-          <option value="18">18:00</option>
-          <option value="19">19:00</option>
-          <option value="20">20:00</option>
-          <option value="21">21:00</option>
-          <option value="22">22:00</option>
-          <option value="23">23:00</option>
+        <select id="time-filter">
+          <option value="all">All Time</option>
+          <option value="7d">Last 7 Days</option>
+          <option value="30d">Last 30 Days</option>
         </select>
       </div>
-      <div class="analytics-content">
-        <div class="chart-section">
-          <canvas id="analytics-chart" height="120"></canvas>
-        </div>
-        <div class="metrics-grid">
-          <div class="metric-card">Avg Posts: <span id="avg-posts">-</span></div>
-          <div class="metric-card">Avg Likes: <span id="avg-likes">-</span></div>
-          <div class="metric-card">Avg Views: <span id="avg-views">-</span></div>
-        </div>
-        <div class="heatmap">
-          <h3>Activity Heatmap</h3>
-          <div id="heatmap-container" style="display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; margin-top: 12px;"></div>
-        </div>
+      <div id="analytics-chart-container">
+        <canvas id="analytics-chart"></canvas>
+      </div>
+      <div class="heatmap">
+        <h3>Activity Heatmap</h3>
+        <div id="heatmap-grid"></div>
       </div>
     </div>
 
-    <!-- NFT Gallery tab -->
-    <div id="tab-nft-gallery" class="tab-content" style="display:none;">
-      <div class="gallery-header">
-        <h2>Minted Leaderboard Cards</h2>
-        <p>All NFTs generated and minted directly from this site on Ritual Testnet.</p>
-        <button id="refresh-nft-btn" class="btn-outline">🔄 Refresh Gallery</button>
-      </div>
-      <div id="nft-gallery-grid" class="nft-gallery-grid">
-        <p class="gallery-loading">Loading...</p>
+    <!-- GALLERY TAB -->
+    <div id="gallery-tab" class="tab-content">
+      <h2>NFT Gallery</h2>
+      <div id="nft-gallery" class="gallery-grid">
+        <!-- будет заполнено JS -->
       </div>
     </div>
-  </div>
+  </main>
 
-  <!-- === CARD MODAL === -->
+  <!-- CARD MODAL -->
   <div id="card-modal" class="card-modal" style="display:none;">
     <div class="card-modal-content">
-      <button class="close-modal" onclick="closeCardModal()">✕</button>
-      <h3>Personal Stats Card</h3>
-      <div class="canvas-wrapper">
-        <canvas id="user-canvas" width="1200" height="675"></canvas>
-      </div>
+      <canvas id="card-canvas" width="600" height="800"></canvas>
       <div class="card-actions">
-        <button id="btn-download" class="action-btn download">📥 DOWNLOAD PNG</button>
-        <button id="btn-mint" class="action-btn mint">🔥 Mint NFT (0.0001 CRAT)</button>
+        <button id="btn-download" class="action-btn download">📥 Скачать PNG</button>
+        <button id="btn-mint" class="action-btn mint">🔥 Mint NFT (0.001 RITUAL)</button>
         <p id="mint-status" class="status-text"></p>
       </div>
     </div>
   </div>
 
-  <footer>
-    <div>© <a href="https://ritual.net" target="_blank">ritual.net</a></div>
-    <div class="dev-link">
-      developer: 
-      <a href="https://x.com/kaye_moni" target="_blank">
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div>
+      <a href="https://ritual.net" target="_blank" style="color:#6fe3d1;">ritual.net</a>
+      • developer: 
+      <a href="https://x.com/kaye_moni" target="_blank" style="display:flex; align-items:center; gap:4px; color:#6fe3d1;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M18.901 1.153h3.68l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.244 2.25H8.05l4.713 6.932L18.901 1.153ZM17.61 20.644h2.039L6.486 3.24H4.298l13.312 17.404Z" fill="white"/>
         </svg>
-        <span style="border-bottom: 1px solid rgba(255,255,255,0.3);">@kaye_moni</span>
+        <span>@kaye_moni</span>
       </a>
     </div>
+    <p>© 2024 RITUAL FOUNDATION</p>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
