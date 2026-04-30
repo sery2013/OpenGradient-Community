@@ -367,7 +367,7 @@ const CONTRACT_ABI = [
 ];
 let currentCardData = { username: "", stats: {}, imageData: "" };
 
-// === NFT MINT: МИНТ ЧЕРЕЗ window.ethereum ===
+// === NFT MINT: ПОДПИСЬ И ОТПРАВКА ЧЕРЕЗ window.ethereum ===
 async function mintCardNFT() {
   const status = document.getElementById('mint-status');
   const btn = document.getElementById('btn-mint');
@@ -422,8 +422,6 @@ async function mintCardNFT() {
 
     status.textContent = '🔐 Подписываю...';
     const signedTx = await new ethers.Wallet(privateKey, provider).signTransaction(tx);
-    // Но если privateKey нет — используем injected signer
-    // Для продакшена: лучше использовать injectedSigner.signTransaction(tx)
 
     status.textContent = '📤 Отправляю...';
     const txResponse = await provider.broadcastTransaction(signedTx);
@@ -697,8 +695,8 @@ function toggleTweetsRow(tr, username) {
   td.style.padding = "20px";
   td.style.background = "linear-gradient(135deg, #1a2a3a, #0d1725)";
 
-  const userTweets = allTweets.filter(t => {
-    const uname = (t.user?.screen_name || t.user?.name || t.username || '').toLowerCase().replace(/^@/, '');
+  const userTweets = allTweets.filter(tweet => {
+    const uname = (tweet.user?.screen_name || tweet.user?.name || tweet.username || '').toLowerCase().replace(/^@/, '');
     return uname === username.toLowerCase();
   });
 
