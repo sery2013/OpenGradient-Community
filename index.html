@@ -8,7 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
 </head>
 <body>
-  <!-- === LOGO + WELCOME HEADER === -->
+  <!-- === HEADER: WELCOME + LOGO === -->
   <div class="welcome-header">
     <div class="logo-container">
       <img src="https://github.com/sery2013/OpenGradient-Community/blob/main/OpenGradient%20Community.png?raw=true" alt="OpenGradient Logo" class="company-logo">
@@ -139,13 +139,13 @@
   <div id="card-modal" class="card-modal" style="display:none;">
     <div class="card-modal-content">
       <button class="close-modal" onclick="closeCardModal()">✕</button>
-      <h3>Personal Stats Card</h3>
+      <h3 id="card-modal-title">User Card</h3>
       <div class="canvas-wrapper">
         <canvas id="user-canvas" width="1200" height="675"></canvas>
       </div>
       <div class="card-actions">
-        <button id="btn-download" class="btn-primary">📥 DOWNLOAD PNG</button>
-        <button id="btn-mint" class="btn-neon">🔥 MINT NFT (0.0001 CRAT)</button>
+        <button id="btn-download" class="action-btn download">📥 DOWNLOAD PNG</button>
+        <button id="btn-mint" class="action-btn mint">🔥 Mint NFT (0.0001 CRAT)</button>
         <p id="mint-status" class="status-text"></p>
       </div>
     </div>
