@@ -36,29 +36,25 @@ body {
   max-width: 1000px;
   margin: 0 auto;
 }
-.logo-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
+.welcome-title {
   margin-bottom: 16px;
 }
-.company-logo {
-  width: 100px;
-  height: auto;
-}
-.logo-text {
-  font-size: 1.1rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.welcome-title {
+.welcome-main {
   font-size: 4.2rem;
   font-weight: 800;
   color: #fff;
   text-shadow: 0 0 16px rgba(255, 255, 255, 0.5);
-  margin-bottom: 16px;
+  display: block;
+}
+.welcome-sub {
+  font-size: 3.8rem;
+  font-weight: 800;
+  background: linear-gradient(90deg, #fff, var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 16px rgba(111, 227, 209, 0.7);
+  display: block;
 }
 .welcome-desc {
   color: var(--text-secondary);
@@ -143,7 +139,7 @@ body {
 #leaderboard {
   width: 100%;
   border-collapse: collapse;
-  background: var(--card-bg);
+  background: #2F4F4F;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
@@ -203,38 +199,6 @@ body {
 }
 .pagination span {
   color: var(--text-secondary);
-}
-
-/* === TWEETS ACCORDION === */
-.tweets-row td {
-  padding: 24px !important;
-  background: linear-gradient(135deg, #1a2a3a, #0d1725);
-}
-.tweet-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
-}
-.tweet-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
-  color: var(--text);
-  transition: all 0.3s ease;
-}
-.tweet-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(111, 227, 209, 0.2);
-}
-.tweet-card a {
-  color: var(--accent);
-  text-decoration: none;
-}
-.tweet-card img {
-  width: 100%;
-  border-radius: 8px;
-  margin-top: 12px;
 }
 
 /* === CARD MODAL === */
@@ -320,10 +284,10 @@ footer a {
 
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
-  .welcome-title { font-size: 3.2rem; }
+  .welcome-main { font-size: 3.2rem; }
+  .welcome-sub { font-size: 2.8rem; }
   .welcome-desc { font-size: 1rem; }
   .main-buttons { flex-direction: column; align-items: center; }
   .search-stats-bar { flex-direction: column; }
   #leaderboard { font-size: 0.85rem; }
-  .tweet-container { grid-template-columns: 1fr; }
 }
