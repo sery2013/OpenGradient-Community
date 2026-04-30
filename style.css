@@ -171,7 +171,7 @@ body {
   gap: 12px;
 }
 #leaderboard .generate-btn {
-  background: rgba(255, 255, 255, 0.06);
+  background: #2F4F4F;
   color: var(--accent);
   border: 1px solid var(--border);
   padding: 6px 16px;
@@ -181,8 +181,8 @@ body {
   transition: all 0.25s ease;
 }
 #leaderboard .generate-btn:hover {
-  background: rgba(111, 227, 209, 0.2);
-  box-shadow: 0 0 10px rgba(111, 227, 209, 0.4);
+  background: #3a4f5c;
+  box-shadow: 0 0 12px rgba(111, 227, 209, 0.6);
 }
 
 /* === PAGINATION === */
