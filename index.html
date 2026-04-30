@@ -12,10 +12,10 @@
   <header class="header">
     <div class="logo-container">
       <img src="https://ritual.net/favicon.ico" alt="Ritual Logo" width="32" height="32">
-      <span class="header-title">
+      <h1 class="header-title">
         <span class="welcome-text">WELCOME</span><br>
         <span class="ritualists-text">RITUALISTS!</span>
-      </span>
+      </h1>
     </div>
     <p class="header-subtitle">
       Analyze community metrics on the Ritual Testnet.<br>
@@ -83,9 +83,12 @@
   </main>
 
   <!-- CARD MODAL -->
-  <div id="card-modal" style="display:none;">
+  <div id="card-modal" class="card-modal" style="display:none;">
     <div class="card-modal-content">
-      <canvas id="user-canvas" width="1200" height="675"></canvas>
+      <button class="close-modal" onclick="document.getElementById('card-modal').style.display='none'">✕</button>
+      <div class="canvas-wrapper">
+        <canvas id="user-canvas" width="1200" height="675"></canvas>
+      </div>
       <div class="card-actions">
         <button id="btn-download">📥 Download PNG</button>
         <button id="btn-mint">🔥 Mint NFT (0.001 RITUAL)</button>
