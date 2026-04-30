@@ -1,167 +1,244 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ritual Community</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
+   <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ritual Community</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
 </head>
 <body>
-  <!-- === HEADER: LOGO + TITLE === -->
-  <div class="header-wrapper">
-    <div class="logo-title">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M18.901 1.153h3.68l-7.227 8.26L22 18.653h-3.83l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.244 2.25H8.05l4.713 6.932L18.901 1.153ZM17.61 20.644h2.039L6.486 3.24H4.298l13.312 17.404Z" fill="#6fe3d1"/>
-      </svg>
-      <span class="header-title" onclick="location.reload()">RITUAL COMMUNITY</span>
-    </div>
-  </div>
+    
+<!-- === ЛОГОТИП КОМПАНИИ (ПЕРЕД ЗАГОЛОВКОМ) === -->
+<div class="logo-container">
+  <a href="https://opengradient.ai" target="_blank">
+    <img src="https://github.com/sery2013/OpenGradient-Community/blob/main/OpenGradient%20Community.png?raw=true" alt="Company Logo" class="company-logo">
+  </a>
+  <span class="logo-text">OpenGradient Community</span>
+</div>
 
-  <div class="background"></div>
-  <div class="container">
+<div class="header-wrapper">
+    <div class="header-title" onclick="location.reload()">RITUAL TWITTER COMMUNITY</div>
+</div>
+
+<div class="background"></div>
+<div class="container">
     <!-- === WELCOME SECTION === -->
     <div class="welcome-block">
-      <h1 id="welcome-title">WELCOME RITUALISTS!</h1>
-      <p id="welcome-desc">Analyze community metrics on the Ritual Testnet. Generate your personal stats card and mint it as an NFT. 🎴</p>
-      <div class="action-buttons">
-        <button class="btn-primary" id="btn-leaderboard">🏆 LEADERBOARD</button>
-        <button class="btn-outline" id="btn-analytics">📊 ANALYTICS</button>
-        <button class="btn-outline" id="btn-gallery">🖼️ GALLERY</button>
-      </div>
+        <h1 id="welcome-title">WELCOME RITUALISTS!</h1>
+        <p id="welcome-desc-1">This leaderboard tracks activity from the last 30 days in the <a href="https://x.com/i/communities/1896991026272723220" target="_blank" class="white-link">Ritual Community</a>.</p>
+        <p id="welcome-desc-2">By clicking on any participant, you can view their works directly.</p>
+        <p id="welcome-desc-3">By clicking on any metric (e.g., Views), you can sort the list.</p>
+        <p id="welcome-desc-4">You can also generate your personal stats card to download as <b>PNG</b> or mint as an <b>NFT</b> on the Ritual Testnet.</p>
+
+        <p><strong>Last updated:</strong> <span id="manual-last-updated">27 Apr, 2026</span></p>
     </div>
 
-    <!-- === SEARCH & FILTER === -->
-    <div class="search-filter-bar">
-      <input type="text" id="search" placeholder="Search by username..." class="search-input">
-      <select id="time-select" class="time-select">
-        <option value="7">Last 7 days</option>
-        <option value="14">Last 14 days</option>
-        <option value="30" selected>Last 30 days</option>
-        <option value="all">All time</option>
-      </select>
+    <!-- === TABS & DEVELOPER BLOCK === -->
+    <div class="combined-bottom-block">
+        <div class="tabs-wrapper">
+            <button class="tab-btn active" data-tab="leaderboard" id="tab-leaderboard-btn">Leaderboard</button>
+            <button class="tab-btn" data-tab="analytics" id="tab-analytics-btn">Analytics</button>
+            <button class="tab-btn" data-tab="nft-gallery" id="tab-nft-gallery-btn">🖼️ NFT Gallery</button>
+        </div>
+        <div class="team-box">
+            <p id="follow-dev-text" style="text-align: center;">Follow Developer - <a href="https://x.com/kaye_moni" target="_blank" id="follow-dev-link" class="white-link">@kaye_moni</a></p>
+        </div>
     </div>
 
     <!-- Leaderboard wrapper -->
     <div id="leaderboard-wrapper" class="tab-content active">
-      <div class="stats">
-        <div class="stat-box" id="total-posts">Posts: 0</div>
-        <div class="stat-box" id="total-users">Users: 0</div>
-        <div class="stat-box" id="total-views">Views: 0</div>
-      </div>
-      <table id="leaderboard">
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>Posts</th>
-            <th>Likes</th>
-            <th>Retweets</th>
-            <th>Comments</th>
-            <th>Views</th>
-            <th>Card</th>
-          </tr>
-        </thead>
-        <tbody id="leaderboard-body"></tbody>
-      </table>
-      <div class="pagination">
-        <button id="prev-page">← Prev</button>
-        <span id="page-info">Page 1 / 1</span>
-        <button id="next-page">Next →</button>
-      </div>
-      <div id="tweets-container" style="margin-top: 20px;"></div>
+        <div class="stats">
+            <div class="stat-box" id="total-posts">Total Posts: 0</div>
+            <div class="stat-box" id="total-users">Total Users: 0</div>
+            <div class="stat-box" id="total-views">Total Views: 0</div>
+        </div>
+        <div class="search-time-filter-container">
+            <div class="search-section">
+                <label for="search" class="search-label" id="search-label">SEARCH USER</label>
+                <input type="text" id="search" placeholder="Type @twitter name..." class="search-input">
+            </div>
+            <div class="filter-section">
+                <span class="filter-label" id="filter-label">FILTER BY TIME:</span>
+                <select id="time-select" class="time-select">
+                    <option value="7" id="time-7">Last 7 days</option>
+                    <option value="14" id="time-14">Last 14 days</option>
+                    <option value="30" id="time-30">Last 30 days</option>
+                    <option value="all" id="time-all" selected>All time</option>
+                </select>
+            </div>
+        </div>
+        <table id="leaderboard">
+            <thead>
+                <tr>
+                    <th id="name-header">User</th>
+                    <th id="posts-header">Posts <span class="sort-arrow">▲</span></th>
+                    <th id="likes-header">Likes <span class="sort-arrow"></span></th>
+                    <th id="retweets-header">Retweets <span class="sort-arrow"></span></th>
+                    <th id="comments-header">Comments <span class="sort-arrow"></span></th>
+                    <th id="views-col-header">Views <span class="sort-arrow"></span></th>
+                    <th id="card-header">Card</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboard-body"></tbody>
+        </table>
+        <div class="pagination">
+            <button id="prev-page">Previous</button>
+            <span id="page-info">Page 1 / 1</span>
+            <button id="next-page">Next</button>
+        </div>
+        <div id="tweets-container" style="margin-top: 20px;">
+            <ul id="tweets-list"></ul>
+        </div>
     </div>
 
     <!-- Analytics tab -->
-    <div id="tab-analytics" class="tab-content" style="display:none;">
-      <h2>Analytics</h2>
-      <div class="analytics-filters">
-        <label>Filter by time:</label>
-        <select id="analytics-time-select">
-          <option value="all">All time</option>
-          <option value="30" selected>Last 30 days</option>
-          <option value="14">Last 14 days</option>
-          <option value="7">Last 7 days</option>
-        </select>
-        <label>Filter by hour:</label>
-        <select id="hour-select">
-          <option value="all">All hours</option>
-          <option value="0">00:00</option>
-          <option value="1">01:00</option>
-          <option value="2">02:00</option>
-          <option value="3">03:00</option>
-          <option value="4">04:00</option>
-          <option value="5">05:00</option>
-          <option value="6">06:00</option>
-          <option value="7">07:00</option>
-          <option value="8">08:00</option>
-          <option value="9">09:00</option>
-          <option value="10">10:00</option>
-          <option value="11">11:00</option>
-          <option value="12">12:00</option>
-          <option value="13">13:00</option>
-          <option value="14">14:00</option>
-          <option value="15">15:00</option>
-          <option value="16">16:00</option>
-          <option value="17">17:00</option>
-          <option value="18">18:00</option>
-          <option value="19">19:00</option>
-          <option value="20">20:00</option>
-          <option value="21">21:00</option>
-          <option value="22">22:00</option>
-          <option value="23">23:00</option>
-        </select>
-      </div>
-      <div class="analytics-content">
-        <div class="chart-section">
-          <canvas id="analytics-chart" height="120"></canvas>
+    <div id="tab-analytics" class="tab-content" style="display:none; text-align:left;">
+        <h2 id="analytics-title">Analytics</h2>
+        <div class="analytics-time-filter" style="display:flex; gap:10px; align-items:center; margin-bottom:18px; background: rgba(255,255,255,0.02); padding:12px; border-radius:12px;">
+            <label for="analytics-time-select" id="analytics-time-label" style="font-weight:600; color:#a9ddd3; white-space:nowrap;">Filter by time:</label>
+            <select id="analytics-time-select" style="flex:1; max-width:180px;">
+                <option value="all" id="analytics-time-all">All time</option>
+                <option value="30" id="analytics-time-30">Last 30 days</option>
+                <option value="14" id="analytics-time-14">Last 14 days</option>
+                <option value="7" id="analytics-time-7">Last 7 days</option>
+            </select>
+            <label for="hour-select" id="hour-label" style="font-weight:600; color:#a9ddd3; white-space:nowrap;">Filter by hour:</label>
+            <select id="hour-select" style="flex:1; max-width:180px;">
+                <option value="all" id="hour-all">All hours</option>
+                <option value="0" id="hour-0">00:00</option>
+                <option value="1" id="hour-1">01:00</option>
+                <option value="2" id="hour-2">02:00</option>
+                <option value="3" id="hour-3">03:00</option>
+                <option value="4" id="hour-4">04:00</option>
+                <option value="5" id="hour-5">05:00</option>
+                <option value="6" id="hour-6">06:00</option>
+                <option value="7" id="hour-7">07:00</option>
+                <option value="8" id="hour-8">08:00</option>
+                <option value="9" id="hour-9">09:00</option>
+                <option value="10" id="hour-10">10:00</option>
+                <option value="11" id="hour-11">11:00</option>
+                <option value="12" id="hour-12">12:00</option>
+                <option value="13" id="hour-13">13:00</option>
+                <option value="14" id="hour-14">14:00</option>
+                <option value="15" id="hour-15">15:00</option>
+                <option value="16" id="hour-16">16:00</option>
+                <option value="17" id="hour-17">17:00</option>
+                <option value="18" id="hour-18">18:00</option>
+                <option value="19" id="hour-19">19:00</option>
+                <option value="20" id="hour-20">20:00</option>
+                <option value="21" id="hour-21">21:00</option>
+                <option value="22" id="hour-22">22:00</option>
+                <option value="23" id="hour-23">23:00</option>
+            </select>
         </div>
-        <div class="metrics-grid">
-          <div class="metric-card"><strong>Avg Posts</strong><br><span id="avg-posts">-</span></div>
-          <div class="metric-card"><strong>Avg Likes</strong><br><span id="avg-likes">-</span></div>
-          <div class="metric-card"><strong>Avg Views</strong><br><span id="avg-views">-</span></div>
+        <div class="analytics-nested-tabs">
+            <button class="analytics-tab-btn active" data-analytics-tab="averages" id="analytics-tab-averages">Avg metrics</button>
+            <button class="analytics-tab-btn" data-analytics-tab="authors" id="analytics-tab-authors">Top 10 authors</button>
+            <button class="analytics-tab-btn" data-analytics-tab="posts" id="analytics-tab-posts">Top 10 posts</button>
         </div>
-        <div class="heatmap">
-          <h3>Activity Heatmap</h3>
-          <div id="heatmap-container" style="display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; margin-top: 12px;"></div>
-        </div>
-      </div>
+        <section class="analytics-nested-content active" id="analytics-averages-section" data-analytics-section="averages">
+            <div class="analytics-block" id="analytics-averages">
+                <h3 id="analytics-averages-title">Average metrics per user</h3>
+                <div class="analytics-row" style="display:flex; gap:12px; flex-wrap:wrap;">
+                    <div class="stat-box" id="avg-posts">Avg Posts: -</div>
+                    <div class="stat-box" id="avg-likes">Avg Likes: -</div>
+                    <div class="stat-box" id="avg-views">Avg Views: -</div>
+                </div>
+                <div class="analytics-block" style="margin-top: 16px;">
+                    <h3 id="heatmap-title">Activity Heatmap (Tweets by Day & Hour)</h3>
+                    <div id="heatmap-container" style="display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; margin-top: 12px;"></div>
+                    <div id="heatmap-legend" style="display: flex; gap: 8px; margin-top: 8px; font-size: 0.85rem; color: #999;">
+                        <div>Sun</div> <div>Mon</div> <div>Tue</div> <div>Wed</div> <div>Thu</div> <div>Fri</div> <div>Sat</div>
+                    </div>
+                </div>
+                <div style="margin-top:16px;">
+                    <canvas id="analytics-chart" height="120"></canvas>
+                </div>
+                <div style="margin-top: 16px; display: flex; gap: 10px;">
+                    <button id="export-csv" class="tab-btn" style="font-size: 0.9rem; padding: 6px 12px;">Export CSV</button>
+                    <button id="export-json" class="tab-btn" style="font-size: 0.9rem; padding: 6px 12px;">Export JSON</button>
+                </div>
+            </div>
+        </section>
+        <section class="analytics-nested-content" id="analytics-authors-section" data-analytics-section="authors">
+            <div class="analytics-block" id="analytics-top-authors-block">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                    <h3 id="top-authors-title" style="margin:0;">Top 10 authors</h3>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <label for="author-metric-select" id="author-metric-label" style="font-weight:600; color:#a9ddd3;">Sort by:</label>
+                        <select id="author-metric-select">
+                            <option value="posts" id="author-metric-posts">Posts</option>
+                            <option value="likes" id="author-metric-likes">Likes</option>
+                            <option value="views" id="author-metric-views">Views</option>
+                        </select>
+                    </div>
+                </div>
+                <ol id="top-authors-list" style="margin-top:12px;"></ol>
+            </div>
+        </section>
+        <section class="analytics-nested-content" id="analytics-posts-section" data-analytics-section="posts">
+            <div class="analytics-block" id="analytics-top-posts-block">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                    <h3 id="top-posts-title" style="margin:0;">Top 10 posts</h3>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <label for="post-metric-select" id="post-metric-label" style="font-weight:600; color:#a9ddd3;">Sort by:</label>
+                        <select id="post-metric-select">
+                            <option value="likes" id="post-metric-likes">Likes</option>
+                            <option value="views" id="post-metric-views">Views</option>
+                        </select>
+                    </div>
+                </div>
+                <ol id="top-posts-list" style="margin-top:12px;"></ol>
+            </div>
+        </section>
     </div>
 
     <!-- NFT Gallery tab -->
     <div id="tab-nft-gallery" class="tab-content" style="display:none;">
-      <div class="gallery-header">
-        <h2>Minted Leaderboard Cards</h2>
-        <p>All NFTs generated and minted directly from this site on Ritual Testnet. 🌌</p>
-        <button id="refresh-nft-btn" class="btn-outline">🔄 Refresh Gallery</button>
-      </div>
-      <div id="nft-gallery-grid" class="nft-gallery-grid">
-        <p class="gallery-loading">Loading...</p>
-      </div>
+        <div class="gallery-header">
+            <h2>Minted Leaderboard Cards</h2>
+            <p>All NFTs generated and minted directly from this site on Ritual Testnet.</p>
+            <button id="refresh-nft-btn" class="action-btn download">🔄 Refresh Gallery</button>
+        </div>
+        <div id="nft-gallery-grid" class="nft-gallery-grid">
+            <p class="gallery-loading">Connect wallet or wait for auto-load...</p>
+        </div>
     </div>
-  </div>
+</div>
 
-  <!-- === CARD MODAL === -->
-  <div id="card-modal" class="card-modal" style="display:none;">
+<!-- === МОДАЛЬНОЕ ОКНО ДЛЯ КАРТОЧКИ (COMPACT MODE) === -->
+<div id="card-modal" class="card-modal" style="display:none;">
     <div class="card-modal-content">
-      <button class="close-modal" onclick="closeCardModal()">✕</button>
-      <h3>Personal Stats Card</h3>
-      <div class="canvas-wrapper">
-        <canvas id="user-canvas" width="1200" height="675"></canvas>
-      </div>
-      <div class="card-actions">
-        <button id="btn-download" class="btn-primary">📥 DOWNLOAD PNG</button>
-        <button id="btn-mint" class="btn-neon">🔥 MINT NFT (0.0001 CRAT)</button>
-        <p id="mint-status" class="status-text"></p>
-      </div>
+        <button class="close-modal" onclick="closeCardModal()">✕</button>
+        <h3 id="card-modal-title">User Card</h3>
+        <div class="canvas-wrapper">
+            <canvas id="user-canvas" width="600" height="800"></canvas>
+        </div>
+        <div class="card-actions">
+            <button id="btn-download" class="action-btn download">📥 DOWNLOAD PNG</button>
+            <button id="btn-mint" class="action-btn mint">🔥 Mint NFT (0.0001 RITUAL)</button>
+            <p id="mint-status" class="status-text"></p>
+        </div>
     </div>
-  </div>
+</div>
 
-  <footer>
-    <div>© <a href="https://ritual.net" target="_blank">ritual.net</a></div>
-    <div>developer: <a href="https://x.com/kaye_moni" target="_blank">@kaye_moni</a></div>
-  </footer>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="script.js"></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="script.js"></script>
-</body>
+<footer style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 40px 0; font-family: sans-serif; color: #ffffff;">
+    <div style="margin-bottom: 10px;">
+        &copy; <a href="https://ritual.net" target="_blank" style="color: #ffffff; text-decoration: none; font-weight: 500;">ritual.net</a>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px; font-size: 14px; opacity: 0.9;">
+        <span>developer:</span>
+        <a href="https://x.com/kaye_moni" target="_blank" style="display: flex; align-items: center; gap: 4px; color: #ffffff; text-decoration: none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18.901 1.153h3.68l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.244 2.25H8.05l4.713 6.932L18.901 1.153ZM17.61 20.644h2.039L6.486 3.24H4.298l13.312 17.404Z" fill="white"/>
+            </svg>
+            <span style="border-bottom: 1px solid rgba(255,255,255,0.3);">@kaye_moni</span>
+        </a>
+    </div>
+</footer>
+  </body>
 </html>
