@@ -250,7 +250,7 @@ body {
   padding: 20px;
 }
 .card-modal-content {
-  background: var(--card-bg);
+  background: #1a1a1a;
   border-radius: 16px;
   padding: 28px;
   max-width: 1240px;
@@ -282,21 +282,22 @@ body {
   gap: 16px;
   justify-content: center;
 }
-.btn-primary, .btn-neon {
+.action-btn {
   padding: 14px 32px;
   border-radius: 8px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
 }
-.btn-neon {
+.download {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.mint {
   background: linear-gradient(135deg, #6fe3d1, #00c4b0);
   color: #0d1117;
   box-shadow: 0 0 15px rgba(111, 227, 209, 0.5);
-}
-.btn-neon:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0 25px rgba(111, 227, 209, 0.8);
 }
 .status-text {
   text-align: center;
