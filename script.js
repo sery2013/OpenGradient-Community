@@ -945,53 +945,6 @@ async function generateCardCanvas(username, stats) {
         ctx.fillText(Number(m.val).toLocaleString(), x + (cellW - 12) / 2, y + 100);
     });
 
-    ctx.textAlign = 'left';
-
-    // === ЛОГОТИП И ТЕКСТ ===
-    try {
-        const logoImg = new Image();
-        logoImg.crossOrigin = 'anonymous';
-        logoImg.src = 'https://i.postimg.cc/prn7dJ1c/Gemini-Generated-Image-nq0xe5nq0xe5nq0x-(1).png';
-        
-        console.log('🔄 Загрузка логотипа...');
-        
-        // Ждём загрузки
-        await Promise.race([
-            new Promise((resolve, reject) => {
-                logoImg.onload = () => {
-                    console.log('✅ Логотип загружен:', logoImg.width, 'x', logoImg.height);
-                    resolve();
-                };
-                logoImg.onerror = (e) => {
-                    console.error('❌ Ошибка загрузки логотипа:', e);
-                    reject(new Error('Logo failed to load'));
-                };
-            }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
-        ]);
-
-        // Рисуем логотип если загрузился
-        if (logoImg.complete && logoImg.naturalWidth !== 0) {
-            const logoSize = 55;  // Размер 45x45 пикселей
-            const logoX = (W / 2) - 350;  // СДВИНУЛ ЛЕВЕЕ (было -180, стало -220)
-            const logoY = H - 176;  // ПОДНЯЛ ВЫШЕ (было -175, стало -180)
-            
-            ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
-            console.log('🎨 Логотип нарисован на позиции:', logoX, logoY);
-        }
-        
-    } catch (e) {
-        console.error('❌ Ошибка при загрузке логотипа:', e.message);
-    }
-
-    // Текст (рисуем ВСЕГДА)
-    ctx.fillStyle = '#6fe3d1';
-    ctx.font = 'bold 40px Segoe UI, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('TWITTER RITUAL COMMUNITY', W / 2, H - 135);  // ОПУСТИЛ НИЖЕ (было -145, стало -135)
-    ctx.textAlign = 'left';
-    // === КОНЕЦ ЛОГОТИПА ===
-
     // 7. Нижняя разделительная линия
     ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
     ctx.lineWidth = 2;
@@ -1000,7 +953,7 @@ async function generateCardCanvas(username, stats) {
     ctx.lineTo(W - 40, H - 100);
     ctx.stroke();
 
-    // 8. Футер (рисуем ВСЕГДА)
+    // 8. Футер
     ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
     ctx.font = '20px Segoe UI, sans-serif';
     ctx.textAlign = 'center';
@@ -1219,7 +1172,7 @@ function toggleTweetsRow(tr, username) {
             const url = tweet.url || (tweet.id_str ? `https://twitter.com/${username}/status/${tweet.id_str}` : "#");
             
             // Формат даты
-            let dateRaw = tweet.created_at || tweet.tweet_created_at || "";
+            let dateRaw = tweet.tweet_created_at || tweet.created_at || "";
             let date = "";
             if (dateRaw) {
                 const parsed = new Date(dateRaw);
@@ -1242,15 +1195,7 @@ function toggleTweetsRow(tr, username) {
             // Создаём карточку твита
             const card = document.createElement("div");
             card.classList.add("tweet-card");
-            card.style.cssText = `
-                background: linear-gradient(135deg, #2F4F4F, #1a2a2a);
-                border: 1px solid rgba(111, 227, 209, 0.2);
-                border-radius: 12px;
-                padding: 15px;
-                width: 400px;
-                color: #fff;
-                transition: all 0.2s;
-            `;
+            card.style.cssText = `background: linear-gradient(135deg, #2F4F4F, #1a2a2a); border: 1px solid rgba(111, 227, 209, 0.2); border-radius: 12px; padding: 15px; width: 400px; color: #fff; transition: all 0.2s;`;
             card.onmouseenter = () => card.style.transform = 'translateY(-3px)';
             card.onmouseleave = () => card.style.transform = 'translateY(0)';
             
