@@ -1,29 +1,5 @@
-/* === GLOBAL === */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-:root {
-  --bg: #0a0f16;
-  --bg-dark: #06090e;
-  --bg-card: #111a24;
-  --text: #e6f0f5;
-  --text-muted: #a9ddd3;
-  --accent: #6fe3d1;
-  --accent-hover: #00c4b0;
-  --border: rgba(111, 227, 209, 0.2);
-}
-
-body {
-  font-family: 'Inter', sans-serif;
-  background-color: var(--bg);
-  color: var(--text);
-  line-height: 1.6;
-}
-
-/* === HEADER === */
+/* === ДИЗАЙН ПОД СКРИНШОТЫ 1–3 === */
+/* 1. Заголовок */
 .header {
   text-align: center;
   padding: 40px 20px 20px;
@@ -36,10 +12,6 @@ body {
   justify-content: center;
   gap: 16px;
   margin-bottom: 16px;
-}
-.logo-container img {
-  border-radius: 50%;
-  border: 1px solid var(--accent);
 }
 .header-title {
   font-size: 4.2rem;
@@ -56,29 +28,29 @@ body {
 }
 .ritualists-text {
   display: block;
-  color: var(--accent);
+  color: #6fe3d1;
 }
 .header-subtitle {
   font-size: 1.2rem;
-  color: var(--text-muted);
+  color: #a9ddd3;
   max-width: 600px;
   margin: 0 auto;
 }
 
-/* === TABS === */
+/* 2. Вкладки */
 .tabs {
   display: flex;
   justify-content: center;
-  gap: 12px;
-  margin: 32px auto;
+  gap: 8px;
+  margin: 24px auto;
   max-width: 800px;
 }
 .tab-btn {
-  background: var(--bg-card);
-  color: var(--text);
-  border: 1px solid var(--border);
+  background: #0a0f16;
+  color: #e6f0f5;
+  border: 1px solid rgba(111, 227, 209, 0.2);
   border-radius: 8px;
-  padding: 12px 24px;
+  padding: 12px 20px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -88,80 +60,22 @@ body {
   gap: 8px;
 }
 .tab-btn:hover {
-  background: var(--accent-hover);
+  background: #00c4b0;
   color: #fff;
-  box-shadow: 0 0 12px rgba(111, 227, 209, 0.5);
-  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(111, 227, 209, 0.6);
+  border-color: #6fe3d1;
 }
 .tab-btn.active {
-  background: var(--accent-hover);
+  background: #00c4b0;
   color: #fff;
-  box-shadow: 0 0 16px rgba(111, 227, 209, 0.7);
-  border-color: var(--accent);
+  box-shadow: 0 0 16px rgba(111, 227, 209, 0.8);
+  border-color: #6fe3d1;
 }
 
-/* === CONTENT === */
-.content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px 40px;
-}
-
-/* SEARCH BOX */
-.search-box {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
-  max-width: 600px;
-}
-.search-box input {
-  flex: 1;
-  background: var(--bg-dark);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px 16px;
-  color: var(--text);
-  font-size: 1rem;
-}
-.search-box button {
-  background: var(--accent-hover);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 0 16px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-/* TABLE */
-.table-container {
-  overflow-x: auto;
-}
-#leaderboard-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--bg-card);
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-}
+/* 3. Таблица */
 #leaderboard-table th {
-  background: rgba(17, 26, 36, 0.7);
-  color: var(--accent);
+  color: #6fe3d1;
   font-weight: 600;
-  padding: 16px 12px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-}
-#leaderboard-table td {
-  padding: 16px 12px;
-  border-bottom: 1px solid rgba(111, 227, 209, 0.05);
-}
-#leaderboard-table tr:last-child td {
-  border-bottom: none;
-}
-#leaderboard-table tr:hover {
-  background: rgba(16, 24, 36, 0.5);
 }
 .user-cell {
   display: flex;
@@ -172,7 +86,7 @@ body {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--accent);
+  background: #6fe3d1;
   color: #0a0f16;
   font-weight: 700;
   display: flex;
@@ -180,6 +94,8 @@ body {
   justify-content: center;
   font-size: 0.9rem;
 }
+
+/* 4. Кнопка GENERATE */
 .generate-btn {
   background: #2F4F4F;
   color: #fff;
@@ -191,12 +107,12 @@ body {
   transition: all 0.3s ease;
 }
 .generate-btn:hover {
-  background: var(--accent-hover);
+  background: #00c4b0;
   box-shadow: 0 0 10px rgba(111, 227, 209, 0.6);
 }
 
-/* CARD MODAL */
-#card-modal {
+/* 5. Модальное окно */
+.card-modal {
   position: fixed;
   inset: 0;
   background: rgba(8, 12, 20, 0.95);
@@ -209,39 +125,74 @@ body {
   display: none;
 }
 .card-modal-content {
-  background: #0a0f16;
+  background: #1a1a1a;
   border-radius: 16px;
-  padding: 24px;
-  max-width: 640px;
+  padding: 28px;
+  max-width: 1240px;
   width: 100%;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(111, 227, 209, 0.2);
+  border: 1px solid rgba(111, 227, 209, 0.3);
   position: relative;
+}
+.close-modal {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.8rem;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+.close-modal:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: rotate(90deg);
+}
+.canvas-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+#user-canvas {
+  width: 100%;
+  max-width: 1200px;
+  height: auto;
+  display: block;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(111, 227, 209, 0.3);
 }
 .card-actions {
   display: flex;
   gap: 12px;
-  margin-top: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 16px;
 }
 .card-actions button {
-  flex: 1;
-  padding: 12px;
+  padding: 12px 20px;
   border-radius: 8px;
   border: none;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s;
 }
 .btn-download {
   background: #2F4F4F;
   color: #fff;
 }
 .btn-download:hover {
-  background: var(--accent-hover);
+  background: #00c4b0;
 }
 .btn-mint {
-  background: var(--accent-hover);
-  color: #fff;
+  background: #00c4b0;
+  color: #0a0f16;
 }
 .btn-mint:hover {
   box-shadow: 0 0 12px rgba(111, 227, 209, 0.7);
@@ -249,43 +200,26 @@ body {
 #mint-status {
   margin-top: 8px;
   font-size: 0.9rem;
-  color: var(--text-muted);
+  color: #a9ddd3;
   text-align: center;
 }
 
-/* FOOTER */
+/* 6. Футер */
 .footer {
   text-align: center;
   padding: 32px 20px;
-  color: var(--text-muted);
+  color: #e6f0f5;
   font-size: 0.9rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgba(111, 227, 209, 0.2);
   margin-top: 40px;
 }
 .footer a {
-  color: #fff;
+  color: #e6f0f5;
   text-decoration: none;
 }
 .footer a:hover {
   text-decoration: underline;
 }
 .footer a span {
-  border-bottom: 1px solid rgba(255,255,255,0.3);
-}
-
-/* MOBILE */
-@media (max-width: 768px) {
-  .header-title {
-    font-size: 3rem;
-  }
-  .tabs {
-    flex-wrap: wrap;
-  }
-  .tab-btn {
-    padding: 10px 16px;
-    font-size: 0.9rem;
-  }
-  .search-box {
-    flex-direction: column;
-  }
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
 }
