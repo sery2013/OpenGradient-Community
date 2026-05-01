@@ -1,115 +1,102 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ritual Community Tracker</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ritual Leaderboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
 </head>
 <body>
-  <!-- HEADER -->
-  <header class="header">
-    <div class="logo-container">
-      <img src="https://ritual.net/favicon.ico" alt="Ritual Logo" width="32" height="32">
-      <h1 class="header-title">
-        <span class="welcome-text">WELCOME</span><br>
-        <span class="ritualists-text">RITUALISTS!</span>
-      </h1>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <span class="logo-dot"></span>
+                RITUAL STATS
+            </div>
+            <nav class="tabs-nav">
+                <button class="tab-btn active" data-tab="leaderboard">📊 Leaderboard</button>
+                <button class="tab-btn" data-tab="nft-gallery">🖼️ NFT Gallery</button>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content">
+            <header class="top-bar">
+                <div class="stats-overview">
+                    <div class="stat-card">
+                        <span class="stat-label">Total Posts</span>
+                        <span id="total-posts" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Total Users</span>
+                        <span id="total-users" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Total Views</span>
+                        <span id="total-views" class="stat-value">0</span>
+                    </div>
+                </div>
+            </header>
+
+            <div id="leaderboard-wrapper" class="tab-content active">
+                <div class="filters">
+                    <div class="search-box">
+                        <input type="text" id="search" placeholder="Search user...">
+                    </div>
+                    <select id="time-select">
+                        <option value="all">All Time</option>
+                        <option value="7">Last 7 Days</option>
+                        <option value="30">Last 30 Days</option>
+                    </select>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th id="posts-header" class="sortable">Posts <span class="sort-arrow"></span></th>
+                                <th id="likes-header" class="sortable">Likes <span class="sort-arrow"></span></th>
+                                <th id="retweets-header" class="sortable">RTs <span class="sort-arrow"></span></th>
+                                <th id="comments-header" class="sortable">Comments <span class="sort-arrow"></span></th>
+                                <th id="views-col-header" class="sortable">Views <span class="sort-arrow"></span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body"></tbody>
+                    </table>
+                </div>
+
+                <div class="pagination">
+                    <button id="prev-page">←</button>
+                    <span id="page-info">Page 1 / 1</span>
+                    <button id="next-page">→</button>
+                </div>
+            </div>
+
+            <div id="tab-nft-gallery" class="tab-content" style="display:none;">
+                <div class="gallery-grid" id="nft-grid"></div>
+            </div>
+        </main>
     </div>
-    <p class="header-subtitle">
-      Analyze community metrics on the Ritual Testnet.<br>
-      Generate your personal stats card and mint it as an NFT.
-    </p>
-  </header>
 
-  <!-- TABS -->
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="leaderboard">🏆 LEADERBOARD</button>
-    <button class="tab-btn" data-tab="analytics">📊 ANALYTICS</button>
-    <button class="tab-btn" data-tab="gallery">🖼️ GALLERY</button>
-  </div>
-
-  <!-- CONTENT -->
-  <main class="content">
-    <!-- LEADERBOARD TAB -->
-    <div id="leaderboard-tab" class="tab-content active">
-      <div class="search-box">
-        <input type="text" id="search-input" placeholder="Search by username...">
-        <button id="search-btn">🔍</button>
-      </div>
-      <div class="table-container">
-        <table id="leaderboard-table">
-          <thead>
-            <tr>
-              <th>USER</th>
-              <th>POSTS</th>
-              <th>RETWEETS</th>
-              <th>COMMENTS</th>
-              <th>LIKES</th>
-              <th>VIEWS</th>
-              <th>CARD</th>
-            </tr>
-          </thead>
-          <tbody id="leaderboard-body"></tbody>
-        </table>
-      </div>
+    <!-- Modal for Card Generation -->
+    <div id="card-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Generate Member Card</h3>
+            <div class="canvas-wrapper">
+                <canvas id="user-canvas" width="1200" height="675"></canvas>
+            </div>
+            <div class="modal-actions">
+                <button id="btn-download" class="primary-btn">Download PNG</button>
+                <button id="btn-mint" onclick="mintCardNFT()" class="mint-btn">Mint NFT (0.01 RITUAL)</button>
+            </div>
+            <p id="mint-status"></p>
+        </div>
     </div>
 
-    <!-- ANALYTICS TAB -->
-    <div id="analytics-tab" class="tab-content">
-      <div class="filters">
-        <label>Filter by time:</label>
-        <select id="time-filter">
-          <option value="all">All Time</option>
-          <option value="7d">Last 7 Days</option>
-          <option value="30d">Last 30 Days</option>
-        </select>
-      </div>
-      <div id="analytics-chart-container">
-        <canvas id="analytics-chart"></canvas>
-      </div>
-      <div class="heatmap">
-        <h3>Activity Heatmap</h3>
-        <div id="heatmap-grid"></div>
-      </div>
-    </div>
-
-    <!-- GALLERY TAB -->
-    <div id="gallery-tab" class="tab-content">
-      <h2>NFT Gallery</h2>
-      <div id="nft-gallery" class="gallery-grid"></div>
-    </div>
-  </main>
-
-  <!-- CARD MODAL -->
-  <div id="card-modal" class="card-modal" style="display:none;">
-    <div class="card-modal-content">
-      <button class="close-modal" onclick="document.getElementById('card-modal').style.display='none'">✕</button>
-      <canvas id="user-canvas" width="1200" height="675"></canvas>
-      <div class="card-actions">
-        <button id="btn-download">📥 Download PNG</button>
-        <button id="btn-mint">🔥 Mint NFT (0.001 RITUAL)</button>
-        <p id="mint-status"></p>
-      </div>
-    </div>
-  </div>
-
-  <!-- FOOTER -->
-  <footer class="footer">
-    <div>
-      <a href="https://ritual.net" target="_blank">ritual.net</a>
-      • developer: 
-      <a href="https://x.com/kaye_moni" target="_blank" style="display:flex; align-items:center; gap:4px;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M18.901 1.153h3.68l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.244 2.25H8.05l4.713 6.932L18.901 1.153ZM17.61 20.644h2.039L6.486 3.24H4.298l13.312 17.404Z" fill="white"/>
-        </svg>
-        <span style="border-bottom:1px solid rgba(255,255,255,0.3);">@kaye_moni</span>
-      </a>
-    </div>
-    <p>© 2024 RITUAL FOUNDATION</p>
-  </footer>
-
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
