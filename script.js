@@ -376,7 +376,7 @@ const CONTRACT_ABI = [
 ];
 let currentCardData = { username: "", stats: {}, imageData: "" };
 
-// === NFT MINT: ФИНАЛЬНАЯ ВЕРСИЯ (Legacy TX через window.ethereum.request) ===
+// === NFT MINT: ФИНАЛЬНАЯ ВЕРСИЯ (Legacy TX, RPC-запросы, без getGasPrice()) ===
 async function mintCardNFT() {
   const status = document.getElementById('mint-status');
   const btn = document.getElementById('btn-mint');
@@ -417,56 +417,90 @@ async function mintCardNFT() {
       "" // 🔥 ПУСТАЯ СТРОКА - чтобы избежать "Payload Too Large"
     ]);
 
-    // 4. Получаем gasPrice и nonce напрямую из RPC (без ethers)
-    const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
-    const nonce = await provider.getTransactionCount(address, "pending");
-    const gasPrice = await provider.getGasPrice();
-    const gasPriceHex = ethers.toBeHex(gasPrice);
+    // 4. Получаем gasPrice и nonce НАПРЯМУЮ через RPC (без ethers)
+    status.textContent = '🔍 Получаю параметры транзакции...';
+
+    // --- RPC: eth_gasPrice ---
+    const gasPriceResponse = await fetch("https://rpc.ritualfoundation.org", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "eth_gasPrice",
+        params: []
+      })
+    });
+    const gasPriceData = await gasPriceResponse.json();
+    if (gasPriceData.error) throw new Error(`RPC Error (gasPrice): ${gasPriceData.error.message}`);
+    const gasPriceHex = gasPriceData.result;
+
+    // --- RPC: eth_getTransactionCount ---
+    const nonceResponse = await fetch("https://rpc.ritualfoundation.org", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 2,
+        method: "eth_getTransactionCount",
+        params: [address, "pending"]
+      })
+    });
+    const nonceData = await nonceResponse.json();
+    if (nonceData.error) throw new Error(`RPC Error (nonce): ${nonceData.error.message}`);
+    const nonceHex = nonceData.result;
+
+    // --- Преобразуем в числа ---
+    const gasPrice = BigInt(gasPriceHex);
+    const nonce = parseInt(nonceHex, 16);
 
     // 5. Оценка gas (через RPC, если возможно)
-    let estimatedGas = 800000n; // фикс, если RPC не отвечает
+    let estimatedGasHex = "0xC3500"; // 800000 в hex по умолчанию
     try {
-      const estimationResult = await fetch(provider.connection.url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const estimationResponse = await fetch("https://rpc.ritualfoundation.org", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           jsonrpc: "2.0",
-          id: Date.now(),
+          id: 3,
           method: "eth_estimateGas",
           params: [{
             from: address,
             to: CONTRACT_ADDRESS,
             data: callData,
             value: ethers.toBeHex(ethers.parseEther("0.0001")),
-            gasPrice: gasPriceHex
+            gasPrice: gasPriceHex // Используем тот же gasPrice
           }]
         })
-      }).then(r => r.json());
-      if (!estimationResult.error) {
-        estimatedGas = BigInt(estimationResult.result);
-        // Добавим 20% запаса
-        estimatedGas = estimatedGas + (estimatedGas / 5n);
+      });
+      const estimationData = await estimationResponse.json();
+      if (!estimationData.error) {
+        let est = parseInt(estimationData.result, 16);
+        est = Math.floor(est * 1.2); // Добавим 20% запаса
+        estimatedGasHex = ethers.toBeHex(est);
+      } else {
+        console.warn("Gas estimation failed (using default):", estimationData.error.message);
       }
     } catch (e) {
-      console.warn("Gas estimation failed, using default: ", e);
+      console.warn("Gas estimation failed (using default):", e);
     }
 
-    // 6. ФОРМИРУЕМ ПАРАМЕТРЫ ТРАНЗАКЦИИ
+    // 6. ФОРМИРУЕМ ПАРАМЕТРЫ ТРАНЗАКЦИИ (Legacy Type 0)
     const txParams = {
       from: address,
       to: CONTRACT_ADDRESS,
-      data: callData, // ИСПРАВЛЕНО: было callData, должно быть data
-      value: ethers.toBeHex(ethers.parseEther("0.0001")), 
-      gasPrice: gasPriceHex, 
-      gas: ethers.toBeHex(estimatedGas), 
-      nonce: ethers.toBeHex(nonce), 
+      data: callData,
+      value: ethers.toBeHex(ethers.parseEther("0.0001")),
+      gasPrice: gasPriceHex, // Legacy gas price
+      gas: estimatedGasHex, // Оценённый или фиксированный gas
+      nonce: ethers.toBeHex(nonce), // Уникальный номер транзакции
       type: '0x0', // Явный Legacy тип для совместимости
       chainId: '0x7BB' // ID 1979 в HEX для CratD2C
     };
 
     status.textContent = '🔐 Подтверждаю транзакцию в кошельке...';
 
-    // 7. Отправка
+    // 7. Отправка через window.ethereum.request
     const txHash = await window.ethereum.request({
       method: 'eth_sendTransaction',
       params: [txParams],
@@ -475,7 +509,8 @@ async function mintCardNFT() {
     status.textContent = `⛓️ Транзакция отправлена: ${txHash.slice(0, 6)}...${txHash.slice(-4)}`;
     status.style.color = '#fbbf24';
 
-    // 8. Ждём подтверждения
+    // 8. Ждём подтверждения через JsonRpcProvider
+    const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
     const receipt = await provider.waitForTransaction(txHash, 1, 120000); // 2 мин таймаут
     if (receipt && receipt.status === 1) {
       status.textContent = '✅ Успешно заминчено!';
@@ -489,7 +524,13 @@ async function mintCardNFT() {
 
   } catch (err) {
     console.error(err);
-    status.textContent = `❌ ${err.message || 'Ошибка при минте'}`;
+    if (err.message?.includes('insufficient funds')) {
+      status.textContent = '❌ Недостаточно CRAT на газ или цену минта';
+    } else if (err.message?.includes('transaction type not supported')) {
+      status.textContent = '❌ Сеть не поддерживает этот тип транзакции';
+    } else {
+      status.textContent = `❌ ${err.message || 'Ошибка при минте'}`;
+    }
     status.style.color = '#f87171';
     btn.disabled = false;
   }
