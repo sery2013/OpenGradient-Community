@@ -3,96 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ritual Leaderboard</title>
+    <title>Ritual Community Tracker</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-container">
-        <aside class="sidebar">
-            <div class="logo">
-                <span class="logo-dot"></span>
-                RITUAL STATS
+    <div class="main-wrapper">
+        <!-- Шапка с лого и кошельком -->
+        <header class="navbar">
+            <div class="brand">
+                <img src="https://ritual.net/favicon.ico" alt="logo" class="nav-logo">
+                <span class="brand-text">RITUAL COMMUNITY</span>
             </div>
-            <nav class="tabs-nav">
-                <button class="tab-btn active" data-tab="leaderboard">📊 Leaderboard</button>
-                <button class="tab-btn" data-tab="nft-gallery">🖼️ NFT Gallery</button>
-            </nav>
-        </aside>
-
-        <main class="content">
-            <header class="top-bar">
-                <div class="stats-overview">
-                    <div class="stat-card">
-                        <span class="stat-label">Total Posts</span>
-                        <span id="total-posts-val" class="stat-value">0</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-label">Total Users</span>
-                        <span id="total-users-val" class="stat-value">0</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-label">Total Views</span>
-                        <span id="total-views-val" class="stat-value">0</span>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Вкладка Лидерборда -->
-            <div id="leaderboard-wrapper" class="tab-content active">
-                <div class="filters">
-                    <input type="text" id="search" placeholder="Search user...">
-                    <select id="time-select">
-                        <option value="all">All Time</option>
-                        <option value="7">Last 7 Days</option>
-                        <option value="30">Last 30 Days</option>
-                    </select>
-                </div>
-
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>User</th>
-                                <th id="posts-header" class="sortable">Posts</th>
-                                <th id="likes-header" class="sortable">Likes</th>
-                                <th id="retweets-header" class="sortable">RTs</th>
-                                <th id="comments-header" class="sortable">Comments</th>
-                                <th id="views-header" class="sortable">Views</th>
-                            </tr>
-                        </thead>
-                        <tbody id="leaderboard-body"></tbody>
-                    </table>
-                </div>
-
-                <div class="pagination">
-                    <button id="prev-page">←</button>
-                    <span id="page-info">Page 1 / 1</span>
-                    <button id="next-page">→</button>
-                </div>
+            <div class="wallet-status">
+                <span class="dot"></span>
+                <span class="address">0xeb76...17a4</span>
             </div>
+        </header>
 
-            <!-- Вкладка Галереи -->
-            <div id="tab-nft-gallery" class="tab-content" style="display:none;">
-                <div class="gallery-grid" id="nft-grid">
-                    <p style="padding: 20px; color: var(--text-dim);">Галерея пуста или загружается...</p>
-                </div>
+        <!-- Hero Section как на скриншоте (1) -->
+        <section class="hero">
+            <h1>WELCOME<br><span class="highlight">RITUALISTS!</span></h1>
+            <p class="subtitle">Analyze community metrics on the Ritual Testnet.<br>Generate your personal stats card and mint it as an NFT.</p>
+            
+            <div class="nav-pills">
+                <button class="pill active" data-tab="leaderboard">🏆 LEADERBOARD</button>
+                <button class="pill" data-tab="analytics">📊 ANALYTICS</button>
+                <button class="pill" data-tab="gallery">🖼️ GALLERY</button>
             </div>
-        </main>
-    </div>
+        </section>
 
-    <!-- Модальное окно -->
-    <div id="card-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h3>Generate Member Card</h3>
-            <div class="canvas-wrapper">
-                <canvas id="user-canvas" width="1200" height="675"></canvas>
+        <!-- Поиск и Статистика (Dashboard Updated) -->
+        <section class="controls-row">
+            <div class="search-box">
+                <img src="https://img.icons8.com/ios/50/6fe3d1/search--v1.png" class="search-icon">
+                <input type="text" id="search" placeholder="Search by username...">
             </div>
-            <div class="modal-actions">
-                <button id="btn-download" class="primary-btn">Download PNG</button>
+            <div class="update-status">
+                <div class="refresh-icon">🔄</div>
+                <span>DASHBOARD UPDATED</span>
+            </div>
+        </section>
+
+        <!-- Таблица как на скриншоте (2) -->
+        <div id="leaderboard-wrapper" class="tab-content active">
+            <div class="table-container">
+                <table class="ritual-table">
+                    <thead>
+                        <tr>
+                            <th>USER</th>
+                            <th id="posts-header" class="sortable">POSTS</th>
+                            <th id="retweets-header" class="sortable">RETWEETS</th>
+                            <th id="comments-header" class="sortable">COMMENTS</th>
+                            <th id="likes-header" class="sortable">LIKES</th>
+                            <th id="views-header" class="sortable">VIEWS</th>
+                            <th>CARD</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        <!-- Данные вставляются через JS -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="pagination">
+                <button id="prev-page" class="pager-btn">←</button>
+                <span id="page-info">Page 1 / 1</span>
+                <button id="next-page" class="pager-btn">→</button>
             </div>
         </div>
+
+        <!-- Футер как на скриншоте (3) -->
+        <footer class="ritual-footer">
+            <div class="footer-links">
+                <a href="#">ritual.net</a>
+                <span class="separator">•</span>
+                <span>developer: <a href="https://x.com/kaye_moni" target="_blank">@kaye_moni</a></span>
+            </div>
+            <p class="copyright">© 2024 RITUAL FOUNDATION</p>
+        </footer>
     </div>
 
     <script src="script.js"></script>
