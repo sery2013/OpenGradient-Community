@@ -376,7 +376,7 @@ const CONTRACT_ABI = [
 ];
 let currentCardData = { username: "", stats: {}, imageData: "" };
 
-// === NFT MINT: ФИНАЛЬНАЯ ВЕРСИЯ (Legacy TX, RPC-запросы, без getGasPrice()) ===
+// === NFT MINT: ФИНАЛЬНОЕ РЕШЕНИЕ (только через window.ethereum, без fetch к RPC) ===
 async function mintCardNFT() {
   const status = document.getElementById('mint-status');
   const btn = document.getElementById('btn-mint');
@@ -417,75 +417,36 @@ async function mintCardNFT() {
       "" // 🔥 ПУСТАЯ СТРОКА - чтобы избежать "Payload Too Large"
     ]);
 
-    // 4. Получаем gasPrice и nonce НАПРЯМУЮ через RPC (без ethers)
+    // 4. Получаем параметры транзакции через window.ethereum (без fetch к RPC)
     status.textContent = '🔍 Получаю параметры транзакции...';
 
-    // --- RPC: eth_gasPrice ---
-    const gasPriceResponse = await fetch("https://rpc.ritualfoundation.org", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method: "eth_gasPrice",
-        params: []
-      })
-    });
-    const gasPriceData = await gasPriceResponse.json();
-    if (gasPriceData.error) throw new Error(`RPC Error (gasPrice): ${gasPriceData.error.message}`);
-    const gasPriceHex = gasPriceData.result;
+    // --- Получаем gasPrice ---
+    const gasPriceHex = await window.ethereum.request({ method: 'eth_gasPrice' });
 
-    // --- RPC: eth_getTransactionCount ---
-    const nonceResponse = await fetch("https://rpc.ritualfoundation.org", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 2,
-        method: "eth_getTransactionCount",
-        params: [address, "pending"]
-      })
-    });
-    const nonceData = await nonceResponse.json();
-    if (nonceData.error) throw new Error(`RPC Error (nonce): ${nonceData.error.message}`);
-    const nonceHex = nonceData.result;
+    // --- Получаем nonce ---
+    const nonceHex = await window.ethereum.request({ method: 'eth_getTransactionCount', params: [address, 'pending'] });
 
-    // --- Преобразуем в числа ---
-    const gasPrice = BigInt(gasPriceHex);
-    const nonce = parseInt(nonceHex, 16);
-
-    // 5. Оценка gas (через RPC, если возможно)
-    let estimatedGasHex = "0xC3500"; // 800000 в hex по умолчанию
+    // --- Оцениваем gas ---
+    let estimatedGasHex = '0xC3500'; // 800000 в hex по умолчанию
     try {
-      const estimationResponse = await fetch("https://rpc.ritualfoundation.org", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: 3,
-          method: "eth_estimateGas",
-          params: [{
-            from: address,
-            to: CONTRACT_ADDRESS,
-            data: callData,
-            value: ethers.toBeHex(ethers.parseEther("0.0001")),
-            gasPrice: gasPriceHex // Используем тот же gasPrice
-          }]
-        })
+      const estimation = await window.ethereum.request({
+        method: 'eth_estimateGas',
+        params: [{
+          from: address,
+          to: CONTRACT_ADDRESS,
+          data: callData,
+          value: ethers.toBeHex(ethers.parseEther("0.0001")),
+          gasPrice: gasPriceHex
+        }]
       });
-      const estimationData = await estimationResponse.json();
-      if (!estimationData.error) {
-        let est = parseInt(estimationData.result, 16);
-        est = Math.floor(est * 1.2); // Добавим 20% запаса
-        estimatedGasHex = ethers.toBeHex(est);
-      } else {
-        console.warn("Gas estimation failed (using default):", estimationData.error.message);
-      }
+      let est = parseInt(estimation, 16);
+      est = Math.floor(est * 1.2); // Добавим 20% запаса
+      estimatedGasHex = ethers.toBeHex(est);
     } catch (e) {
       console.warn("Gas estimation failed (using default):", e);
     }
 
-    // 6. ФОРМИРУЕМ ПАРАМЕТРЫ ТРАНЗАКЦИИ (Legacy Type 0)
+    // 5. ФОРМИРУЕМ ПАРАМЕТРЫ ТРАНЗАКЦИИ (Legacy Type 0)
     const txParams = {
       from: address,
       to: CONTRACT_ADDRESS,
@@ -493,14 +454,14 @@ async function mintCardNFT() {
       value: ethers.toBeHex(ethers.parseEther("0.0001")),
       gasPrice: gasPriceHex, // Legacy gas price
       gas: estimatedGasHex, // Оценённый или фиксированный gas
-      nonce: ethers.toBeHex(nonce), // Уникальный номер транзакции
+      nonce: nonceHex, // Уникальный номер транзакции
       type: '0x0', // Явный Legacy тип для совместимости
       chainId: '0x7BB' // ID 1979 в HEX для CratD2C
     };
 
     status.textContent = '🔐 Подтверждаю транзакцию в кошельке...';
 
-    // 7. Отправка через window.ethereum.request
+    // 6. Отправка через window.ethereum.request (минуя fetch к RPC)
     const txHash = await window.ethereum.request({
       method: 'eth_sendTransaction',
       params: [txParams],
@@ -509,8 +470,12 @@ async function mintCardNFT() {
     status.textContent = `⛓️ Транзакция отправлена: ${txHash.slice(0, 6)}...${txHash.slice(-4)}`;
     status.style.color = '#fbbf24';
 
-    // 8. Ждём подтверждения через JsonRpcProvider
-    const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
+    // 7. Ждём подтверждения через JsonRpcProvider (только для просмотра статуса)
+    const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org", {
+      chainId: 1979,
+      name: "cratd2c-testnet"
+    }, { staticNetwork: true });
+
     const receipt = await provider.waitForTransaction(txHash, 1, 120000); // 2 мин таймаут
     if (receipt && receipt.status === 1) {
       status.textContent = '✅ Успешно заминчено!';
@@ -527,7 +492,9 @@ async function mintCardNFT() {
     if (err.message?.includes('insufficient funds')) {
       status.textContent = '❌ Недостаточно CRAT на газ или цену минта';
     } else if (err.message?.includes('transaction type not supported')) {
-      status.textContent = '❌ Сеть не поддерживает этот тип транзакции';
+      status.textContent = '❌ Сеть не поддерживает формат транзакции. (Legacy не принят)';
+    } else if (err.message?.includes('execution reverted')) {
+      status.textContent = '❌ Ошибка контракта. (Неверные параметры)';
     } else {
       status.textContent = `❌ ${err.message || 'Ошибка при минте'}`;
     }
