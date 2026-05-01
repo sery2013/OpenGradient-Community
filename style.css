@@ -1,5 +1,29 @@
-/* === ДИЗАЙН ПОД СКРИНШОТЫ 1–3 === */
-/* 1. Заголовок */
+/* === ОСНОВНЫЕ СТИЛИ === */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #0a0f16;
+  --bg-dark: #06090e;
+  --bg-card: #111a24;
+  --text: #e6f0f5;
+  --text-muted: #a9ddd3;
+  --accent: #6fe3d1;
+  --accent-hover: #00c4b0;
+  --border: rgba(111, 227, 209, 0.2);
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* === HEADER === */
 .header {
   text-align: center;
   padding: 40px 20px 20px;
@@ -12,6 +36,12 @@
   justify-content: center;
   gap: 16px;
   margin-bottom: 16px;
+}
+.logo-container img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
 }
 .header-title {
   font-size: 4.2rem;
@@ -28,16 +58,16 @@
 }
 .ritualists-text {
   display: block;
-  color: #6fe3d1;
+  color: var(--accent);
 }
 .header-subtitle {
   font-size: 1.2rem;
-  color: #a9ddd3;
+  color: var(--text-muted);
   max-width: 600px;
   margin: 0 auto;
 }
 
-/* 2. Вкладки */
+/* === TABS === */
 .tabs {
   display: flex;
   justify-content: center;
@@ -46,9 +76,9 @@
   max-width: 800px;
 }
 .tab-btn {
-  background: #0a0f16;
-  color: #e6f0f5;
-  border: 1px solid rgba(111, 227, 209, 0.2);
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px 20px;
   font-size: 1rem;
@@ -60,22 +90,41 @@
   gap: 8px;
 }
 .tab-btn:hover {
-  background: #00c4b0;
+  background: var(--accent-hover);
   color: #fff;
   box-shadow: 0 0 12px rgba(111, 227, 209, 0.6);
-  border-color: #6fe3d1;
+  border-color: var(--accent);
 }
 .tab-btn.active {
-  background: #00c4b0;
+  background: var(--accent-hover);
   color: #fff;
   box-shadow: 0 0 16px rgba(111, 227, 209, 0.8);
-  border-color: #6fe3d1;
+  border-color: var(--accent);
 }
 
-/* 3. Таблица */
+/* === TABLE === */
+.table-container {
+  overflow-x: auto;
+}
+#leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-card);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
 #leaderboard-table th {
-  color: #6fe3d1;
+  background: rgba(17, 26, 36, 0.7);
+  color: var(--accent);
   font-weight: 600;
+  padding: 16px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+#leaderboard-table td {
+  padding: 16px 12px;
+  border-bottom: 1px solid rgba(111, 227, 209, 0.05);
 }
 .user-cell {
   display: flex;
@@ -86,7 +135,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #6fe3d1;
+  background: var(--accent);
   color: #0a0f16;
   font-weight: 700;
   display: flex;
@@ -95,7 +144,7 @@
   font-size: 0.9rem;
 }
 
-/* 4. Кнопка GENERATE */
+/* === GENERATE BUTTON === */
 .generate-btn {
   background: #2F4F4F;
   color: #fff;
@@ -107,11 +156,11 @@
   transition: all 0.3s ease;
 }
 .generate-btn:hover {
-  background: #00c4b0;
+  background: var(--accent-hover);
   box-shadow: 0 0 10px rgba(111, 227, 209, 0.6);
 }
 
-/* 5. Модальное окно */
+/* === CARD MODAL === */
 .card-modal {
   position: fixed;
   inset: 0;
@@ -153,12 +202,6 @@
 }
 .close-modal:hover {
   background: rgba(255, 255, 255, 0.1);
-  transform: rotate(90deg);
-}
-.canvas-wrapper {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 24px;
 }
 #user-canvas {
   width: 100%;
@@ -172,8 +215,7 @@
   display: flex;
   gap: 12px;
   justify-content: center;
-  flex-wrap: wrap;
-  margin-top: 16px;
+  margin-top: 24px;
 }
 .card-actions button {
   padding: 12px 20px;
@@ -188,10 +230,10 @@
   color: #fff;
 }
 .btn-download:hover {
-  background: #00c4b0;
+  background: var(--accent-hover);
 }
 .btn-mint {
-  background: #00c4b0;
+  background: var(--accent-hover);
   color: #0a0f16;
 }
 .btn-mint:hover {
@@ -200,21 +242,21 @@
 #mint-status {
   margin-top: 8px;
   font-size: 0.9rem;
-  color: #a9ddd3;
+  color: var(--text-muted);
   text-align: center;
 }
 
-/* 6. Футер */
+/* === FOOTER === */
 .footer {
   text-align: center;
   padding: 32px 20px;
-  color: #e6f0f5;
+  color: var(--text);
   font-size: 0.9rem;
-  border-top: 1px solid rgba(111, 227, 209, 0.2);
+  border-top: 1px solid var(--border);
   margin-top: 40px;
 }
 .footer a {
-  color: #e6f0f5;
+  color: var(--text);
   text-decoration: none;
 }
 .footer a:hover {
@@ -222,4 +264,21 @@
 }
 .footer a span {
   border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* === MOBILE === */
+@media (max-width: 768px) {
+  .header-title {
+    font-size: 3rem;
+  }
+  .tabs {
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    padding: 10px 16px;
+    font-size: 0.9rem;
+  }
+  .search-box {
+    flex-direction: column;
+  }
 }
