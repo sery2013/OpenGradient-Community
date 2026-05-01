@@ -306,7 +306,6 @@ async function showCardModal(username, stats) {
 
 // === ГЕНЕРАЦИЯ КАРТОЧКИ (1200×675) ===
 async function generateCardCanvas(username, stats) {
-  console.log("🎨 Generating card for:", username, stats);
   const canvas = document.getElementById('user-canvas');
   if (!canvas) {
     console.error("❌ Canvas not found!");
