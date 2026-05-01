@@ -376,12 +376,12 @@ const CONTRACT_ABI = [
 ];
 let currentCardData = { username: "", stats: {}, imageData: "" };
 
-// === NFT MINT: ФИНАЛЬНОЕ РЕШЕНИЕ (только через window.ethereum, без fetch к RPC) ===
+// === NFT MINT: ИСПРАВЛЕННАЯ ФУНКЦИЯ (ОБХОД ОШИБОК) ===
 async function mintCardNFT() {
   const status = document.getElementById('mint-status');
   const btn = document.getElementById('btn-mint');
   if (!window.ethereum) {
-    status.textContent = '❌ Установи MetaMask или Rabby';
+    status.textContent = '❌ Установи MetaMask/Rabby';
     return;
   }
   btn.disabled = true;
@@ -434,7 +434,7 @@ async function mintCardNFT() {
         params: [{
           from: address,
           to: CONTRACT_ADDRESS,
-          data: callData,
+           callData,
           value: ethers.toBeHex(ethers.parseEther("0.0001")),
           gasPrice: gasPriceHex
         }]
@@ -1504,11 +1504,11 @@ function renderAnalytics() {
             } else if (window.Chart) {
                 analyticsChart = new Chart(ctx.getContext('2d'), {
                     type: 'line',
-                    data: {
+                     {
                         labels: labels,
                         datasets: [{
                             label: 'Tweets per day',
-                            data: counts,
+                             counts,
                             fill: false,
                             borderColor: '#ffffff',
                             borderWidth: 2,
