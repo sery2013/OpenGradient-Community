@@ -1,183 +1,225 @@
-// === ПОДДЕРЖКА КОНТРАКТА И ГЛОБАЛЬНЫЕ НАСТРОЙКИ ===
+/**
+ * RITUAL LEADERBOARD ENGINE
+ * Выполняет функции: загрузку данных, фильтрацию по времени, 
+ * отрисовку NFT-карточек и интеграцию с блокчейном Ritual Foundation.
+ */
+
+// --- КОНФИГУРАЦИЯ И СОСТОЯНИЕ ---
 const CONTRACT_ADDRESS = "0x30412DD5eAf58a8491b2f728140dEb3CDCF83C26";
-const CONTRACT_ABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"string","name":"username","type":"string"},{"internalType":"uint256","name":"posts","type":"uint256"},{"internalType":"uint256","name":"likes","type":"uint256"},{"internalType":"uint256","name":"retweets","type":"uint256"},{"internalType":"uint256","name":"comments","type":"uint256"},{"internalType":"uint256","name":"views","type":"uint256"},{"internalType":"string","name":"imageData","type":"string"}],"name":"mintCard","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"cards","outputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"string","name":"","type":"string"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"string","name":"","type":"string"},{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Transfer","type":"event"}];
+const CONTRACT_ABI = [
+    "function mintCard(address to, string username, uint256 posts, uint256 likes, uint256 retweets, uint256 comments, uint256 views, string imageData) payable",
+    "function cards(uint256 tokenId) view returns (address, string, uint256, uint256, uint256, uint256, uint256, string, uint256)",
+    "function balanceOf(address owner) view returns (uint256)"
+];
 
-let rawData = [], data = [], allTweets = [], sortKey = "posts", sortOrder = "desc", currentPage = 1, timeFilter = "all";
-const perPage = 15;
+let state = {
+    rawData: [],      // Исходные данные лидеров
+    allTweets: [],    // Массив всех твитов для фильтрации по датам
+    processedData: [], // Данные после фильтров и поиска
+    currentSort: { key: 'posts', order: 'desc' },
+    pagination: { current: 1, perPage: 15 },
+    filters: { search: '', time: 'all' }
+};
 
-// === ИНИЦИАЛИЗАЦИЯ И ЗАГРУЗКА ===
-const provider = () => new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
+// --- ИНИЦИАЛИЗАЦИЯ ---
+document.addEventListener('DOMContentLoaded', () => {
+    initializeApp();
+    setupEventListeners();
+});
 
-async function loadApp() {
+async function initializeApp() {
     try {
-        const [lbRes, twRes] = await Promise.all([fetch("leaderboard.json"), fetch("all_tweets.json")]);
-        rawData = await lbRes.json();
-        allTweets = await twRes.json();
-        updateDisplay();
+        console.log("🚀 Загрузка данных...");
+        const [lbResponse, twResponse] = await Promise.all([
+            fetch("leaderboard.json"),
+            fetch("all_tweets.json")
+        ]);
+
+        state.rawData = await lbResponse.json();
+        state.allTweets = await twResponse.json();
+        
+        applyFiltersAndSort();
         setupTabs();
-    } catch (e) { console.error("Load failed", e); }
-}
-
-function updateDisplay() {
-    normalizeData(rawData);
-    data.sort((a, b) => sortOrder === "asc" ? a[sortKey] - b[sortKey] : b[sortKey] - a[sortKey]);
-    renderTable();
-    updateTotals();
-}
-
-// === ОБРАБОТКА ДАННЫХ ===
-function normalizeData(json) {
-    const getVal = (o, k) => o[k] ?? o[k + " "] ?? 0;
-    const entries = Array.isArray(json) ? (Array.isArray(json[0]) ? json : json.map(i => [i.username || i.user, i])) : Object.entries(json);
-    
-    data = entries.map(([name, stats]) => {
-        let base = { 
-            username: name, 
-            posts: Number(getVal(stats, "posts")), 
-            likes: Number(getVal(stats, "likes")), 
-            retweets: Number(getVal(stats, "retweets")), 
-            comments: Number(getVal(stats, "comments")), 
-            views: Number(getVal(stats, "views")) 
-        };
-        if (timeFilter === "all") return base;
-        
-        const filtered = allTweets.filter(t => (t.user?.screen_name || t.username || "").toLowerCase().replace(/^@/,'') === name.toLowerCase().replace(/^@/,''));
-        const days = Number(timeFilter);
-        const now = new Date();
-        
-        return filtered.reduce((acc, t) => {
-            const diff = (now - new Date(t.created_at || t.tweet_created_at)) / 864e5;
-            if (diff <= days) {
-                acc.posts++;
-                acc.likes += (t.favorite_count || 0);
-                acc.views += (t.views_count || 0);
-            }
-            return acc;
-        }, { ...base, posts: 0, likes: 0, retweets: 0, comments: 0, views: 0 });
-    });
-}
-
-function updateTotals() {
-    const sum = (k) => data.reduce((s, i) => s + (i[k] || 0), 0);
-    document.getElementById("total-posts").textContent = `Total Posts: ${sum('posts')}`;
-    document.getElementById("total-users").textContent = `Total Users: ${data.length}`;
-    document.getElementById("total-views").textContent = `Total Views: ${sum('views')}`;
-}
-
-// === UI: ТАБЛИЦА И ПАГИНАЦИЯ ===
-function renderTable() {
-    const tbody = document.getElementById("leaderboard-body");
-    const query = document.getElementById("search").value.toLowerCase();
-    const filtered = data.filter(i => i.username.toLowerCase().includes(query));
-    const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
-    
-    tbody.innerHTML = filtered.slice((currentPage - 1) * perPage, currentPage * perPage).map(s => `
-        <tr onclick="toggleTweetsRow(this, '${s.username}')">
-            <td><div style="display:flex;align-items:center;gap:8px;">
-                <span>${s.username}</span>
-                <button class="generate-card-btn" onclick="event.stopPropagation(); showCardModal('${s.username}')">🎴 Card</button>
-            </div></td>
-            ${['posts','likes','retweets','comments','views'].map(k => `<td>${s[k]}</td>`).join('')}
-        </tr>`).join('');
-    
-    document.getElementById("page-info").textContent = `Page ${currentPage} / ${totalPages}`;
-    updateArrows();
-}
-
-function updateArrows() {
-    document.querySelectorAll(".sort-arrow").forEach(el => el.textContent = "");
-    const header = document.getElementById(`${sortKey}-header`) || document.getElementById(`${sortKey}-col-header`);
-    if (header) {
-        header.querySelector(".sort-arrow").textContent = sortOrder === "asc" ? "▲" : "▼";
-        document.querySelectorAll("thead th").forEach(th => th.classList.toggle("active", th === header));
+    } catch (error) {
+        showNotification("Ошибка загрузки данных. Проверьте JSON файлы.", "error");
+        console.error("Critical Load Error:", error);
     }
 }
 
-// === NFT КАРТОЧКА (CANVAS) ===
-async function generateCardCanvas(username, stats) {
+// --- ЯДРО ОБРАБОТКИ ДАННЫХ ---
+function applyFiltersAndSort() {
+    let filtered = Array.isArray(state.rawData) ? [...state.rawData] : Object.entries(state.rawData).map(([u, s]) => ({ username: u, ...s }));
+
+    // 1. Фильтрация по времени (если выбрано не "all")
+    if (state.filters.time !== 'all') {
+        const daysLimit = parseInt(state.filters.time);
+        const now = new Date();
+        
+        filtered = filtered.map(user => {
+            const userTweets = state.allTweets.filter(t => 
+                (t.user?.screen_name || t.username || "").toLowerCase().replace('@','') === user.username.toLowerCase().replace('@','')
+            );
+            
+            return calculateStatsForPeriod(user, userTweets, daysLimit, now);
+        });
+    }
+
+    // 2. Поиск
+    if (state.filters.search) {
+        filtered = filtered.filter(u => u.username.toLowerCase().includes(state.filters.search.toLowerCase()));
+    }
+
+    // 3. Сортировка
+    filtered.sort((a, b) => {
+        const valA = a[state.currentSort.key] || 0;
+        const valB = b[state.currentSort.key] || 0;
+        return state.currentSort.order === 'desc' ? valB - valA : valA - valB;
+    });
+
+    state.processedData = filtered;
+    renderAll();
+}
+
+function calculateStatsForPeriod(user, tweets, days, now) {
+    const stats = { ...user, posts: 0, likes: 0, retweets: 0, views: 0 };
+    tweets.forEach(t => {
+        const date = new Date(t.created_at || t.tweet_created_at);
+        if ((now - date) / (1000 * 60 * 60 * 24) <= days) {
+            stats.posts++;
+            stats.likes += (t.favorite_count || 0);
+            stats.retweets += (t.retweet_count || 0);
+            stats.views += (t.views_count || 0);
+        }
+    });
+    return stats;
+}
+
+// --- ОТРИСОВКА ИНТЕРФЕЙСА ---
+function renderAll() {
+    renderTable();
+    updateDashboardStats();
+    updatePaginationUI();
+}
+
+function renderTable() {
+    const tbody = document.getElementById("leaderboard-body");
+    const start = (state.pagination.current - 1) * state.pagination.perPage;
+    const pageData = state.processedData.slice(start, start + state.pagination.perPage);
+
+    tbody.innerHTML = pageData.map(user => `
+        <tr class="fade-in">
+            <td>
+                <div class="user-cell">
+                    <span class="username">${user.username}</span>
+                    <button class="generate-card-btn" onclick="openMintModal('${user.username}')">🎴 Card</button>
+                </div>
+            </td>
+            <td>${user.posts.toLocaleString()}</td>
+            <td>${user.likes.toLocaleString()}</td>
+            <td>${(user.retweets || 0).toLocaleString()}</td>
+            <td>${(user.comments || 0).toLocaleString()}</td>
+            <td class="views-cell">${(user.views || 0).toLocaleString()}</td>
+        </tr>
+    `).join('');
+}
+
+function updateDashboardStats() {
+    const totals = state.processedData.reduce((acc, curr) => {
+        acc.posts += (curr.posts || 0);
+        acc.views += (curr.views || 0);
+        return acc;
+    }, { posts: 0, views: 0 });
+
+    document.getElementById("total-posts").textContent = totals.posts.toLocaleString();
+    document.getElementById("total-users").textContent = state.processedData.length;
+    document.getElementById("total-views").textContent = totals.views.toLocaleString();
+}
+
+// --- МОДАЛЬНОЕ ОКНО И CANVAS (NFT) ---
+async function openMintModal(username) {
+    const userStats = state.processedData.find(u => u.username === username);
+    if (!userStats) return;
+
+    const modal = document.getElementById('card-modal');
+    modal.style.display = 'block';
+    
+    await drawNFTCard(username, userStats);
+}
+
+async function drawNFTCard(username, stats) {
     const canvas = document.getElementById('user-canvas');
     const ctx = canvas.getContext('2d');
-    const W = 1200, H = 675;
     
-    // Фон и Рамка
-    const grad = ctx.createLinearGradient(0, 0, W, H);
-    grad.addColorStop(0, '#0f1f1f'); grad.addColorStop(1, '#0d1a1a');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0,0,W,H);
-    ctx.strokeStyle = '#6fe3d166'; ctx.lineWidth = 4;
-    ctx.strokeRect(12,12,W-24,H-24);
+    // Очистка и фон
+    ctx.fillStyle = '#0f1717';
+    ctx.fillRect(0, 0, 1200, 675);
+    
+    // Рисуем декоративные элементы (сетку/градиент)
+    drawCardBranding(ctx);
 
     // Текст
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 48px Segoe UI';
-    ctx.fillText(`@${username}`, 210, 120);
-    
-    // Метрики (Цикл вместо дублирования)
-    const metrics = [
-        { l: 'Posts', v: stats.posts, i: '📝' }, { l: 'Likes', v: stats.likes, i: '❤️' },
-        { l: 'Retweets', v: stats.retweets, i: '🔁' }, { l: 'Comments', v: stats.comments, i: '💬' },
-        { l: 'Views', v: stats.views, i: '👁️' }
+    ctx.fillStyle = '#6fe3d1';
+    ctx.font = 'bold 50px Inter, sans-serif';
+    ctx.fillText(`@${username.toUpperCase()}`, 80, 100);
+
+    // Статистика в ряд
+    const items = [
+        { label: 'POSTS', val: stats.posts, x: 80 },
+        { label: 'LIKES', val: stats.likes, x: 330 },
+        { label: 'VIEWS', val: stats.views, x: 580 }
     ];
-    
-    metrics.forEach((m, i) => {
-        const x = 60 + i * 225;
-        ctx.fillStyle = '#ffffff0a';
-        ctx.fillRect(x, 220, 210, 160);
-        ctx.fillStyle = '#6fe3d1'; ctx.textAlign = 'center';
-        ctx.font = 'bold 36px Segoe UI';
-        ctx.fillText(m.v.toLocaleString(), x + 105, 320);
-        ctx.font = '22px Segoe UI'; ctx.fillStyle = '#a9ddd3';
-        ctx.fillText(`${m.i} ${m.l}`, x + 105, 265);
-    });
 
-    document.getElementById('btn-download').onclick = () => {
-        const a = document.createElement('a');
-        a.download = `${username}_card.png`;
-        a.href = canvas.toDataURL();
-        a.click();
-    };
+    items.forEach(item => {
+        ctx.fillStyle = '#8ba2a0';
+        ctx.font = '20px Inter';
+        ctx.fillText(item.label, item.x, 200);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 40px Inter';
+        ctx.fillText(item.val.toLocaleString(), item.x, 250);
+    });
 }
 
-// === NFT МИНТ ===
-async function mintCardNFT() {
-    const status = document.getElementById('mint-status');
-    if (!window.ethereum) return status.textContent = '❌ Install MetaMask';
+function drawCardBranding(ctx) {
+    const grad = ctx.createLinearGradient(0,0, 1200, 675);
+    grad.addColorStop(0, '#6fe3d122');
+    grad.addColorStop(1, '#00000000');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0, 1200, 675);
     
-    try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const iface = new ethers.Interface(CONTRACT_ABI);
-        const txData = iface.encodeFunctionData('mintCard', [accounts[0], data.username, data.posts, data.likes, data.retweets, data.comments, data.views, ""]);
-        
-        const txHash = await window.ethereum.request({
-            method: 'eth_sendTransaction',
-            params: [{ from: accounts[0], to: CONTRACT_ADDRESS, data: txData, value: '0x5AF3107A4000', chainId: '0x7BB' }]
+    ctx.strokeStyle = '#6fe3d144';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(20, 20, 1160, 635);
+}
+
+// --- СОБЫТИЯ И НАВИГАЦИЯ ---
+function setupEventListeners() {
+    document.getElementById('search').addEventListener('input', (e) => {
+        state.filters.search = e.target.value;
+        state.pagination.current = 1;
+        applyFiltersAndSort();
+    });
+
+    document.getElementById('time-select').addEventListener('change', (e) => {
+        state.filters.time = e.target.value;
+        applyFiltersAndSort();
+    });
+
+    document.querySelectorAll('.sortable').forEach(header => {
+        header.addEventListener('click', () => {
+            const key = header.id.replace('-header', '').replace('-col', '');
+            state.currentSort.order = (state.currentSort.key === key && state.currentSort.order === 'desc') ? 'asc' : 'desc';
+            state.currentSort.key = key;
+            applyFiltersAndSort();
         });
-        status.textContent = '✅ Minted! Hash: ' + txHash.slice(0,10);
-    } catch (e) { status.textContent = '❌ Error: ' + e.message; }
-}
-
-// === СОБЫТИЯ ===
-document.getElementById("search").oninput = () => { currentPage = 1; renderTable(); };
-document.getElementById("time-select").onchange = (e) => { timeFilter = e.target.value; currentPage = 1; updateDisplay(); };
-['posts','likes','retweets','comments','views'].forEach(k => {
-    const el = document.getElementById(k === "views" ? "views-col-header" : k+"-header");
-    if (el) el.onclick = () => {
-        sortOrder = (sortKey === k && sortOrder === "desc") ? "asc" : "desc";
-        sortKey = k;
-        updateDisplay();
-    };
-});
-
-function setupTabs() {
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.onclick = () => {
-            document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active'));
-            btn.classList.add('active');
-            const target = document.getElementById(btn.dataset.tab === 'leaderboard' ? 'leaderboard-wrapper' : `tab-${btn.dataset.tab}`);
-            if (target) target.classList.add('active'), target.style.display = 'block';
-            if (btn.dataset.tab === 'nft-gallery') loadNFTGallery();
-        };
     });
+
+    // Закрытие модалки
+    document.querySelector('.close-modal').onclick = () => {
+        document.getElementById('card-modal').style.display = 'none';
+    };
 }
 
-// Запуск
-loadApp();
+function showNotification(msg, type) {
+    // Здесь можно добавить логику всплывающих уведомлений (Toast)
+    alert(msg); 
+}
