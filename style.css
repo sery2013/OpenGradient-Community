@@ -199,3 +199,49 @@ canvas { width: 100%; height: auto; display: block; }
     align-items: center;
     gap: 20px;
 }
+/* Тонкие рамки для стат-карт */
+.stat-card {
+    background: transparent; /* Убираем тяжелый фон */
+    border: 1px solid rgba(111, 227, 209, 0.2); /* Очень тонкая рамка */
+    padding: 15px 20px;
+    transition: border-color 0.3s;
+}
+
+.stat-card:hover {
+    border-color: var(--accent);
+}
+
+.stat-value {
+    font-size: 1.3rem; /* Чуть компактнее */
+}
+
+/* Стили для раскрывающихся твитов */
+.tweets-row {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.tweets-container {
+    padding: 15px;
+    font-size: 0.9rem;
+}
+
+.tweet-item {
+    border-bottom: 1px solid var(--border);
+    padding: 10px 0;
+}
+
+.tweet-item a {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 0.8rem;
+}
+
+.user-link {
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--text-main);
+}
+
+.user-link:hover {
+    color: var(--accent);
+}
