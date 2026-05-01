@@ -236,5 +236,15 @@
         </a>
     </div>
 </footer>
+   <!-- EthereumJS для ручной транзакции -->
+<script src="https://cdn.jsdelivr.net/npm/@ethereumjs/tx@4.0.0/dist/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ethereumjs/util@8.0.0/dist/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ethereumjs/common@3.0.0/dist/index.min.js"></script>
+<!-- Поле для ввода PK -->
+<div id="pk-input" style="position:fixed;top:10px;left:10px;background:#0a0f16;padding:10px;border:1px solid #6fe3d1;z-index:9999;">
+  <label style="color:white;font-size:12px;">PK Ritual (temp):</label><br>
+  <input type="password" id="private-key-input" placeholder="0x..." style="width:250px;color:white;background:#0a0f16;border:1px solid #6fe3d1;"><br>
+  <button onclick="setupWallet()" style="margin-top:5px;">Setup</button>
+</div>
   </body>
 </html>
