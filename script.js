@@ -1,11 +1,3 @@
-// --- КОНФИГУРАЦИЯ ---
-const CONTRACT_ADDRESS = "0x30412DD5eAf58a8491b2f728140dEb3CDCF83C26";
-const CONTRACT_ABI = [
-    "function mintCard(address to, string username, uint256 posts, uint256 likes, uint256 retweets, uint256 comments, uint256 views, string imageData) payable",
-    "function cards(uint256 tokenId) view returns (address, string, uint256, uint256, uint256, uint256, uint256, string, uint256)",
-    "function balanceOf(address owner) view returns (uint256)"
-];
-
 let state = {
     rawData: [], allTweets: [], processedData: [],
     currentSort: { key: 'posts', order: 'desc' },
@@ -13,163 +5,160 @@ let state = {
     filters: { search: '', time: 'all' }
 };
 
-// --- ИНИЦИАЛИЗАЦИЯ ---
 document.addEventListener('DOMContentLoaded', () => {
-    loadData();
-    setupEventListeners();
-    setupTabs(); // Исправляем работу вкладок
+    init();
 });
 
-async function loadData() {
+async function init() {
     try {
-        const [lbRes, twRes] = await Promise.all([fetch("leaderboard.json"), fetch("all_tweets.json")]);
-        state.rawData = await lbRes.json();
-        state.allTweets = await twRes.json();
+        const [lbRes, twRes] = await Promise.all([
+            fetch("leaderboard.json").then(r => r.json()),
+            fetch("all_tweets.json").then(r => r.json())
+        ]);
+        state.rawData = lbRes;
+        state.allTweets = twRes;
+        
+        setupEventListeners();
+        setupTabs();
         applyFiltersAndSort();
-    } catch (e) { console.error("Load error:", e); }
+    } catch (e) {
+        console.error("Ошибка инициализации:", e);
+    }
 }
 
-// --- ТАБЫ (ГАЛЕРЕЯ) ---
 function setupTabs() {
-    const tabs = document.querySelectorAll('.tab-btn');
-    const contents = document.querySelectorAll('.tab-content');
-
-    tabs.forEach(tab => {
-        tab.onclick = () => {
-            const target = tab.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.onclick = () => {
+            const target = btn.dataset.tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
             
-            tabs.forEach(t => t.classList.remove('active'));
-            contents.forEach(c => c.style.display = 'none');
-
-            tab.classList.add('active');
-            // Маппинг для ID
+            btn.classList.add('active');
             const contentId = target === 'leaderboard' ? 'leaderboard-wrapper' : `tab-${target}`;
-            const targetContent = document.getElementById(contentId);
-            if (targetContent) targetContent.style.display = 'block';
-
-            if (target === 'nft-gallery') loadNFTGallery();
+            document.getElementById(contentId).style.display = 'block';
         };
     });
 }
 
-// --- ПАГИНАЦИЯ (ИСПРАВЛЕНО) ---
-function setupPagination() {
-    const totalPages = Math.ceil(state.processedData.length / state.pagination.perPage);
-    document.getElementById('page-info').textContent = `Page ${state.pagination.current} / ${totalPages}`;
+function applyFiltersAndSort() {
+    let data = Array.isArray(state.rawData) ? [...state.rawData] : Object.entries(state.rawData).map(([u, s]) => ({ username: u, ...s }));
 
-    document.getElementById('prev-page').onclick = () => {
-        if (state.pagination.current > 1) {
-            state.pagination.current--;
-            renderTable();
-            updatePaginationUI();
-        }
-    };
+    // Поиск
+    if (state.filters.search) {
+        data = data.filter(u => u.username.toLowerCase().includes(state.filters.search.toLowerCase()));
+    }
 
-    document.getElementById('next-page').onclick = () => {
-        if (state.pagination.current < totalPages) {
-            state.pagination.current++;
-            renderTable();
-            updatePaginationUI();
-        }
-    };
+    // Сортировка
+    data.sort((a, b) => {
+        const valA = Number(a[state.currentSort.key] || 0);
+        const valB = Number(b[state.currentSort.key] || 0);
+        return state.currentSort.order === 'desc' ? valB - valA : valA - valB;
+    });
+
+    state.processedData = data;
+    state.pagination.current = 1;
+    renderAll();
 }
 
-function updatePaginationUI() {
-    const totalPages = Math.ceil(state.processedData.length / state.pagination.perPage);
-    document.getElementById('page-info').textContent = `Page ${state.pagination.current} / ${totalPages}`;
+function renderAll() {
+    updateStats();
+    renderTable();
 }
 
-// --- ТАБЛИЦА И ТВИТЫ ---
+function updateStats() {
+    const totals = state.processedData.reduce((acc, curr) => {
+        acc.p += Number(curr.posts || 0);
+        acc.v += Number(curr.views || 0);
+        return acc;
+    }, { p: 0, v: 0 });
+
+    document.getElementById("total-posts-val").textContent = totals.p.toLocaleString();
+    document.getElementById("total-users-val").textContent = state.processedData.length.toLocaleString();
+    document.getElementById("total-views-val").textContent = totals.v.toLocaleString();
+}
+
 function renderTable() {
     const tbody = document.getElementById("leaderboard-body");
     const start = (state.pagination.current - 1) * state.pagination.perPage;
     const pageData = state.processedData.slice(start, start + state.pagination.perPage);
 
     tbody.innerHTML = pageData.map(user => `
-        <tr class="main-row" onclick="toggleUserTweets('${user.username}', this)">
+        <tr class="main-row" onclick="toggleTweets('${user.username}', this)">
             <td>
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <span class="user-link">@${user.username}</span>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="color:var(--accent); font-weight:bold;">@${user.username}</span>
                     <button class="generate-card-btn" onclick="event.stopPropagation(); openMintModal('${user.username}')">🎴 Card</button>
                 </div>
             </td>
-            <td>${user.posts}</td>
-            <td>${user.likes}</td>
-            <td>${user.retweets || 0}</td>
-            <td>${user.comments || 0}</td>
-            <td>${user.views || 0}</td>
+            <td>${Number(user.posts).toLocaleString()}</td>
+            <td>${Number(user.likes).toLocaleString()}</td>
+            <td>${Number(user.retweets || 0).toLocaleString()}</td>
+            <td>${Number(user.comments || 0).toLocaleString()}</td>
+            <td>${Number(user.views || 0).toLocaleString()}</td>
         </tr>
-        <tr id="tweets-${user.username.replace(/[^a-zA-Z0-9]/g, '')}" class="tweets-row" style="display:none;">
-            <td colspan="6"><div class="tweets-container">Loading tweets...</div></td>
+        <tr id="tweets-${user.username.replace(/[^a-z0-9]/gi,'')}" class="tweets-row" style="display:none;">
+            <td colspan="6"><div class="tweets-container">Загрузка твитов...</div></td>
         </tr>
     `).join('');
-    setupPagination();
+    
+    updatePaginationUI();
 }
 
-function toggleUserTweets(username, row) {
-    const safeId = username.replace(/[^a-zA-Z0-9]/g, '');
-    const tweetRow = document.getElementById(`tweets-${safeId}`);
+function toggleTweets(username, row) {
+    const safeId = `tweets-${username.replace(/[^a-z0-9]/gi,'')}`;
+    const targetRow = document.getElementById(safeId);
     
-    if (tweetRow.style.display === 'table-row') {
-        tweetRow.style.display = 'none';
+    if (targetRow.style.display === 'table-row') {
+        targetRow.style.display = 'none';
     } else {
-        // Закрываем другие открытые строки
         document.querySelectorAll('.tweets-row').forEach(r => r.style.display = 'none');
-        tweetRow.style.display = 'table-row';
+        targetRow.style.display = 'table-row';
         
-        const container = tweetRow.querySelector('.tweets-container');
+        const container = targetRow.querySelector('.tweets-container');
         const userTweets = state.allTweets.filter(t => 
-            (t.user?.screen_name || t.username || "").toLowerCase().replace('@','') === username.toLowerCase().replace('@','')
-        ).slice(0, 5); // Показываем последние 5
+            (t.username || t.user?.screen_name || "").toLowerCase().replace('@','') === username.toLowerCase().replace('@','')
+        ).slice(0, 5);
 
         container.innerHTML = userTweets.length ? userTweets.map(t => `
             <div class="tweet-item">
-                <p>${t.text || t.full_text}</p>
-                <a href="https://twitter.com/any/status/${t.id_str || t.tweet_id}" target="_blank">View on X</a>
+                <p>${t.text || t.full_text || "Текст отсутствует"}</p>
+                <a href="https://twitter.com/i/status/${t.id_str || t.tweet_id}" target="_blank">Открыть в X →</a>
             </div>
-        `).join('') : "No tweets found.";
+        `).join('') : "Твиты не найдены в базе.";
     }
 }
 
-// --- ОСТАЛЬНАЯ ЛОГИКА (БЕЗ ИЗМЕНЕНИЙ) ---
-function applyFiltersAndSort() {
-    let filtered = Array.isArray(state.rawData) ? [...state.rawData] : Object.entries(state.rawData).map(([u, s]) => ({ username: u, ...s }));
-    if (state.filters.search) filtered = filtered.filter(u => u.username.toLowerCase().includes(state.filters.search.toLowerCase()));
+function updatePaginationUI() {
+    const totalPages = Math.ceil(state.processedData.length / state.pagination.perPage) || 1;
+    document.getElementById('page-info').textContent = `Page ${state.pagination.current} / ${totalPages}`;
     
-    filtered.sort((a, b) => {
-        const valA = a[state.currentSort.key] || 0;
-        const valB = b[state.currentSort.key] || 0;
-        return state.currentSort.order === 'desc' ? valB - valA : valA - valB;
-    });
-    state.processedData = filtered;
-    renderAll();
-}
-
-function renderAll() {
-    renderTable();
-    updateDashboardStats();
-}
-
-function updateDashboardStats() {
-    const totalPosts = state.processedData.reduce((s, i) => s + (i.posts || 0), 0);
-    const totalViews = state.processedData.reduce((s, i) => s + (i.views || 0), 0);
-    document.getElementById("total-posts").textContent = totalPosts.toLocaleString();
-    document.getElementById("total-users").textContent = state.processedData.length;
-    document.getElementById("total-views").textContent = totalViews.toLocaleString();
+    document.getElementById('prev-page').onclick = () => {
+        if (state.pagination.current > 1) { state.pagination.current--; renderTable(); }
+    };
+    document.getElementById('next-page').onclick = () => {
+        const max = Math.ceil(state.processedData.length / state.pagination.perPage);
+        if (state.pagination.current < max) { state.pagination.current++; renderTable(); }
+    };
 }
 
 function setupEventListeners() {
     document.getElementById('search').oninput = (e) => {
         state.filters.search = e.target.value;
-        state.pagination.current = 1;
         applyFiltersAndSort();
     };
-    document.querySelectorAll('.sortable').forEach(h => {
-        h.onclick = () => {
-            const key = h.id.replace('-header', '').replace('-col', '');
+    
+    document.querySelectorAll('.sortable').forEach(th => {
+        th.onclick = () => {
+            const key = th.id.replace('-header', '');
             state.currentSort.order = (state.currentSort.key === key && state.currentSort.order === 'desc') ? 'asc' : 'desc';
             state.currentSort.key = key;
             applyFiltersAndSort();
         };
     });
+
+    document.querySelector('.close-modal').onclick = () => {
+        document.getElementById('card-modal').style.display = 'none';
+    };
 }
+
+// Функцию отрисовки NFT (openMintModal) оставь из предыдущего кода, она работает корректно.
