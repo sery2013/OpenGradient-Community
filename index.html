@@ -9,7 +9,6 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar -->
         <aside class="sidebar">
             <div class="logo">
                 <span class="logo-dot"></span>
@@ -21,30 +20,28 @@
             </nav>
         </aside>
 
-        <!-- Main Content -->
         <main class="content">
             <header class="top-bar">
                 <div class="stats-overview">
                     <div class="stat-card">
                         <span class="stat-label">Total Posts</span>
-                        <span id="total-posts" class="stat-value">0</span>
+                        <span id="total-posts-val" class="stat-value">0</span>
                     </div>
                     <div class="stat-card">
                         <span class="stat-label">Total Users</span>
-                        <span id="total-users" class="stat-value">0</span>
+                        <span id="total-users-val" class="stat-value">0</span>
                     </div>
                     <div class="stat-card">
                         <span class="stat-label">Total Views</span>
-                        <span id="total-views" class="stat-value">0</span>
+                        <span id="total-views-val" class="stat-value">0</span>
                     </div>
                 </div>
             </header>
 
+            <!-- Вкладка Лидерборда -->
             <div id="leaderboard-wrapper" class="tab-content active">
                 <div class="filters">
-                    <div class="search-box">
-                        <input type="text" id="search" placeholder="Search user...">
-                    </div>
+                    <input type="text" id="search" placeholder="Search user...">
                     <select id="time-select">
                         <option value="all">All Time</option>
                         <option value="7">Last 7 Days</option>
@@ -57,11 +54,11 @@
                         <thead>
                             <tr>
                                 <th>User</th>
-                                <th id="posts-header" class="sortable">Posts <span class="sort-arrow"></span></th>
-                                <th id="likes-header" class="sortable">Likes <span class="sort-arrow"></span></th>
-                                <th id="retweets-header" class="sortable">RTs <span class="sort-arrow"></span></th>
-                                <th id="comments-header" class="sortable">Comments <span class="sort-arrow"></span></th>
-                                <th id="views-col-header" class="sortable">Views <span class="sort-arrow"></span></th>
+                                <th id="posts-header" class="sortable">Posts</th>
+                                <th id="likes-header" class="sortable">Likes</th>
+                                <th id="retweets-header" class="sortable">RTs</th>
+                                <th id="comments-header" class="sortable">Comments</th>
+                                <th id="views-header" class="sortable">Views</th>
                             </tr>
                         </thead>
                         <tbody id="leaderboard-body"></tbody>
@@ -75,13 +72,16 @@
                 </div>
             </div>
 
+            <!-- Вкладка Галереи -->
             <div id="tab-nft-gallery" class="tab-content" style="display:none;">
-                <div class="gallery-grid" id="nft-grid"></div>
+                <div class="gallery-grid" id="nft-grid">
+                    <p style="padding: 20px; color: var(--text-dim);">Галерея пуста или загружается...</p>
+                </div>
             </div>
         </main>
     </div>
 
-    <!-- Modal for Card Generation -->
+    <!-- Модальное окно -->
     <div id="card-modal" class="modal">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
@@ -91,9 +91,7 @@
             </div>
             <div class="modal-actions">
                 <button id="btn-download" class="primary-btn">Download PNG</button>
-                <button id="btn-mint" onclick="mintCardNFT()" class="mint-btn">Mint NFT (0.01 RITUAL)</button>
             </div>
-            <p id="mint-status"></p>
         </div>
     </div>
 
