@@ -2,88 +2,82 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ritual Community Tracker</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="main-wrapper">
-        <!-- Шапка с лого и кошельком -->
         <header class="navbar">
             <div class="brand">
-                <img src="https://ritual.net/favicon.ico" alt="logo" class="nav-logo">
-                <span class="brand-text">RITUAL COMMUNITY</span>
+                <img src="https://ritual.net/favicon.ico" class="nav-logo">
+                <span>RITUAL COMMUNITY</span>
             </div>
-            <div class="wallet-status">
-                <span class="dot"></span>
-                <span class="address">0xeb76...17a4</span>
-            </div>
+            <!-- Кнопка кошелька -->
+            <button id="connect-wallet" class="wallet-btn">Connect Wallet</button>
         </header>
 
-        <!-- Hero Section как на скриншоте (1) -->
         <section class="hero">
             <h1>WELCOME<br><span class="highlight">RITUALISTS!</span></h1>
             <p class="subtitle">Analyze community metrics on the Ritual Testnet.<br>Generate your personal stats card and mint it as an NFT.</p>
             
             <div class="nav-pills">
-                <button class="pill active" data-tab="leaderboard">🏆 LEADERBOARD</button>
-                <button class="pill" data-tab="analytics">📊 ANALYTICS</button>
-                <button class="pill" data-tab="gallery">🖼️ GALLERY</button>
+                <button class="pill active" onclick="showTab('leaderboard', this)">🏆 LEADERBOARD</button>
+                <button class="pill" onclick="showTab('analytics', this)">📊 ANALYTICS</button>
+                <button class="pill" onclick="showTab('gallery', this)">🖼️ GALLERY</button>
             </div>
         </section>
 
-        <!-- Поиск и Статистика (Dashboard Updated) -->
-        <section class="controls-row">
-            <div class="search-box">
-                <img src="https://img.icons8.com/ios/50/6fe3d1/search--v1.png" class="search-icon">
-                <input type="text" id="search" placeholder="Search by username...">
+        <!-- Контент Лидерборда -->
+        <div id="leaderboard" class="tab-content active">
+            <div class="controls-row">
+                <div class="search-box">
+                    <input type="text" id="search" placeholder="Search by username..." oninput="filterData()">
+                </div>
+                <div class="update-status">🔄 DASHBOARD UPDATED</div>
             </div>
-            <div class="update-status">
-                <div class="refresh-icon">🔄</div>
-                <span>DASHBOARD UPDATED</span>
-            </div>
-        </section>
 
-        <!-- Таблица как на скриншоте (2) -->
-        <div id="leaderboard-wrapper" class="tab-content active">
             <div class="table-container">
                 <table class="ritual-table">
                     <thead>
                         <tr>
                             <th>USER</th>
-                            <th id="posts-header" class="sortable">POSTS</th>
-                            <th id="retweets-header" class="sortable">RETWEETS</th>
-                            <th id="comments-header" class="sortable">COMMENTS</th>
-                            <th id="likes-header" class="sortable">LIKES</th>
-                            <th id="views-header" class="sortable">VIEWS</th>
+                            <th>POSTS</th>
+                            <th>RETWEETS</th>
+                            <th>COMMENTS</th>
+                            <th>LIKES</th>
+                            <th>VIEWS</th>
                             <th>CARD</th>
                         </tr>
                     </thead>
-                    <tbody id="leaderboard-body">
-                        <!-- Данные вставляются через JS -->
-                    </tbody>
+                    <tbody id="leaderboard-body"></tbody>
                 </table>
-            </div>
-            
-            <div class="pagination">
-                <button id="prev-page" class="pager-btn">←</button>
-                <span id="page-info">Page 1 / 1</span>
-                <button id="next-page" class="pager-btn">→</button>
             </div>
         </div>
 
-        <!-- Футер как на скриншоте (3) -->
-        <footer class="ritual-footer">
-            <div class="footer-links">
-                <a href="#">ritual.net</a>
-                <span class="separator">•</span>
-                <span>developer: <a href="https://x.com/kaye_moni" target="_blank">@kaye_moni</a></span>
+        <!-- Контент Аналитики (здесь будут твои карточки статистики) -->
+        <div id="analytics" class="tab-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="label">TOTAL POSTS</span>
+                    <span id="total-posts-val" class="value">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">TOTAL USERS</span>
+                    <span id="total-users-val" class="value">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">TOTAL VIEWS</span>
+                    <span id="total-views-val" class="value">0</span>
+                </div>
             </div>
+        </div>
+
+        <footer class="ritual-footer">
+            <p>ritual.net  •  developer: @kaye_moni</p>
             <p class="copyright">© 2024 RITUAL FOUNDATION</p>
         </footer>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
