@@ -1,83 +1,132 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Ritual Community Tracker</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ritual Community Tracker</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
 </head>
 <body>
-    <div class="main-wrapper">
-        <header class="navbar">
-            <div class="brand">
-                <img src="https://ritual.net/favicon.ico" class="nav-logo">
-                <span>RITUAL COMMUNITY</span>
-            </div>
-            <!-- Кнопка кошелька -->
-            <button id="connect-wallet" class="wallet-btn">Connect Wallet</button>
-        </header>
-
-        <section class="hero">
-            <h1>WELCOME<br><span class="highlight">RITUALISTS!</span></h1>
-            <p class="subtitle">Analyze community metrics on the Ritual Testnet.<br>Generate your personal stats card and mint it as an NFT.</p>
-            
-            <div class="nav-pills">
-                <button class="pill active" onclick="showTab('leaderboard', this)">🏆 LEADERBOARD</button>
-                <button class="pill" onclick="showTab('analytics', this)">📊 ANALYTICS</button>
-                <button class="pill" onclick="showTab('gallery', this)">🖼️ GALLERY</button>
-            </div>
-        </section>
-
-        <!-- Контент Лидерборда -->
-        <div id="leaderboard" class="tab-content active">
-            <div class="controls-row">
-                <div class="search-box">
-                    <input type="text" id="search" placeholder="Search by username..." oninput="filterData()">
-                </div>
-                <div class="update-status">🔄 DASHBOARD UPDATED</div>
-            </div>
-
-            <div class="table-container">
-                <table class="ritual-table">
-                    <thead>
-                        <tr>
-                            <th>USER</th>
-                            <th>POSTS</th>
-                            <th>RETWEETS</th>
-                            <th>COMMENTS</th>
-                            <th>LIKES</th>
-                            <th>VIEWS</th>
-                            <th>CARD</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaderboard-body"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Контент Аналитики (здесь будут твои карточки статистики) -->
-        <div id="analytics" class="tab-content">
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <span class="label">TOTAL POSTS</span>
-                    <span id="total-posts-val" class="value">0</span>
-                </div>
-                <div class="stat-card">
-                    <span class="label">TOTAL USERS</span>
-                    <span id="total-users-val" class="value">0</span>
-                </div>
-                <div class="stat-card">
-                    <span class="label">TOTAL VIEWS</span>
-                    <span id="total-views-val" class="value">0</span>
-                </div>
-            </div>
-        </div>
-
-        <footer class="ritual-footer">
-            <p>ritual.net  •  developer: @kaye_moni</p>
-            <p class="copyright">© 2024 RITUAL FOUNDATION</p>
-        </footer>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo-container">
+      <img src="https://ritual.net/favicon.ico" alt="Ritual Logo" width="32" height="32">
+      <h1 class="header-title">
+        <span class="welcome-text">WELCOME</span><br>
+        <span class="ritualists-text">RITUALISTS!</span>
+      </h1>
     </div>
-    <script src="script.js"></script>
+    <p class="header-subtitle">
+      Analyze community metrics on the Ritual Testnet.<br>
+      Generate your personal stats card and mint it as an NFT.
+    </p>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="leaderboard">🏆 LEADERBOARD</button>
+    <button class="tab-btn" data-tab="analytics">📊 ANALYTICS</button>
+    <button class="tab-btn" data-tab="gallery">🖼️ GALLERY</button>
+  </div>
+
+  <!-- SEARCH & STATS -->
+  <div class="search-stats-bar">
+    <div class="search-wrapper">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M15.5 14H14.5V13H15.5V12H14.5V11H13.5V12H12.5V13H13.5V14H12.5V15H13.5V16H14.5V15H15.5V14ZM11 21C14.867 21 18 17.867 18 14C18 10.133 14.867 7 11 7C7.133 7 4 10.133 4 14C4 17.867 7.133 21 11 21Z" fill="rgba(255,255,255,0.5)"/>
+      </svg>
+      <input type="text" id="search-input" placeholder="Search by username...">
+    </div>
+    <button class="dashboard-update-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17.65 6.35C16.2 4.9 14.2 4 12 4C9.8 4 7.8 4.9 6.35 6.35C4.9 7.8 4 9.8 4 12C4 14.2 4.9 16.2 6.35 17.65C7.8 19.1 9.8 20 12 20C14.2 20 16.2 19.1 17.65 17.65C19.1 16.2 20 14.2 20 12C20 9.8 19.1 7.8 17.65 6.35ZM12 18C8.69 18 6 15.31 6 12C6 8.69 8.69 6 12 6C15.31 6 18 8.69 18 12C18 15.31 15.31 18 12 18Z" fill="white"/>
+      </svg>
+      DASHBOARD UPDATED
+    </button>
+  </div>
+
+  <!-- STATS SUMMARY -->
+  <div class="stats-summary">
+    Posts: <span id="total-posts">0</span> | Users: <span id="total-users">0</span> | Views: <span id="total-views">0</span>
+  </div>
+
+  <!-- CONTENT -->
+  <main class="content">
+    <!-- LEADERBOARD TAB -->
+    <div id="leaderboard-tab" class="tab-content active">
+      <div class="table-container">
+        <table id="leaderboard-table">
+          <thead>
+            <tr>
+              <th>USER</th>
+              <th>POSTS</th>
+              <th>RETWEETS</th>
+              <th>COMMENTS</th>
+              <th>LIKES</th>
+              <th>VIEWS</th>
+              <th>CARD</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ANALYTICS TAB -->
+    <div id="analytics-tab" class="tab-content">
+      <div class="filters">
+        <label>Filter by time:</label>
+        <select id="time-filter">
+          <option value="all">All Time</option>
+          <option value="7d">Last 7 Days</option>
+          <option value="30d">Last 30 Days</option>
+        </select>
+      </div>
+      <div id="analytics-chart-container">
+        <canvas id="analytics-chart"></canvas>
+      </div>
+      <div class="heatmap">
+        <h3>Activity Heatmap</h3>
+        <div id="heatmap-grid"></div>
+      </div>
+    </div>
+
+    <!-- GALLERY TAB -->
+    <div id="gallery-tab" class="tab-content">
+      <h2>NFT Gallery</h2>
+      <div id="nft-gallery" class="gallery-grid"></div>
+    </div>
+  </main>
+
+  <!-- CARD MODAL -->
+  <div id="card-modal" class="card-modal" style="display:none;">
+    <div class="card-modal-content">
+      <button class="close-modal" onclick="document.getElementById('card-modal').style.display='none'">✕</button>
+      <canvas id="user-canvas" width="600" height="800"></canvas>
+      <div class="card-actions">
+        <button id="btn-download">📥 Download PNG</button>
+        <button id="btn-mint">🔥 Mint NFT (0.001 RITUAL)</button>
+        <p id="mint-status"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div>
+      <a href="https://ritual.net" target="_blank">ritual.net</a>
+      • developer: 
+      <a href="https://x.com/kaye_moni" target="_blank" style="display:flex; align-items:center; gap:4px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18.901 1.153h3.68l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.244 2.25H8.05l4.713 6.932L18.901 1.153ZM17.61 20.644h2.039L6.486 3.24H4.298l13.312 17.404Z" fill="white"/>
+        </svg>
+        <span style="border-bottom:1px solid rgba(255,255,255,0.3);">@kaye_moni</span>
+      </a>
+    </div>
+    <p>© 2024 RITUAL FOUNDATION</p>
+  </footer>
+
+  <script src="script.js"></script>
 </body>
 </html>
