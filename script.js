@@ -376,7 +376,7 @@ const CONTRACT_ABI = [
 ];
 let currentCardData = { username: "", stats: {}, imageData: "" };
 
-// === NFT MINT: ИСПРАВЛЕНО (provider создаётся внутри функции) ===
+// === NFT MINT: ИСПРАВЛЕНО (getFeeData вместо getGasPrice) ===
 async function mintCardNFT() {
   const status = document.getElementById('mint-status');
   const btn = document.getElementById('btn-mint');
@@ -426,8 +426,9 @@ async function mintCardNFT() {
     // 5. Получаем параметры транзакции через provider
     status.textContent = '🔍 Получаю параметры транзакции...';
 
-    // --- Получаем gasPrice ---
-    const gasPrice = await provider.getGasPrice();
+    // --- Получаем gasPrice через getFeeData (ethers v6) ---
+    const feeData = await provider.getFeeData();
+    const gasPrice = feeData.gasPrice || ethers.parseUnits("1", "gwei"); // fallback
     const gasPriceHex = ethers.toBeHex(gasPrice);
 
     // --- Получаем nonce ---
@@ -442,7 +443,7 @@ async function mintCardNFT() {
         params: [{
           from: address,
           to: CONTRACT_ADDRESS,
-          data: callData,
+           callData,
           value: ethers.toBeHex(ethers.parseEther("0.0001")),
           gasPrice: gasPriceHex
         }]
@@ -459,7 +460,7 @@ async function mintCardNFT() {
       from: address,
       to: CONTRACT_ADDRESS,
       data: callData,
-      value: ethers.toBeHex(ethers.parseEther("0.0001")),
+      value: ethers.toBeHex(ethers.parseEther("0.0001")), // ✅ 0.0001, как вы просили
       gasPrice: gasPriceHex, // Legacy gas price
       gas: estimatedGasHex, // Оценённый или фиксированный gas
       nonce: nonceHex, // Уникальный номер транзакции
