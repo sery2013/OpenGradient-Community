@@ -376,7 +376,7 @@ const CONTRACT_ABI = [
 ];
 let currentCardData = { username: "", stats: {}, imageData: "" };
 
-// === NFT MINT: ФИНАЛЬНАЯ ВЕРСИЯ (Legacy TX через window.ethereum.request) ===
+// === NFT MINT: ИСПРАВЛЕНО (provider создаётся внутри функции) ===
 async function mintCardNFT() {
   const status = document.getElementById('mint-status');
   const btn = document.getElementById('btn-mint');
@@ -388,23 +388,23 @@ async function mintCardNFT() {
   status.textContent = '⏳ Подготовка транзакции...';
 
   try {
-    // 1. Проверяем сеть
+    // 1. Проверяем и переключаем сеть
     const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
     const currentChainId = parseInt(chainIdHex, 16);
     if (currentChainId !== 1979) {
-      status.textContent = '🔄 Переключаю на Ritual Testnet...';
+      status.textContent = '🔄 Переключаю на CratD2C Testnet...';
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0x7BB' }]
+        params: [{ chainId: '0x7BB' }] // 1979 в hex
       });
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Пауза для стабильности
     }
 
     // 2. Получаем адрес
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
     const address = accounts[0];
 
-    // 3. Подготавливаем вызов
+    // 3. Подготавливаем вызов функции (imageData = "")
     const iface = new ethers.Interface(CONTRACT_ABI);
     const callData = iface.encodeFunctionData('mintCard', [
       address,
@@ -414,67 +414,94 @@ async function mintCardNFT() {
       BigInt(currentCardData.stats.retweets || 0),
       BigInt(currentCardData.stats.comments || 0),
       BigInt(currentCardData.stats.views || 0),
-      "" // пусто
+      "" // 🔥 ПУСТАЯ СТРОКА - чтобы избежать "Payload Too Large"
     ]);
 
-    // 4. Получаем gasPrice (для EIP-1559)
-    const feeData = await provider.getFeeData(); // но provider ещё не создан — см. ниже
-    const maxFeePerGas = feeData.maxFeePerGas || ethers.parseUnits("1", "gwei");
-    const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || ethers.parseUnits("1", "gwei");
+    // 4. Создаём PROVIDER ВНУТРИ ФУНКЦИИ для работы с RPC
+    const provider = new ethers.JsonRpcProvider("http://rpc.ritualfoundation.org", {
+      chainId: 1979,
+      name: "cratd2c-testnet"
+    }, { staticNetwork: true });
 
-    // Используем прямой запрос к RPC для получения feeData (обход ethers)
-    const rpcUrl = "https://rpc.ritualfoundation.org";
-    const feeResponse = await fetch(rpcUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: Date.now(),
-        method: "eth_gasPrice"
-      })
-    });
-    const feeJson = await feeResponse.json();
-    const gasPriceWei = BigInt(feeJson.result || "0x3b9aca00"); // 1 Gwei по умолчанию
+    // 5. Получаем параметры транзакции через provider
+    status.textContent = '🔍 Получаю параметры транзакции...';
 
-    // 5. Формируем EIP-1559 транзакцию
+    // --- Получаем gasPrice ---
+    const gasPrice = await provider.getGasPrice();
+    const gasPriceHex = ethers.toBeHex(gasPrice);
+
+    // --- Получаем nonce ---
+    const nonce = await provider.getTransactionCount(address, "pending");
+    const nonceHex = ethers.toBeHex(nonce);
+
+    // --- Оцениваем gas ---
+    let estimatedGasHex = '0xC3500'; // 800000 в hex по умолчанию
+    try {
+      const estimation = await window.ethereum.request({
+        method: 'eth_estimateGas',
+        params: [{
+          from: address,
+          to: CONTRACT_ADDRESS,
+          data: callData,
+          value: ethers.toBeHex(ethers.parseEther("0.0001")),
+          gasPrice: gasPriceHex
+        }]
+      });
+      let est = parseInt(estimation, 16);
+      est = Math.floor(est * 1.2); // Добавим 20% запаса
+      estimatedGasHex = ethers.toBeHex(est);
+    } catch (e) {
+      console.warn("Gas estimation failed (using default):", e);
+    }
+
+    // 6. ФОРМИРУЕМ ПАРАМЕТРЫ ТРАНЗАКЦИИ (Legacy Type 0)
     const txParams = {
       from: address,
       to: CONTRACT_ADDRESS,
       data: callData,
       value: ethers.toBeHex(ethers.parseEther("0.0001")),
-      gasLimit: ethers.toBeHex(800000),
-      maxFeePerGas: ethers.toBeHex(gasPriceWei),       // ← EIP-1559
-      maxPriorityFeePerGas: ethers.toBeHex(gasPriceWei), // ← EIP-1559
-      nonce: ethers.toBeHex(await window.ethereum.request({
-        method: 'eth_getTransactionCount',
-        params: [address, 'pending']
-      })),
-      type: '0x2', // ← КЛЮЧЕВОЙ ФИКС: EIP-1559 ТОЛЬКО!
-      chainId: '0x7BB'
+      gasPrice: gasPriceHex, // Legacy gas price
+      gas: estimatedGasHex, // Оценённый или фиксированный gas
+      nonce: nonceHex, // Уникальный номер транзакции
+      type: '0x0', // Явный Legacy тип для совместимости
+      chainId: '0x7BB' // ID 1979 в HEX для CratD2C
     };
 
     status.textContent = '🔐 Подтверждаю транзакцию в кошельке...';
 
+    // 7. Отправка через window.ethereum.request (минуя fetch к RPC)
     const txHash = await window.ethereum.request({
       method: 'eth_sendTransaction',
       params: [txParams],
     });
 
-    status.textContent = `⛓️ Отправлена: ${txHash.slice(0,6)}...${txHash.slice(-4)}`;
+    status.textContent = `⛓️ Транзакция отправлена: ${txHash.slice(0, 6)}...${txHash.slice(-4)}`;
     status.style.color = '#fbbf24';
 
-    const provider = new ethers.JsonRpcProvider(rpcUrl, { chainId: 1979 });
-    const receipt = await provider.waitForTransaction(txHash, 1, 120000);
+    // 8. Ждём подтверждения через ТОТ ЖЕ provider (созданный выше)
+    const receipt = await provider.waitForTransaction(txHash, 1, 120000); // 2 мин таймаут
     if (receipt && receipt.status === 1) {
-      status.textContent = '✅ Успешно!';
+      status.textContent = '✅ Успешно заминчено!';
+      status.style.color = '#4ade80';
+      // Обновляем галерею
       setTimeout(loadNFTGallery, 2000);
     } else {
-      status.textContent = '❌ Откат';
+      status.textContent = '❌ Транзакция откатилась.';
+      status.style.color = '#f87171';
     }
 
   } catch (err) {
     console.error(err);
-    status.textContent = `❌ ${err.message || 'Ошибка'}`;
+    if (err.message?.includes('insufficient funds')) {
+      status.textContent = '❌ Недостаточно CRAT на газ или цену минта';
+    } else if (err.message?.includes('transaction type not supported')) {
+      status.textContent = '❌ Сеть не поддерживает формат транзакции. (Legacy не принят)';
+    } else if (err.message?.includes('execution reverted')) {
+      status.textContent = '❌ Ошибка контракта. (Неверные параметры)';
+    } else {
+      status.textContent = `❌ ${err.message || 'Ошибка при минте'}`;
+    }
+    status.style.color = '#f87171';
     btn.disabled = false;
   }
 }
