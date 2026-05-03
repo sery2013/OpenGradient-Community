@@ -376,24 +376,37 @@ const CONTRACT_ABI = [
 ];
 let currentCardData = { username: "", stats: {}, imageData: "" };
 
-// === NFT MINT: ФИНАЛЬНОЕ РЕШЕНИЕ (только через window.ethereum, без fetch к RPC) ===
+// === NFT MINT: ФИНАЛЬНАЯ ВЕРСИЯ С ЗАЩИТОЙ ОТ ОШИБОК ===
 async function mintCardNFT(username, stats) {
     const status = document.getElementById('mint-status');
     const btn = document.getElementById('btn-mint');
 
+    // 1. Проверка наличия данных (Исправление вашей ошибки)
+    if (!stats || typeof stats !== 'object') {
+        console.error("Данные статистики отсутствуют:", stats);
+        // Попытка взять данные из глобальной переменной, если она у вас есть
+        if (window.currentCardData && window.currentCardData.stats) {
+            stats = window.currentCardData.stats;
+            username = window.currentCardData.username;
+        } else {
+            if (status) status.textContent = '❌ Ошибка: данные для минта не найдены';
+            return;
+        }
+    }
+
     if (!window.ethereum) {
-        status.textContent = '❌ Установи MetaMask или Rabby';
+        if (status) status.textContent = '❌ Установи MetaMask или Rabby';
         return;
     }
 
     btn.disabled = true;
-    status.textContent = '⏳ Инициализация...';
+    if (status) status.textContent = '⏳ Подготовка...';
 
     try {
-        // 1. Проверка сети (должна быть 1979 / 0x7BB)
+        // 2. Проверка сети (1979 / 0x7BB)
         const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
         if (chainIdHex.toLowerCase() !== '0x7bb') {
-            status.textContent = '🔄 Переключите сеть в MetaMask на CratD2C (1979)';
+            status.textContent = '🔄 Переключите сеть на CratD2C (1979)';
             btn.disabled = false;
             return;
         }
@@ -401,11 +414,11 @@ async function mintCardNFT(username, stats) {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         const address = accounts[0];
 
-        // 2. Кодирование данных
+        // 3. Кодирование (Используем BigInt для всех чисел)
         const iface = new ethers.Interface(CONTRACT_ABI);
         const encodedData = iface.encodeFunctionData('mintCard', [
             address,
-            username,
+            username || "User",
             BigInt(stats.posts || 0),
             BigInt(stats.likes || 0),
             BigInt(stats.retweets || 0),
@@ -414,55 +427,46 @@ async function mintCardNFT(username, stats) {
             "" 
         ]);
 
-        // 3. Получаем параметры напрямую через RPC Ritual
+        // 4. Параметры через RPC (Legacy)
         const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
         const [gasPrice, nonce] = await Promise.all([
             provider.getFeeData().then(f => f.gasPrice),
             provider.getTransactionCount(address, "pending")
         ]);
 
-        // 4. Формируем "чистый" объект транзакции
-        // ВНИМАНИЕ: Мы убираем maxFeePerGas и maxPriorityFeePerGas полностью
         const txParams = {
             from: address,
             to: CONTRACT_ADDRESS,
-            data: encodedData, // Используем строго 'data'
+            data: encodedData, // СТРОГО 'data'
             value: ethers.toBeHex(ethers.parseEther("0.0001")),
-            gas: ethers.toBeHex(800000n), // Фиксированный газ для теста, чтобы исключить ошибку оценки
+            gas: ethers.toBeHex(800000n), 
             gasPrice: ethers.toBeHex(gasPrice),
             nonce: ethers.toBeHex(nonce),
-            type: '0x0' // Принудительный Legacy
+            type: '0x0'
         };
 
-        // Удаляем потенциально конфликтующие поля из объекта перед отправкой
-        delete txParams.maxFeePerGas;
-        delete txParams.maxPriorityFeePerGas;
+        if (status) status.textContent = '🔐 Подтвердите в кошельке...';
 
-        status.textContent = '🔐 Подтвердите в MetaMask (Legacy Mode)...';
-
-        // 5. Отправка
         const txHash = await window.ethereum.request({
             method: 'eth_sendTransaction',
             params: [txParams],
         });
 
-        status.textContent = `⛓️ Транзакция: ${txHash.slice(0, 8)}...`;
+        if (status) status.textContent = '⛓️ Ожидание подтверждения...';
         
         const receipt = await provider.waitForTransaction(txHash, 1, 60000);
         if (receipt && receipt.status === 1) {
             status.textContent = '✅ Успешно заминчено!';
             status.style.color = '#4ade80';
-        } else {
-            status.textContent = '❌ Ошибка выполнения транзакции.';
         }
 
     } catch (err) {
-        console.error(err);
-        // Если ошибка всё еще есть, проверяем сообщение
-        if (err.message && err.message.includes("type not supported")) {
-            status.textContent = "❌ RPC не принимает тип транзакции. Попробуйте сменить RPC или проверьте настройки сети в кошельке.";
+        console.error("Mint error:", err);
+        const errMsg = err.message || "";
+        if (errMsg.includes("type not supported")) {
+            status.textContent = "❌ Ошибка типа транзакции. Проверьте настройки RPC.";
         } else {
-            status.textContent = `❌ Ошибка: ${err.message.slice(0, 50)}...`;
+            status.textContent = `❌ Ошибка: ${errMsg.slice(0, 40)}...`;
         }
     } finally {
         btn.disabled = false;
