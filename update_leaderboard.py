@@ -121,7 +121,7 @@ def collect_all_tweets():
     return all_tweets
 
 
-# === ПОСТРОЕНИЕ ЛИДЕРБОРДА ===
+# === ПОСТРОЕНИЕ ЛИДЕРБОРДА (исправленная версия) ===
 def build_leaderboard(tweets):
     leaderboard = {}
 
@@ -143,11 +143,12 @@ def build_leaderboard(tweets):
         })
 
         stats["posts"] += 1
-        stats["likes"] += t.get("favorite_count", 0)
-        stats["retweets"] += t.get("retweet_count", 0)
-        stats["comments"] += t.get("reply_count", 0)
-        stats["quotes"] += t.get("quote_count", 0)
-        stats["views"] += t.get("views_count", 0)
+        # Используем `or 0` для защиты от None
+        stats["likes"] += t.get("favorite_count") or 0
+        stats["retweets"] += t.get("retweet_count") or 0
+        stats["comments"] += t.get("reply_count") or 0
+        stats["quotes"] += t.get("quote_count") or 0
+        stats["views"] += t.get("views_count") or 0
 
     leaderboard_list = [[user, stats] for user, stats in leaderboard.items()]
     save_json(LEADERBOARD_FILE, leaderboard_list)
