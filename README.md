@@ -1,6 +1,6 @@
 # 🏆 Ritual Community Leaderboard
 
-> Live analytics dashboard for OpenGradient community engagement.
+> Live analytics dashboard for Ritual community engagement.
 
 [🌐 Live Site](https://github.com/sery2013/Ritual-Community/) 
 
