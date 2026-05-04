@@ -417,12 +417,16 @@ async function mintCardNFT() {
       "" // 🔥 ПУСТАЯ СТРОКА - чтобы избежать "Payload Too Large"
     ]);
 
-    // 4. Получаем EIP-1559 параметры (maxFeePerGas, maxPriorityFeePerGas)
+    // 4. Создаём PROVIDER ВНУТРИ ФУНКЦИИ для работы с RPC
+    const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org", {
+      chainId: 1979,
+      name: "ritual-testnet"
+    }, { staticNetwork: true });
+
     status.textContent = '🔍 Получаю параметры EIP-1559...';
 
     // --- Получаем feeData ---
     const feeData = await provider.getFeeData();
-    // Используем EIP-1559 поля
     const maxFeePerGas = feeData.maxFeePerGas || ethers.parseUnits("1.5", "gwei"); // fallback
     const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || ethers.parseUnits("0.1", "gwei"); // fallback
 
@@ -455,7 +459,7 @@ async function mintCardNFT() {
     const txParams = {
       from: address,
       to: CONTRACT_ADDRESS,
-      data: callData,
+       callData,
       value: ethers.toBeHex(ethers.parseEther("0.0001")),
       gas: estimatedGasHex, // Оценённый или фиксированный gas
       nonce: nonceHex, // Уникальный номер транзакции
@@ -476,12 +480,7 @@ async function mintCardNFT() {
     status.textContent = `⛓️ Транзакция отправлена: ${txHash.slice(0, 6)}...${txHash.slice(-4)}`;
     status.style.color = '#fbbf24';
 
-    // 7. Ждём подтверждения через JsonRpcProvider (только для просмотра статуса)
-    const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org", {
-      chainId: 1979,
-      name: "ritual-testnet"
-    }, { staticNetwork: true });
-
+    // 7. Ждём подтверждения через ТОТ ЖЕ provider (созданный выше)
     const receipt = await provider.waitForTransaction(txHash, 1, 120000); // 2 мин таймаут
     if (receipt && receipt.status === 1) {
       status.textContent = '✅ Успешно заминчено!';
