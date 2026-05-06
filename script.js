@@ -376,16 +376,22 @@ const CONTRACT_ABI = [
 ];
 let currentCardData = { username: "", stats: {}, imageData: "" };
 
-// === NFT MINT: FIXED FOR CRATD2C / RITUAL (by Gemini Analysis) ===
+// === NFT MINT: FIXED FOR CRATD2C / RITUAL (with wait for data) ===
 async function mintCardNFT() {
     const status = document.getElementById('mint-status');
     const btn = document.getElementById('btn-mint');
 
     // ПРОВЕРКА: Данные должны быть в window.currentCardData
+    // Добавим небольшую задержку и повторную проверку
     if (!window.currentCardData || !window.currentCardData.stats) {
-        status.textContent = '❌ Ошибка: Данные карты не загружены';
-        console.error("window.currentCardData is missing!");
-        return;
+        // Ждём 100ms, чтобы дать showCardModal выполниться
+        await new Promise(r => setTimeout(r, 100));
+        // Повторная проверка
+        if (!window.currentCardData || !window.currentCardData.stats) {
+            status.textContent = '❌ Ошибка: Данные карты не загружены. Закройте и откройте карточку снова.';
+            console.error("window.currentCardData is still missing after delay!");
+            return;
+        }
     }
 
     if (!window.ethereum) {
