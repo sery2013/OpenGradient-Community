@@ -376,111 +376,22 @@ const CONTRACT_ABI = [
 ];
 let currentCardData = { username: "", stats: {}, imageData: "" };
 
-// === NFT MINT: FIXED FOR CRATD2C / RITUAL (with wait for data) ===
-async function mintCardNFT() {
-    const status = document.getElementById('mint-status');
-    const btn = document.getElementById('btn-mint');
-
-    // ПРОВЕРКА: Данные должны быть в window.currentCardData
-    // Добавим небольшую задержку и повторную проверку
-    if (!window.currentCardData || !window.currentCardData.stats) {
-        // Ждём 100ms, чтобы дать showCardModal выполниться
-        await new Promise(r => setTimeout(r, 100));
-        // Повторная проверка
-        if (!window.currentCardData || !window.currentCardData.stats) {
-            status.textContent = '❌ Ошибка: Данные карты не загружены. Закройте и откройте карточку снова.';
-            console.error("window.currentCardData is still missing after delay!");
-            return;
-        }
-    }
-
-    if (!window.ethereum) {
-        status.textContent = '❌ Установи MetaMask или Rabby';
+// === NFT CARD: ОТКРЫТИЕ МОДАЛЬНОГО ОКНА (исправленная) ===
+function showCardModal(username) {
+    const user = data.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) {
+        console.error("❌ User not found in data:", username);
         return;
     }
-
-    btn.disabled = true;
-    status.textContent = '⏳ Подготовка транзакции...';
-
-    try {
-        // 1. Проверяем сеть (ID 1979)
-        const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
-        if (parseInt(chainIdHex, 16) !== 1979) {
-            status.textContent = '🔄 Переключаю на CratD2C Testnet...';
-            await window.ethereum.request({
-                method: 'wallet_switchEthereumChain',
-                params: [{ chainId: '0x7BB' }]
-            });
-            await new Promise(r => setTimeout(r, 1000));
-        }
-
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const address = accounts[0];
-
-        // 2. Кодируем данные (КЛЮЧЕВОЕ: проверяем наличие полей)
-        const iface = new ethers.Interface(CONTRACT_ABI);
-        const encodedData = iface.encodeFunctionData('mintCard', [
-            address,
-            window.currentCardData.username || "User",
-            BigInt(window.currentCardData.stats.posts || 0),
-            BigInt(window.currentCardData.stats.likes || 0),
-            BigInt(window.currentCardData.stats.retweets || 0),
-            BigInt(window.currentCardData.stats.comments || 0),
-            BigInt(window.currentCardData.stats.views || 0),
-            "" 
-        ]);
-
-        // 3. Провайдер для получения nonce и gasPrice
-        const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
-        const [gasPrice, nonce] = await Promise.all([
-            provider.getFeeData().then(f => f.gasPrice),
-            provider.getTransactionCount(address, "pending")
-        ]);
-
-        // 4. Формируем параметры (Используем LEGACY '0x0' и ключ 'data')
-        const txParams = {
-            from: address,
-            to: CONTRACT_ADDRESS,
-             encodedData, // 🔥 ИСПРАВЛЕНО: было callData
-            value: ethers.toBeHex(ethers.parseEther("0.0001")),
-            gas: ethers.toBeHex(850000n), // Фиксированный запас для Ritual
-            gasPrice: ethers.toBeHex(gasPrice),
-            nonce: ethers.toBeHex(nonce),
-            type: '0x0', // 🔥 ИСПРАВЛЕНО: Legacy тип работает на Ritual лучше
-            chainId: '0x7BB'
-        };
-
-        status.textContent = '🔐 Подтвердите в кошельке...';
-
-        // 5. Отправка
-        const txHash = await window.ethereum.request({
-            method: 'eth_sendTransaction',
-            params: [txParams],
-        });
-
-        status.textContent = `⛓️ Отправлено: ${txHash.slice(0, 10)}...`;
-        status.style.color = '#fbbf24';
-
-        const receipt = await provider.waitForTransaction(txHash, 1, 120000);
-        if (receipt && receipt.status === 1) {
-            status.textContent = '✅ Успешно заминчено!';
-            status.style.color = '#4ade80';
-            if (typeof loadNFTGallery === 'function') loadNFTGallery();
-        } else {
-            status.textContent = '❌ Транзакция отклонена сетью';
-        }
-
-    } catch (err) {
-        console.error(err);
-        status.style.color = '#f87171';
-        if (err.code === 4001) {
-            status.textContent = '❌ Вы отклонили транзакцию';
-        } else {
-            status.textContent = `❌ ${err.message?.includes('type not supported') ? 'Смените тип на Legacy' : (err.message || 'Ошибка')}`;
-        }
-    } finally {
-        btn.disabled = false;
-    }
+    // ✅ Записываем в ГЛОБАЛЬНУЮ переменную, как ожидает mintCardNFT (Gemini)
+    window.currentCardData = { username, stats: user };
+    console.log("✅ window.currentCardData set:", window.currentCardData); // Добавим лог для отладки
+    generateCardCanvas(username, user);
+    const modal = document.getElementById('card-modal');
+    if (modal) modal.style.display = 'flex';
+    document.getElementById('card-modal-title').textContent = `@${username} Card`;
+    document.getElementById('mint-status').textContent = '';
+    document.getElementById('btn-mint').disabled = false;
 }
 // === NFT GALLERY: ЗАГРУЗКА С ОГРАНИЧЕНИЕМ ДИАПАЗОНА БЛОКОВ ===
 async function loadNFTGallery() {
