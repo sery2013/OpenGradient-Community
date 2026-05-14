@@ -519,38 +519,28 @@ function closeCardModal() {
     document.getElementById('card-modal').style.display = 'none';
 }
 
-// === NFT GALLERY: ЗАГРУЗКА ЧЕРЕЗ СОБЫТИЯ TRANSFER ===
+// === NFT GALLERY: ПОСЛЕДНИЕ МИНТЫ (ПРОСТАЯ ТАБЛИЦА) ===
 async function loadNFTGallery() {
     const grid = document.getElementById('nft-gallery-grid');
     if (!grid) return;
-    grid.innerHTML = '<p class="gallery-loading">⏳ Загрузка NFT из блокчейна...</p>';
+    grid.innerHTML = '<p style="text-align:center;padding:40px;color:#6fe3d1;">⏳ Загрузка...</p>';
 
     try {
         const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 
-        console.log("🔍 Ищем события Transfer...");
-
-        // 🔥 Вместо totalSupply() используем события Transfer
-        // Запрашиваем последние 10000 блоков (безопасный диапазон для Ritual RPC)
         const latestBlock = await provider.getBlockNumber();
         const fromBlock = Math.max(0, latestBlock - 10000);
         
-        console.log(`📊 Диапазон поиска: блоки ${fromBlock} → ${latestBlock}`);
-
         const filter = {
             address: CONTRACT_ADDRESS,
-            topics: [
-                ethers.id("Transfer(address,address,uint256)")
-            ],
+            topics: [ethers.id("Transfer(address,address,uint256)")],
             fromBlock: fromBlock,
             toBlock: latestBlock
         };
 
         const logs = await provider.getLogs(filter);
-        console.log(`✅ Найдено ${logs.length} событий Transfer`);
-
-        const nfts = [];
+        const mints = [];
         const seenTokens = new Set();
 
         for (const log of logs) {
@@ -558,180 +548,103 @@ async function loadNFTGallery() {
                 const parsed = contract.interface.parseLog(log);
                 if (!parsed || parsed.name !== 'Transfer') continue;
 
-                const tokenId = parsed.args[2].toString();
+                const from = parsed.args[0];
                 const to = parsed.args[1];
+                const tokenId = parsed.args[2].toString();
 
-                // Пропускаем burn (Transfer в нулевой адрес) и дубликаты
-                if (to === ethers.ZeroAddress || seenTokens.has(tokenId)) continue;
+                // Минт = перевод с zero address
+                if (from !== ethers.ZeroAddress || seenTokens.has(tokenId)) continue;
                 seenTokens.add(tokenId);
 
-                // Читаем данные токена из контракта
+                let username = "Unknown";
+                let stats = { posts: 0, likes: 0, views: 0 };
+                
                 try {
                     const cardData = await contract.cards(tokenId);
-                    
-                    nfts.push({
-                        tokenId: tokenId,
-                        owner: to,
-                        username: cardData.username || cardData[1] || "Unknown",
+                    username = cardData.username || cardData[1] || "Unknown";
+                    stats = {
                         posts: Number(cardData.posts || cardData[2] || 0),
                         likes: Number(cardData.likes || cardData[3] || 0),
-                        retweets: Number(cardData.retweets || cardData[4] || 0),
-                        comments: Number(cardData.comments || cardData[5] || 0),
-                        views: Number(cardData.views || cardData[6] || 0),
-                        mintedAt: Number(cardData.mintedAt || cardData[8] || Date.now())
-                    });
-                    console.log(`📦 NFT #${tokenId}: @${nfts[nfts.length-1].username}`);
-                } catch (err) {
-                    console.warn(`⚠️ Не удалось прочитать данные токена #${tokenId}`);
-                }
-            } catch (err) {
-                console.warn("⚠️ Ошибка парсинга лога:", err);
-            }
+                        views: Number(cardData.views || cardData[6] || 0)
+                    };
+                } catch (e) {}
+
+                const block = await provider.getBlock(log.blockNumber);
+                
+                mints.push({
+                    tokenId,
+                    owner: to,
+                    txHash: log.transactionHash,
+                    blockNumber: log.blockNumber,
+                    timestamp: block ? block.timestamp * 1000 : Date.now(),
+                    username,
+                    stats
+                });
+            } catch (err) {}
         }
 
-        // Сортировка: новые сверху
-        nfts.sort((a, b) => b.mintedAt - a.mintedAt || Number(b.tokenId) - Number(a.tokenId));
-        
-        console.log(`🎨 Рендерим ${nfts.length} NFT`);
-        renderNFTCards(nfts);
+        mints.sort((a, b) => b.blockNumber - a.blockNumber);
+        renderMintsTable(mints, grid);
 
     } catch (err) {
-        console.error("❌ Gallery error:", err);
-        grid.innerHTML = `<p class="gallery-error">❌ Ошибка: ${err.message}</p>`;
+        grid.innerHTML = `<p style="text-align:center;padding:40px;color:#f87171;">❌ ${err.message}</p>`;
     }
 }
 
-// === NFT GALLERY: РЕНДЕР КАРТОЧЕК (КАНВАС-ПРЕВЬЮ + ПРАВИЛЬНАЯ ССЫЛКА) ===
-function renderNFTCards(nfts) {
-    const grid = document.getElementById('nft-gallery-grid');
-    if (!grid) return;
-    grid.innerHTML = '';
-    
-    if (nfts.length === 0) {
-        grid.innerHTML = '<p class="gallery-empty">🎨 Пока нет заминченных NFT. Будьте первым!</p>';
+// === РЕНДЕР ТАБЛИЦЫ МИНТОВ ===
+function renderMintsTable(mints, container) {
+    if (mints.length === 0) {
+        container.innerHTML = '<p style="text-align:center;padding:60px;color:#94a3b8;">🎨 Пока нет минтов. Будьте первым!</p>';
         return;
     }
 
-    nfts.forEach(nft => {
-        const card = document.createElement('div');
-        card.className = 'nft-gallery-card';
-        card.style.cssText = `
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            border: 2px solid rgba(111, 227, 209, 0.3);
-            border-radius: 16px;
-            overflow: hidden;
-            transition: transform 0.3s, box-shadow 0.3s;
-            max-width: 380px;
-            margin: 0 auto;
-        `;
-        card.onmouseenter = () => {
-            card.style.transform = 'translateY(-5px)';
-            card.style.boxShadow = '0 10px 30px rgba(111, 227, 209, 0.25)';
-        };
-        card.onmouseleave = () => {
-            card.style.transform = 'translateY(0)';
-            card.style.boxShadow = 'none';
-        };
+    let html = `<div style="max-width:1000px;margin:0 auto;padding:20px;">
+        <h3 style="color:#6fe3d1;margin:0 0 20px 0;text-align:center;">Recent Mints (${mints.length})</h3>
+        <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+            <thead style="background:rgba(111,227,209,0.1);">
+                <tr>
+                    <th style="padding:12px;text-align:left;color:#6fe3d1;">Token ID</th>
+                    <th style="padding:12px;text-align:left;color:#6fe3d1;">Username</th>
+                    <th style="padding:12px;text-align:left;color:#6fe3d1;">Stats</th>
+                    <th style="padding:12px;text-align:left;color:#6fe3d1;">Owner</th>
+                    <th style="padding:12px;text-align:left;color:#6fe3d1;">Time</th>
+                    <th style="padding:12px;text-align:center;color:#6fe3d1;">Explorer</th>
+                </tr>
+            </thead>
+            <tbody>`;
 
-        // 🔥 ГЕНЕРАЦИЯ КАНВАС-ПРЕВЬЮ (как в модалке, но компактнее)
-        const canvas = document.createElement('canvas');
-        canvas.width = 760;
-        canvas.height = 428;
-        const ctx = canvas.getContext('2d');
-
-        const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-        grad.addColorStop(0, '#0f1f1f');
-        grad.addColorStop(0.5, '#1a3333');
-        grad.addColorStop(1, '#0d1a1a');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.strokeStyle = 'rgba(111, 227, 209, 0.4)';
-        ctx.lineWidth = 3;
-        ctx.roundRect(10, 10, canvas.width - 20, canvas.height - 20, 15);
-        ctx.stroke();
-
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 30px Segoe UI, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('RITUAL', canvas.width / 2, 45);
-
-        ctx.fillStyle = '#6fe3d1';
-        ctx.font = 'bold 26px Segoe UI, sans-serif';
-        ctx.fillText('@' + nft.username, canvas.width / 2, 85);
-
-        ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(25, 115);
-        ctx.lineTo(canvas.width - 25, 115);
-        ctx.stroke();
-
-        const metrics = [
-            { label: 'Posts', val: nft.posts, icon: '📝' },
-            { label: 'Likes', val: nft.likes, icon: '❤️' },
-            { label: 'RTs', val: nft.retweets, icon: '🔁' },
-            { label: 'Replies', val: nft.comments, icon: '💬' },
-            { label: 'Views', val: nft.views, icon: '👁️' }
-        ];
-
-        const cellW = (canvas.width - 50) / 5;
-        const startY = 145;
-        const cellH = 160;
-
-        metrics.forEach((m, i) => {
-            const x = 25 + i * cellW;
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-            ctx.roundRect(x, startY, cellW - 10, cellH, 8);
-            ctx.fill();
-            ctx.strokeStyle = 'rgba(111, 227, 209, 0.2)';
-            ctx.lineWidth = 1.5;
-            ctx.roundRect(x, startY, cellW - 10, cellH, 8);
-            ctx.stroke();
-
-            ctx.fillStyle = '#a9ddd3';
-            ctx.font = '18px Segoe UI, sans-serif';
-            ctx.fillText(`${m.icon} ${m.label}`, x + (cellW - 10) / 2, startY + 35);
-
-            ctx.fillStyle = '#6fe3d1';
-            ctx.font = 'bold 28px Segoe UI, sans-serif';
-            ctx.fillText(Number(m.val).toLocaleString(), x + (cellW - 10) / 2, startY + 95);
-        });
-
-        ctx.textAlign = 'left';
-        ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
-        ctx.beginPath();
-        ctx.moveTo(25, canvas.height - 60);
-        ctx.lineTo(canvas.width - 25, canvas.height - 60);
-        ctx.stroke();
-
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.font = '16px Segoe UI, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('MINTED ON RITUAL TESTNET', canvas.width / 2, canvas.height - 35);
-
-        const imgSrc = canvas.toDataURL('image/png');
-
-        // 🔥 ССЫЛКА НА ЭКСПЛОРЕР (страница конкретного токена)
-        const explorerUrl = `https://explorer.ritualfoundation.org/token/${CONTRACT_ADDRESS}/instance/${nft.tokenId}`;
-
-        card.innerHTML = `
-            <img src="${imgSrc}" alt="NFT #${nft.tokenId}" style="width:100%;height:auto;display:block;" loading="lazy">
-            <div style="padding: 14px 16px;">
-                <h4 style="margin:0 0 6px 0;color:#6fe3d1;font-size:17px;font-weight:600;">@${nft.username}</h4>
-                <p style="margin:0 0 10px 0;color:#94a3b8;font-size:12px;">Token #${nft.tokenId}</p>
-                <div style="display:flex;gap:8px;margin-bottom:12px;font-size:13px;">
-                    <span style="color:#fff;background:rgba(111,227,209,0.1);padding:4px 8px;border-radius:6px;">📝 ${nft.posts}</span>
-                    <span style="color:#fff;background:rgba(111,227,209,0.1);padding:4px 8px;border-radius:6px;">❤️ ${nft.likes}</span>
-                    <span style="color:#fff;background:rgba(111,227,209,0.1);padding:4px 8px;border-radius:6px;">👁️ ${nft.views}</span>
-                </div>
-                <a href="${explorerUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:linear-gradient(135deg,#6fe3d1,#4fd3c5);color:#0f172a;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600;">
-                    🔍 View on Explorer
-                </a>
-            </div>
-        `;
-        grid.appendChild(card);
+    mints.forEach((mint, i) => {
+        const timeAgo = getTimeAgo(mint.timestamp);
+        const explorerUrl = `https://explorer.ritualfoundation.org/token/${CONTRACT_ADDRESS}/instance/${mint.tokenId}`;
+        const rowBg = i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)';
+        
+        html += `<tr style="background:${rowBg}">
+            <td style="padding:12px;color:#fff;font-weight:600;">#${mint.tokenId}</td>
+            <td style="padding:12px;color:#6fe3d1;">@${mint.username}</td>
+            <td style="padding:12px;color:#94a3b8;font-size:13px;">📝 ${mint.stats.posts} ❤️ ${mint.stats.likes} 👁️ ${mint.stats.views}</td>
+            <td style="padding:12px;color:#4fd3c5;font-size:13px;">${mint.owner.slice(0,6)}...${mint.owner.slice(-4)}</td>
+            <td style="padding:12px;color:#94a3b8;font-size:13px;">${timeAgo}</td>
+            <td style="padding:12px;text-align:center;">
+                <a href="${explorerUrl}" target="_blank" style="display:inline-block;padding:6px 12px;background:linear-gradient(135deg,#6fe3d1,#4fd3c5);color:#0f172a;text-decoration:none;border-radius:6px;font-size:12px;font-weight:600;">🔍 View</a>
+            </td>
+        </tr>`;
     });
+
+    html += `</tbody></table></div>
+        <p style="text-align:center;margin-top:20px;color:#64748b;font-size:12px;">Last ${mints.length} mints (10k blocks)</p>
+    </div>`;
+
+    container.innerHTML = html;
+}
+
+// === ВСПОМОГАТЕЛЬНАЯ: ВРЕМЯ НАЗАД ===
+function getTimeAgo(timestamp) {
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    if (seconds < 60) return seconds + 's ago';
+    if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+    if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+    return Math.floor(seconds / 86400) + 'd ago';
 }
 
 // === ОСТАЛЬНОЙ КОД (без изменений) ===
