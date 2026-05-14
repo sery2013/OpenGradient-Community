@@ -375,131 +375,142 @@ const CONTRACT_ABI = [
   }
 ];
 
-// === NFT MINT: ПОЛНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ ===
+// === МИНТ: EIP-1559 COMPLIANT (Ritual Testnet) ===
 async function mintCardNFT() {
     const status = document.getElementById('mint-status');
     const btn = document.getElementById('btn-mint');
+    const cardData = window.currentCardData;
 
-    // 1. ПРОВЕРКА НАЛИЧИЯ ДАННЫХ (через window.currentCardData)
-    if (!window.currentCardData || !window.currentCardData.stats) {
-        status.textContent = '❌ Ошибка: Данные карты не загружены. Закройте и откройте карту снова.';
+    // Жёсткая проверка данных
+    if (!cardData?.stats || !cardData.username) {
+        status.textContent = '❌ Данные карточки не загружены. Закройте и откройте заново.';
         status.style.color = '#f87171';
+        console.error("mintCardNFT: currentCardData invalid", cardData);
         return;
     }
 
     if (!window.ethereum) {
-        status.textContent = '❌ Установите MetaMask или Rabby';
+        status.textContent = '❌ Кошелёк не подключён';
         return;
     }
 
     btn.disabled = true;
-    status.style.color = '#ffffff';
+    status.style.color = '#fbbf24';
     status.textContent = '⏳ Подготовка транзакции...';
 
     try {
-        // 2. ПРОВЕРКА СЕТИ (ID 1979 / 0x7BB)
-        const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
-        if (parseInt(chainIdHex, 16) !== 1979) {
-            status.textContent = '🔄 Переключаю сеть на Ritual...';
-            try {
-                await window.ethereum.request({
-                    method: 'wallet_switchEthereumChain',
-                    params: [{ chainId: '0x7BB' }]
-                });
-            } catch (e) {
-                status.textContent = '❌ Добавьте Ritual Testnet в кошелек';
-                btn.disabled = false;
-                return;
-            }
-            await new Promise(r => setTimeout(r, 1000));
+        // 1. Проверка/переключение сети
+        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+        if (parseInt(chainId, 16) !== 1979) {
+            status.textContent = '🔄 Переключаю на Ritual Testnet...';
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: '0x7BB' }]
+            });
+            await new Promise(r => setTimeout(r, 1200));
         }
 
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const address = accounts[0];
+        const [account] = await window.ethereum.request({ method: 'eth_requestAccounts' });
 
-        // 3. КОДИРОВАНИЕ ДАННЫХ
+        // 2. Кодирование вызова контракта
         const iface = new ethers.Interface(CONTRACT_ABI);
-        const encodedData = iface.encodeFunctionData('mintCard', [
-            address,
-            window.currentCardData.username || "User",
-            BigInt(window.currentCardData.stats.posts || 0),
-            BigInt(window.currentCardData.stats.likes || 0),
-            BigInt(window.currentCardData.stats.retweets || 0),
-            BigInt(window.currentCardData.stats.comments || 0),
-            BigInt(window.currentCardData.stats.views || 0),
-            "" 
+        const callData = iface.encodeFunctionData('mintCard', [
+            account,
+            cardData.username,
+            BigInt(cardData.stats.posts || 0),
+            BigInt(cardData.stats.likes || 0),
+            BigInt(cardData.stats.retweets || 0),
+            BigInt(cardData.stats.comments || 0),
+            BigInt(cardData.stats.views || 0),
+            "" // imageData пустая
         ]);
 
-        // 4. ГАЗ И НОНС (LEGACY MODE ДЛЯ СТАБИЛЬНОСТИ)
-        const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
-        const feeData = await provider.getFeeData();
-        const gasPrice = feeData.gasPrice || ethers.parseUnits("1.5", "gwei");
-        const nonce = await provider.getTransactionCount(address, "pending");
-
+        // 3. Формируем EIP-1559 транзакцию
+        // Важно: MetaMask/Rabby часто игнорируют type/gasLimit при eth_sendTransaction,
+        // но Ritual RPC требует явных полей EIP-1559.
         const txParams = {
-            from: address,
+            from: account,
             to: CONTRACT_ADDRESS,
-            data: encodedData, // 🔥 Ключ 'data' вместо 'callData'
+            data: callData,
             value: ethers.toBeHex(ethers.parseEther("0.0001")),
-            gas: ethers.toBeHex(850000n), 
-            gasPrice: ethers.toBeHex(gasPrice),
-            nonce: ethers.toBeHex(nonce),
-            type: '0x0', // 🔥 Legacy тип (0) для Ritual Testnet
-            chainId: '0x7BB'
+            maxFeePerGas: ethers.toBeHex(ethers.parseUnits("2.5", "gwei")),
+            maxPriorityFeePerGas: ethers.toBeHex(ethers.parseUnits("1.5", "gwei")),
+            gasLimit: ethers.toBeHex(900000n),
+            type: '0x2',        // 🔥 EIP-1559 (требование сети)
+            chainId: 1979       // 🔥 Число, не hex
         };
 
-        status.textContent = '🔐 Подтвердите минт в кошельке...';
+        status.textContent = '🔐 Подтвердите в кошельке...';
 
-        // 5. ОТПРАВКА
+        // 4. Отправка
         const txHash = await window.ethereum.request({
             method: 'eth_sendTransaction',
-            params: [txParams],
+            params: [txParams]
         });
 
-        status.textContent = `⛓️ Транзакция в сети: ${txHash.slice(0, 10)}...`;
+        status.textContent = `⛓️ Отправлено: ${txHash.slice(0, 10)}...`;
         status.style.color = '#fbbf24';
 
-        // 6. ЖДЕМ ПОДТВЕРЖДЕНИЯ
-        const receipt = await provider.waitForTransaction(txHash, 1, 60000);
-        
-        if (receipt && receipt.status === 1) {
-            status.textContent = '✅ NFT успешно заминчено!';
+        // 5. Ожидание подтверждения
+        const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
+        const receipt = await provider.waitForTransaction(txHash, 1, 90000);
+
+        if (receipt?.status === 1) {
+            status.textContent = '✅ Успешно заминчено!';
             status.style.color = '#4ade80';
             if (typeof loadNFTGallery === 'function') loadNFTGallery();
         } else {
-            throw new Error("Транзакция не удалась");
+            throw new Error("Транзакция отклонена контрактом (reverted)");
         }
 
     } catch (err) {
         console.error("Mint Error:", err);
         status.style.color = '#f87171';
+        
         if (err.code === 4001) {
-            status.textContent = '❌ Вы отклонили подпись';
+            status.textContent = '❌ Отменено пользователем';
+        } else if (err.message?.includes('type not supported')) {
+            status.textContent = '❌ Сеть отвергла формат. Попробуйте Rabby Wallet или переключите сеть вручную.';
         } else {
-            status.textContent = `❌ Ошибка: ${err.message?.slice(0, 40)}...`;
+            const msg = err.message || 'Неизвестная ошибка';
+            status.textContent = `❌ ${msg.slice(0, 55)}${msg.length > 55 ? '...' : ''}`;
         }
     } finally {
         btn.disabled = false;
     }
 }
 
-// === NFT CARD: ОТКРЫТИЕ МОДАЛЬНОГО ОКНА (исправленная) ===
-function showCardModal(username) {
-    const user = data.find(u => u.username.toLowerCase() === username.toLowerCase());
+// === МОДАЛЬНОЕ ОКНО: СИНХРОННАЯ ПРИВЯЗКА ДАННЫХ ===
+async function showCardModal(username) {
+    const user = data.find(u => u.username?.toLowerCase() === username?.toLowerCase());
     if (!user) {
-        console.error("❌ User not found in data:", username);
+        console.error("❌ Пользователь не найден:", username);
         return;
     }
-    // ✅ Записываем в ГЛОБАЛЬНУЮ переменную, как ожидает mintCardNFT
+
+    // 1. МГНОВЕННО сохраняем данные (синхронно)
     window.currentCardData = { username, stats: user };
-    console.log("✅ window.currentCardData set:", window.currentCardData);
-    
-    generateCardCanvas(username, user);
+    console.log("✅ Данные карточки привязаны:", window.currentCardData);
+
+    // 2. Блокируем кнопку минта пока грузится canvas
+    const mintBtn = document.getElementById('btn-mint');
+    const statusEl = document.getElementById('mint-status');
+    if (mintBtn) mintBtn.disabled = true;
+    if (statusEl) {
+        statusEl.textContent = '🎨 Генерация карточки...';
+        statusEl.style.color = '#fbbf24';
+    }
+
+    // 3. Отрисовка (асинхронно)
+    await generateCardCanvas(username, user);
+
+    // 4. Открываем модалку и разблокируем минт
     const modal = document.getElementById('card-modal');
     if (modal) modal.style.display = 'flex';
+    
     document.getElementById('card-modal-title').textContent = `@${username} Card`;
-    document.getElementById('mint-status').textContent = '';
-    document.getElementById('btn-mint').disabled = false;
+    if (statusEl) statusEl.textContent = '';
+    if (mintBtn) mintBtn.disabled = false;
 }
 
 function closeCardModal() {
