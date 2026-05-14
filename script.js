@@ -438,7 +438,7 @@ async function mintCardNFT() {
             chainId: 1979
         };
 
-        status.textContent = '🔐 Подтвердите в кошельке...';
+        status.textContent = '🔐 Confirm in the wallet...';
 
         // 4. Отправка
         const txHash = await window.ethereum.request({
