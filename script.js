@@ -470,7 +470,7 @@ async function mintCardNFT() {
         status.style.color = '#f87171';
         
         if (err.code === 4001) {
-            status.textContent = '❌ Отменено пользователем';
+            status.textContent = '❌ Canceled by user';
         } else if (err.message?.includes('type not supported')) {
             status.textContent = '❌ Сеть отвергла формат. Попробуйте Rabby Wallet или переключите сеть вручную.';
         } else {
