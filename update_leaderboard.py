@@ -1,3 +1,4 @@
+import sys
 import requests
 import json
 import time
@@ -5,7 +6,14 @@ import logging
 import os
 from datetime import datetime, timedelta
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
+# 🔥 ПРИНУДИТЕЛЬНЫЙ ВЫВОД ЛОГОВ В РЕАЛЬНОМ ВРЕМЕНИ (для GitHub Actions)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s: %(message)s",
+    force=True,
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+sys.stdout.reconfigure(line_buffering=True)
 
 # === НАСТРОЙКИ ===
 API_KEY = os.getenv("API_KEY")
@@ -26,15 +34,21 @@ def fetch_tweets(cursor=None, limit=50):
     if cursor:
         params["cursor"] = cursor
     try:
-        r = requests.get(BASE_URL, headers=HEADERS, params=params)
+        logging.info(f"🌐 Запрос к API... (лимит: {limit})")
+        r = requests.get(BASE_URL, headers=HEADERS, params=params, timeout=15)
         r.raise_for_status()
-        return r.json()
+        data = r.json()
+        tweets = data.get("tweets", [])
+        logging.info(f"✅ API вернул {len(tweets)} твитов.")
+        return data
+    except requests.exceptions.Timeout:
+        logging.error("⏰ Таймаут API запроса (15 сек)")
+        return {}
     except Exception as e:
-        logging.error(f"Ошибка API: {e}")
+        logging.error(f"❌ Ошибка API: {e}")
         return {}
 
 def parse_tweet_date(tweet):
-    """Извлекает дату твита из разных возможных полей"""
     date_str = (
         tweet.get("created_at") or 
         tweet.get("tweet_created_at") or 
@@ -42,77 +56,83 @@ def parse_tweet_date(tweet):
     )
     if not date_str:
         return None
-    
     try:
-        # Twitter формат: "Mon Apr 27 12:34:56 +0000 2026"
         return datetime.strptime(date_str, "%a %b %d %H:%M:%S %z %Y")
     except:
         try:
-            # ISO формат
             return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
         except:
             return None
 
-# === ОСНОВНАЯ ЛОГИКА (С ЗАЩИТОЙ ОТ ДУБЛИКАТОВ) ===
+# === ОСНОВНАЯ ЛОГИКА С ПОДРОБНЫМИ ЛОГАМИ ===
 def collect_all_tweets():
-    # 1. Определяем дату 30 дней назад
     cutoff_date = datetime.now().replace(tzinfo=None) - timedelta(days=30)
     logging.info(f"📅 Собираем твиты с {cutoff_date.strftime('%Y-%m-%d')} (последние 30 дней)")
     
     all_tweets = []
-    seen_ids = set()  # 🔥 ДЛЯ ОТСЕЧЕНИЯ ДУБЛИКАТОВ
+    seen_ids = set()
     cursor = None
     total_collected = 0
     duplicates_skipped = 0
     
-    # 2. Цикл сбора с начала (от новых к старым)
-    while True:
+    # 🔥 ЖЁСТКИЙ ЛИМИТ: максимум 60 страниц (защита от бесконечного цикла)
+    max_pages = 60
+    page = 0
+    
+    while page < max_pages:
+        page += 1
+        logging.info(f"📄 СТРАНИЦА {page}/{max_pages} | Всего собрано: {total_collected}")
+        
         data = fetch_tweets(cursor)
         tweets = data.get("tweets", [])
-        cursor = data.get("next_cursor")
+        next_cursor = data.get("next_cursor")
 
         if not tweets:
-            logging.info("🏁 API вернул пустую страницу. Сбор завершен.")
+            logging.info("🏁 Пустая страница от API. Сбор завершён.")
             break
 
+        # Защита от зацикливания курсора
+        if next_cursor == cursor:
+            logging.warning("⚠️ Курсор не изменился. Выход во избежание цикла.")
+            break
+
+        new_on_page = 0
         should_stop = False
+        
         for t in tweets:
             tid = t.get("id_str")
             tweet_date = parse_tweet_date(t)
             
-            # Проверяем дату: если старше 30 дней — останавливаемся
             if tweet_date and tweet_date.replace(tzinfo=None) < cutoff_date:
                 should_stop = True
                 break
             
-            # 🔥 Пропускаем дубликаты по ID
             if tid in seen_ids:
                 duplicates_skipped += 1
                 continue
             seen_ids.add(tid)
             
-            # (Опционально) Игнорировать ретвиты, чтобы считать только оригинальные посты
-            # Раскомментируй строку ниже, если хочешь убрать ретвиты из подсчёта:
-            # if t.get("retweeted_status"): continue
-            
             all_tweets.append(t)
             total_collected += 1
+            new_on_page += 1
+            
+            # 🔥 ЛОГ КАЖДЫЕ 100 ТВИТОВ
+            if total_collected % 100 == 0:
+                logging.info(f"📊 Прогресс: {total_collected} твитов собрано (пропущено дублей: {duplicates_skipped})")
+
+        logging.info(f"➕ На странице {page} добавлено {new_on_page} новых твитов.")
         
-        if total_collected % 200 == 0:
-            logging.info(f"📥 Загружено {total_collected} уникальных твитов... (пропущено дублей: {duplicates_skipped})")
-        
-        # Остановка если достигли старых твитов или кончился курсор
         if should_stop:
-            logging.info(f"🛑 Достигли твитов старше 30 дней. Остановка.")
+            logging.info(f"🛑 Достигнут лимит 30 дней. Сбор завершён.")
             break
             
-        if not cursor:
-            logging.info("🏁 Курсор закончился. Сбор завершен.")
+        if not next_cursor:
+            logging.info("🏁 Курсор закончился. Сбор завершён.")
             break
 
-        time.sleep(1)  # Пауза между запросами
+        cursor = next_cursor
+        time.sleep(1.5)  # Пауза для стабильности API
 
-    # 3. Сохраняем результат (перезаписываем файл полностью)
     save_json(TWEETS_FILE, all_tweets)
     logging.info(f"\n✅ Готово! Собрано {total_collected} уникальных твитов.")
     logging.info(f"🗑️ Пропущено дубликатов: {duplicates_skipped}")
@@ -120,30 +140,20 @@ def collect_all_tweets():
     
     return all_tweets
 
-
-# === ПОСТРОЕНИЕ ЛИДЕРБОРДА (исправленная версия) ===
+# === ПОСТРОЕНИЕ ЛИДЕРБОРДА ===
 def build_leaderboard(tweets):
     leaderboard = {}
-
     for t in tweets:
         user = t.get("user")
-        if not user:
-            continue
+        if not user: continue
         name = user.get("screen_name")
-        if not name:
-            continue
+        if not name: continue
 
         stats = leaderboard.setdefault(name, {
-            "posts": 0,
-            "likes": 0,
-            "retweets": 0,
-            "comments": 0,
-            "quotes": 0,
-            "views": 0
+            "posts": 0, "likes": 0, "retweets": 0, "comments": 0, "quotes": 0, "views": 0
         })
 
         stats["posts"] += 1
-        # Используем `or 0` для защиты от None
         stats["likes"] += t.get("favorite_count") or 0
         stats["retweets"] += t.get("retweet_count") or 0
         stats["comments"] += t.get("reply_count") or 0
@@ -154,13 +164,16 @@ def build_leaderboard(tweets):
     save_json(LEADERBOARD_FILE, leaderboard_list)
     logging.info(f"📊 Лидерборд обновлён ({len(leaderboard_list)} участников).")
 
-
 # === ЗАПУСК ===
 if __name__ == "__main__":
     if not API_KEY:
         logging.error("❌ ОШИБКА: Переменная API_KEY не найдена!")
     else:
-        logging.info("🔑 Ключ найден. Запуск сбора с защитой от дубликатов...")
-        tweets = collect_all_tweets()
-        build_leaderboard(tweets)
-        logging.info("✅ Воркфлоу успешно завершен.")
+        logging.info("🔑 Ключ найден. Запуск сбора с детальным логированием...")
+        try:
+            tweets = collect_all_tweets()
+            build_leaderboard(tweets)
+            logging.info("✅ Воркфлоу успешно завершен.")
+        except Exception as e:
+            logging.error(f"💥 Критическая ошибка воркфлоу: {e}")
+            sys.exit(1)
