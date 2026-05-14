@@ -374,7 +374,114 @@ const CONTRACT_ABI = [
     "type": "event"
   }
 ];
-let currentCardData = { username: "", stats: {}, imageData: "" };
+
+// === NFT MINT: ПОЛНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ ===
+async function mintCardNFT() {
+    const status = document.getElementById('mint-status');
+    const btn = document.getElementById('btn-mint');
+
+    // 1. ПРОВЕРКА НАЛИЧИЯ ДАННЫХ (через window.currentCardData)
+    if (!window.currentCardData || !window.currentCardData.stats) {
+        status.textContent = '❌ Ошибка: Данные карты не загружены. Закройте и откройте карту снова.';
+        status.style.color = '#f87171';
+        return;
+    }
+
+    if (!window.ethereum) {
+        status.textContent = '❌ Установите MetaMask или Rabby';
+        return;
+    }
+
+    btn.disabled = true;
+    status.style.color = '#ffffff';
+    status.textContent = '⏳ Подготовка транзакции...';
+
+    try {
+        // 2. ПРОВЕРКА СЕТИ (ID 1979 / 0x7BB)
+        const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
+        if (parseInt(chainIdHex, 16) !== 1979) {
+            status.textContent = '🔄 Переключаю сеть на Ritual...';
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: '0x7BB' }]
+                });
+            } catch (e) {
+                status.textContent = '❌ Добавьте Ritual Testnet в кошелек';
+                btn.disabled = false;
+                return;
+            }
+            await new Promise(r => setTimeout(r, 1000));
+        }
+
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const address = accounts[0];
+
+        // 3. КОДИРОВАНИЕ ДАННЫХ
+        const iface = new ethers.Interface(CONTRACT_ABI);
+        const encodedData = iface.encodeFunctionData('mintCard', [
+            address,
+            window.currentCardData.username || "User",
+            BigInt(window.currentCardData.stats.posts || 0),
+            BigInt(window.currentCardData.stats.likes || 0),
+            BigInt(window.currentCardData.stats.retweets || 0),
+            BigInt(window.currentCardData.stats.comments || 0),
+            BigInt(window.currentCardData.stats.views || 0),
+            "" 
+        ]);
+
+        // 4. ГАЗ И НОНС (LEGACY MODE ДЛЯ СТАБИЛЬНОСТИ)
+        const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
+        const feeData = await provider.getFeeData();
+        const gasPrice = feeData.gasPrice || ethers.parseUnits("1.5", "gwei");
+        const nonce = await provider.getTransactionCount(address, "pending");
+
+        const txParams = {
+            from: address,
+            to: CONTRACT_ADDRESS,
+            data: encodedData, // 🔥 Ключ 'data' вместо 'callData'
+            value: ethers.toBeHex(ethers.parseEther("0.0001")),
+            gas: ethers.toBeHex(850000n), 
+            gasPrice: ethers.toBeHex(gasPrice),
+            nonce: ethers.toBeHex(nonce),
+            type: '0x0', // 🔥 Legacy тип (0) для Ritual Testnet
+            chainId: '0x7BB'
+        };
+
+        status.textContent = '🔐 Подтвердите минт в кошельке...';
+
+        // 5. ОТПРАВКА
+        const txHash = await window.ethereum.request({
+            method: 'eth_sendTransaction',
+            params: [txParams],
+        });
+
+        status.textContent = `⛓️ Транзакция в сети: ${txHash.slice(0, 10)}...`;
+        status.style.color = '#fbbf24';
+
+        // 6. ЖДЕМ ПОДТВЕРЖДЕНИЯ
+        const receipt = await provider.waitForTransaction(txHash, 1, 60000);
+        
+        if (receipt && receipt.status === 1) {
+            status.textContent = '✅ NFT успешно заминчено!';
+            status.style.color = '#4ade80';
+            if (typeof loadNFTGallery === 'function') loadNFTGallery();
+        } else {
+            throw new Error("Транзакция не удалась");
+        }
+
+    } catch (err) {
+        console.error("Mint Error:", err);
+        status.style.color = '#f87171';
+        if (err.code === 4001) {
+            status.textContent = '❌ Вы отклонили подпись';
+        } else {
+            status.textContent = `❌ Ошибка: ${err.message?.slice(0, 40)}...`;
+        }
+    } finally {
+        btn.disabled = false;
+    }
+}
 
 // === NFT CARD: ОТКРЫТИЕ МОДАЛЬНОГО ОКНА (исправленная) ===
 function showCardModal(username) {
@@ -383,9 +490,10 @@ function showCardModal(username) {
         console.error("❌ User not found in data:", username);
         return;
     }
-    // ✅ Записываем в ГЛОБАЛЬНУЮ переменную, как ожидает mintCardNFT (Gemini)
+    // ✅ Записываем в ГЛОБАЛЬНУЮ переменную, как ожидает mintCardNFT
     window.currentCardData = { username, stats: user };
-    console.log("✅ window.currentCardData set:", window.currentCardData); // Добавим лог для отладки
+    console.log("✅ window.currentCardData set:", window.currentCardData);
+    
     generateCardCanvas(username, user);
     const modal = document.getElementById('card-modal');
     if (modal) modal.style.display = 'flex';
@@ -393,6 +501,11 @@ function showCardModal(username) {
     document.getElementById('mint-status').textContent = '';
     document.getElementById('btn-mint').disabled = false;
 }
+
+function closeCardModal() {
+    document.getElementById('card-modal').style.display = 'none';
+}
+
 // === NFT GALLERY: ЗАГРУЗКА С ОГРАНИЧЕНИЕМ ДИАПАЗОНА БЛОКОВ ===
 async function loadNFTGallery() {
     const grid = document.getElementById('nft-gallery-grid');
@@ -673,23 +786,6 @@ function filterData() {
     return data.filter(item => (item.username || "").toLowerCase().includes(query));
 }
 
-// === NFT CARD: ОТКРЫТИЕ МОДАЛЬНОГО ОКНА ===
-function showCardModal(username) {
-    const user = data.find(u => u.username.toLowerCase() === username.toLowerCase());
-    if (!user) return;
-    currentCardData = { username, stats: user };
-    generateCardCanvas(username, user);
-    const modal = document.getElementById('card-modal');
-    if (modal) modal.style.display = 'flex';
-    document.getElementById('card-modal-title').textContent = `@${username} Card`;
-    document.getElementById('mint-status').textContent = '';
-    document.getElementById('btn-mint').disabled = false;
-}
-
-function closeCardModal() {
-    document.getElementById('card-modal').style.display = 'none';
-}
-
 // === NFT CARD: ГЕНЕРАЦИЯ CANVAS (1200x675 - Twitter Format) ===
 async function generateCardCanvas(username, stats) {
     const canvas = document.getElementById('user-canvas');
@@ -857,8 +953,6 @@ async function generateCardCanvas(username, stats) {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
     ctx.font = '16px Segoe UI, sans-serif';
     ctx.fillText('Generated ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), W / 2, H - 35);
-
-    currentCardData.imageData = canvas.toDataURL('image/png').split(',')[1];
 
     // Кнопка Download
     document.getElementById('btn-download').onclick = () => {
