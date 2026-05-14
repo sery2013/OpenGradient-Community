@@ -607,7 +607,7 @@ function renderNFTCards(nfts) {
     grid.innerHTML = '';
     
     if (nfts.length === 0) {
-        grid.innerHTML = '<p class="gallery-empty">🎨 Пока нет заминченных NFT. Будьте первым!</p>';
+        grid.innerHTML = '<p class="gallery-empty">🎨 No minted NFTs yet. Be the first!</p>';
         return;
     }
     
