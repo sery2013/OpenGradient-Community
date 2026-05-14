@@ -524,7 +524,7 @@ async function loadNFTGallery() {
     const grid = document.getElementById('nft-gallery-grid');
     if (!grid) return;
     
-    grid.innerHTML = '<p class="gallery-loading">⏳ Загрузка NFT из блокчейна...</p>';
+    grid.innerHTML = '<p class="gallery-loading">⏳ Loading NFT from blockchain...</p>';
 
     try {
         const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
