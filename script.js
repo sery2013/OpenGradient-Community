@@ -519,7 +519,7 @@ function closeCardModal() {
     document.getElementById('card-modal').style.display = 'none';
 }
 
-// === NFT GALLERY: RECENT MINTS (SIMPLE TABLE - FIXED) ===
+// === NFT GALLERY: RECENT MINTS (FULL WIDTH TABLE) ===
 async function loadNFTGallery() {
     const grid = document.getElementById('nft-gallery-grid');
     if (!grid) return;
@@ -581,25 +581,26 @@ async function loadNFTGallery() {
     }
 }
 
-// === RENDER MINTS TABLE (SIMPLIFIED - FULL WIDTH) ===
+// === RENDER MINTS TABLE (FULL WIDTH - NO SCROLL) ===
 function renderMintsTable(mints, container) {
     if (mints.length === 0) {
         container.innerHTML = '<p style="text-align:center;padding:60px;color:#94a3b8;">🎨 No mints yet. Be the first!</p>';
         return;
     }
 
-    let html = `<div style="width:100%;max-width:100%;margin:0 auto;padding:20px;overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;font-size:14px;">
-            <thead style="background:rgba(111,227,209,0.15);">
-                <tr>
-                    <th style="padding:14px 16px;text-align:center;color:#6fe3d1;font-weight:600;border-bottom:2px solid rgba(111,227,209,0.3);width:60px;">#</th>
-                    <th style="padding:14px 16px;text-align:left;color:#6fe3d1;font-weight:600;border-bottom:2px solid rgba(111,227,209,0.3);">Owner Wallet</th>
-                    <th style="padding:14px 16px;text-align:left;color:#6fe3d1;font-weight:600;border-bottom:2px solid rgba(111,227,209,0.3);">Transaction Hash</th>
-                    <th style="padding:14px 16px;text-align:center;color:#6fe3d1;font-weight:600;border-bottom:2px solid rgba(111,227,209,0.3);width:120px;">Time</th>
-                    <th style="padding:14px 16px;text-align:center;color:#6fe3d1;font-weight:600;border-bottom:2px solid rgba(111,227,209,0.3);width:100px;">Explorer</th>
-                </tr>
-            </thead>
-            <tbody>`;
+    let html = `
+        <div style="width:100%;padding:20px 40px;">
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                <thead style="background:rgba(111,227,209,0.15);">
+                    <tr>
+                        <th style="padding:16px 20px;text-align:center;color:#6fe3d1;font-weight:600;border-bottom:2px solid rgba(111,227,209,0.3);width:80px;">#</th>
+                        <th style="padding:16px 20px;text-align:left;color:#6fe3d1;font-weight:600;border-bottom:2px solid rgba(111,227,209,0.3);">Owner Wallet</th>
+                        <th style="padding:16px 20px;text-align:left;color:#6fe3d1;font-weight:600;border-bottom:2px solid rgba(111,227,209,0.3);">Transaction Hash</th>
+                        <th style="padding:16px 20px;text-align:center;color:#6fe3d1;font-weight:600;border-bottom:2px solid rgba(111,227,209,0.3);width:140px;">Time</th>
+                        <th style="padding:16px 20px;text-align:center;color:#6fe3d1;font-weight:600;border-bottom:2px solid rgba(111,227,209,0.3);width:120px;">Explorer</th>
+                    </tr>
+                </thead>
+                <tbody>`;
 
     mints.forEach((mint, i) => {
         const timeAgo = getTimeAgo(mint.timestamp);
@@ -610,28 +611,28 @@ function renderMintsTable(mints, container) {
         html += `<tr style="background:${rowBg};transition:background 0.2s;" 
                 onmouseenter="this.style.background='rgba(111,227,209,0.1)'" 
                 onmouseleave="this.style.background='${rowBg}'">
-            <td style="padding:14px 16px;text-align:center;color:#94a3b8;font-weight:600;">${i + 1}</td>
-            <td style="padding:14px 16px;color:#4fd3c5;font-family:monospace;font-size:13px;">
+            <td style="padding:16px 20px;text-align:center;color:#94a3b8;font-weight:600;">${i + 1}</td>
+            <td style="padding:16px 20px;color:#4fd3c5;font-family:monospace;font-size:13px;">
                 <a href="https://explorer.ritualfoundation.org/address/${mint.owner}" 
                    target="_blank" 
                    style="color:#4fd3c5;text-decoration:none;">
                     ${mint.owner.slice(0, 6)}...${mint.owner.slice(-4)}
                 </a>
             </td>
-            <td style="padding:14px 16px;color:#64748b;font-family:monospace;font-size:12px;">
+            <td style="padding:16px 20px;color:#64748b;font-family:monospace;font-size:12px;">
                 <a href="${explorerUrl}" 
                    target="_blank" 
                    style="color:#64748b;text-decoration:none;transition:color 0.2s;"
                    onmouseenter="this.style.color='#6fe3d1'"
                    onmouseleave="this.style.color='#64748b'">
-                    ${mint.txHash.slice(0, 10)}...${mint.txHash.slice(-8)}
+                    ${mint.txHash}
                 </a>
             </td>
-            <td style="padding:14px 16px;text-align:center;color:#94a3b8;font-size:13px;">${timeAgo}</td>
-            <td style="padding:14px 16px;text-align:center;">
+            <td style="padding:16px 20px;text-align:center;color:#94a3b8;font-size:13px;">${timeAgo}</td>
+            <td style="padding:16px 20px;text-align:center;">
                 <a href="${explorerUrl}" 
                    target="_blank" 
-                   style="display:inline-block;padding:6px 14px;background:linear-gradient(135deg,#6fe3d1,#4fd3c5);color:#0f172a;text-decoration:none;border-radius:6px;font-size:12px;font-weight:600;transition:opacity 0.2s,transform 0.2s;"
+                   style="display:inline-block;padding:8px 16px;background:linear-gradient(135deg,#6fe3d1,#4fd3c5);color:#0f172a;text-decoration:none;border-radius:6px;font-size:12px;font-weight:600;transition:opacity 0.2s,transform 0.2s;"
                    onmouseenter="this.style.opacity='0.85';this.style.transform='translateY(-1px)'"
                    onmouseleave="this.style.opacity='1';this.style.transform='translateY(0)'">
                     🔍 View
@@ -641,10 +642,10 @@ function renderMintsTable(mints, container) {
     });
 
     html += `</tbody></table>
-        <p style="text-align:center;margin-top:20px;color:#64748b;font-size:12px;">
-            Last ${mints.length} mints (10k blocks)
-        </p>
-    </div>`;
+            <p style="text-align:center;margin-top:24px;color:#64748b;font-size:12px;">
+                Last ${mints.length} mints (10k blocks)
+            </p>
+        </div>`;
 
     container.innerHTML = html;
 }
