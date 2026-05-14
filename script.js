@@ -519,7 +519,7 @@ function closeCardModal() {
     document.getElementById('card-modal').style.display = 'none';
 }
 
-// === NFT GALLERY: RECENT MINTS (SIMPLE TABLE) ===
+// === NFT GALLERY: RECENT MINTS (SIMPLE TABLE - FIXED) ===
 async function loadNFTGallery() {
     const grid = document.getElementById('nft-gallery-grid');
     if (!grid) return;
@@ -556,19 +556,8 @@ async function loadNFTGallery() {
                 if (from !== ethers.ZeroAddress || seenTokens.has(tokenId)) continue;
                 seenTokens.add(tokenId);
 
-                let username = "Unknown";
-                let stats = { posts: 0, likes: 0, views: 0 };
-                
-                try {
-                    const cardData = await contract.cards(tokenId);
-                    username = cardData.username || cardData[1] || "Unknown";
-                    stats = {
-                        posts: Number(cardData.posts || cardData[2] || 0),
-                        likes: Number(cardData.likes || cardData[3] || 0),
-                        views: Number(cardData.views || cardData[6] || 0)
-                    };
-                } catch (e) {}
-
+                // Get transaction data for hash and timestamp
+                const tx = await provider.getTransaction(log.transactionHash);
                 const block = await provider.getBlock(log.blockNumber);
                 
                 mints.push({
@@ -576,13 +565,14 @@ async function loadNFTGallery() {
                     owner: to,
                     txHash: log.transactionHash,
                     blockNumber: log.blockNumber,
-                    timestamp: block ? block.timestamp * 1000 : Date.now(),
-                    username,
-                    stats
+                    timestamp: tx?.timestamp ? tx.timestamp * 1000 : (block?.timestamp ? block.timestamp * 1000 : Date.now()),
                 });
-            } catch (err) {}
+            } catch (err) {
+                console.warn("⚠️ Error processing log:", err);
+            }
         }
 
+        // Sort: newest first
         mints.sort((a, b) => b.blockNumber - a.blockNumber);
         renderMintsTable(mints, grid);
 
@@ -591,60 +581,92 @@ async function loadNFTGallery() {
     }
 }
 
-// === RENDER MINTS TABLE ===
+// === RENDER MINTS TABLE (SIMPLIFIED - FULL WIDTH) ===
 function renderMintsTable(mints, container) {
     if (mints.length === 0) {
         container.innerHTML = '<p style="text-align:center;padding:60px;color:#94a3b8;">🎨 No mints yet. Be the first!</p>';
         return;
     }
 
-    let html = `<div style="max-width:1000px;margin:0 auto;padding:20px;">
-        <h3 style="color:#6fe3d1;margin:0 0 20px 0;text-align:center;">Recent Mints (${mints.length})</h3>
-        <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;">
-            <thead style="background:rgba(111,227,209,0.1);">
+    let html = `<div style="width:100%;max-width:100%;margin:0 auto;padding:20px;overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">
+            <thead style="background:rgba(111,227,209,0.15);">
                 <tr>
-                    <th style="padding:12px;text-align:left;color:#6fe3d1;">Token ID</th>
-                    <th style="padding:12px;text-align:left;color:#6fe3d1;">Username</th>
-                    <th style="padding:12px;text-align:left;color:#6fe3d1;">Stats</th>
-                    <th style="padding:12px;text-align:left;color:#6fe3d1;">Owner</th>
-                    <th style="padding:12px;text-align:left;color:#6fe3d1;">Time</th>
-                    <th style="padding:12px;text-align:center;color:#6fe3d1;">Explorer</th>
+                    <th style="padding:14px 16px;text-align:center;color:#6fe3d1;font-weight:600;border-bottom:2px solid rgba(111,227,209,0.3);width:60px;">#</th>
+                    <th style="padding:14px 16px;text-align:left;color:#6fe3d1;font-weight:600;border-bottom:2px solid rgba(111,227,209,0.3);">Owner Wallet</th>
+                    <th style="padding:14px 16px;text-align:left;color:#6fe3d1;font-weight:600;border-bottom:2px solid rgba(111,227,209,0.3);">Transaction Hash</th>
+                    <th style="padding:14px 16px;text-align:center;color:#6fe3d1;font-weight:600;border-bottom:2px solid rgba(111,227,209,0.3);width:120px;">Time</th>
+                    <th style="padding:14px 16px;text-align:center;color:#6fe3d1;font-weight:600;border-bottom:2px solid rgba(111,227,209,0.3);width:100px;">Explorer</th>
                 </tr>
             </thead>
             <tbody>`;
 
     mints.forEach((mint, i) => {
         const timeAgo = getTimeAgo(mint.timestamp);
-        const explorerUrl = `https://explorer.ritualfoundation.org/token/${CONTRACT_ADDRESS}/instance/${mint.tokenId}`;
-        const rowBg = i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)';
+        // Link to transaction in explorer
+        const explorerUrl = `https://explorer.ritualfoundation.org/tx/${mint.txHash}`;
+        const rowBg = i % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.06)';
         
-        html += `<tr style="background:${rowBg}">
-            <td style="padding:12px;color:#fff;font-weight:600;">#${mint.tokenId}</td>
-            <td style="padding:12px;color:#6fe3d1;">@${mint.username}</td>
-            <td style="padding:12px;color:#94a3b8;font-size:13px;">📝 ${mint.stats.posts} ❤️ ${mint.stats.likes} 👁️ ${mint.stats.views}</td>
-            <td style="padding:12px;color:#4fd3c5;font-size:13px;">${mint.owner.slice(0,6)}...${mint.owner.slice(-4)}</td>
-            <td style="padding:12px;color:#94a3b8;font-size:13px;">${timeAgo}</td>
-            <td style="padding:12px;text-align:center;">
-                <a href="${explorerUrl}" target="_blank" style="display:inline-block;padding:6px 12px;background:linear-gradient(135deg,#6fe3d1,#4fd3c5);color:#0f172a;text-decoration:none;border-radius:6px;font-size:12px;font-weight:600;">🔍 View</a>
+        html += `<tr style="background:${rowBg};transition:background 0.2s;" 
+                onmouseenter="this.style.background='rgba(111,227,209,0.1)'" 
+                onmouseleave="this.style.background='${rowBg}'">
+            <td style="padding:14px 16px;text-align:center;color:#94a3b8;font-weight:600;">${i + 1}</td>
+            <td style="padding:14px 16px;color:#4fd3c5;font-family:monospace;font-size:13px;">
+                <a href="https://explorer.ritualfoundation.org/address/${mint.owner}" 
+                   target="_blank" 
+                   style="color:#4fd3c5;text-decoration:none;">
+                    ${mint.owner.slice(0, 6)}...${mint.owner.slice(-4)}
+                </a>
+            </td>
+            <td style="padding:14px 16px;color:#64748b;font-family:monospace;font-size:12px;">
+                <a href="${explorerUrl}" 
+                   target="_blank" 
+                   style="color:#64748b;text-decoration:none;transition:color 0.2s;"
+                   onmouseenter="this.style.color='#6fe3d1'"
+                   onmouseleave="this.style.color='#64748b'">
+                    ${mint.txHash.slice(0, 10)}...${mint.txHash.slice(-8)}
+                </a>
+            </td>
+            <td style="padding:14px 16px;text-align:center;color:#94a3b8;font-size:13px;">${timeAgo}</td>
+            <td style="padding:14px 16px;text-align:center;">
+                <a href="${explorerUrl}" 
+                   target="_blank" 
+                   style="display:inline-block;padding:6px 14px;background:linear-gradient(135deg,#6fe3d1,#4fd3c5);color:#0f172a;text-decoration:none;border-radius:6px;font-size:12px;font-weight:600;transition:opacity 0.2s,transform 0.2s;"
+                   onmouseenter="this.style.opacity='0.85';this.style.transform='translateY(-1px)'"
+                   onmouseleave="this.style.opacity='1';this.style.transform='translateY(0)'">
+                    🔍 View
+                </a>
             </td>
         </tr>`;
     });
 
-    html += `</tbody></table></div>
-        <p style="text-align:center;margin-top:20px;color:#64748b;font-size:12px;">Last ${mints.length} mints (10k blocks)</p>
+    html += `</tbody></table>
+        <p style="text-align:center;margin-top:20px;color:#64748b;font-size:12px;">
+            Last ${mints.length} mints (10k blocks)
+        </p>
     </div>`;
 
     container.innerHTML = html;
 }
 
-// === HELPER: TIME AGO ===
+// === HELPER: TIME AGO (FIXED) ===
 function getTimeAgo(timestamp) {
-    const seconds = Math.floor((Date.now() - timestamp) / 1000);
-    if (seconds < 60) return seconds + 's ago';
-    if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
-    if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
-    return Math.floor(seconds / 86400) + 'd ago';
+    if (!timestamp || timestamp <= 0) return 'Just now';
+    
+    const now = Date.now();
+    const diff = now - timestamp;
+    
+    if (diff < 0 || diff > 31536000000) return 'Just now'; // more than a year - error
+    
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    
+    if (days > 0) return `${days}d ago`;
+    if (hours > 0) return `${hours}h ago`;
+    if (minutes > 0) return `${minutes}m ago`;
+    return `${seconds}s ago`;
 }
 
 // === REMAINING CODE (unchanged) ===
