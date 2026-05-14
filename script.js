@@ -520,7 +520,6 @@ function closeCardModal() {
 }
 
 // === NFT GALLERY: ИСПРАВЛЕННАЯ ВЕРСИЯ ===
-// === NFT GALLERY: ИСПРАВЛЕННАЯ ВЕРСИЯ (max block range = 50000) ===
 async function loadNFTGallery() {
     const grid = document.getElementById('nft-gallery-grid');
     if (!grid) return;
@@ -529,70 +528,78 @@ async function loadNFTGallery() {
 
     try {
         const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
-        
-        if (!CONTRACT_ABI || CONTRACT_ABI.length === 0) {
-            throw new Error("❌ ABI контракта не найден");
-        }
-
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 
-        // 🔥 БЕЗОПАСНЫЙ ДИАПАЗОН: максимум 50 000 блоков (ограничение RPC Ritual)
+        // Получаем последний блок
         const latestBlock = await provider.getBlockNumber();
         const fromBlock = Math.max(0, latestBlock - 50000);
         
-        console.log(`🔍 Поиск событий: блоки ${fromBlock} → ${latestBlock} (диапазон: ${latestBlock - fromBlock})`);
+        console.log(`🔍 Поиск NFT: блоки ${fromBlock} → ${latestBlock}`);
 
+        // Ищем события Transfer
         const filter = contract.filters.Transfer(null, null);
         const events = await contract.queryFilter(filter, fromBlock, latestBlock);
         
         console.log(`✅ Найдено ${events.length} событий Transfer`);
 
         const nfts = [];
-        const seenIds = new Set();
+        const seenTokens = new Set();
 
         for (const event of events) {
             const tokenId = event.args?.tokenId?.toString();
-            if (!tokenId || seenIds.has(tokenId)) continue;
-            seenIds.add(tokenId);
             
+            // Пропускаем дубликаты и Transfer в нулевой адрес (минт)
+            if (!tokenId || seenTokens.has(tokenId)) continue;
+            seenTokens.add(tokenId);
+
             try {
-                const card = await contract.cards(tokenId);
-                nfts.push({
-                    tokenId,
-                    username: card.username || "Unknown",
-                    posts: card.posts?.toString() || "0",
-                    likes: card.likes?.toString() || "0",
-                    retweets: card.retweets?.toString() || "0",
-                    comments: card.comments?.toString() || "0",
-                    views: card.views?.toString() || "0",
-                    mintedAt: card.mintedAt?.toString() || "0",
-                    owner: event.args?.to
-                });
-            } catch (e) {
-                console.warn(`⚠️ Не удалось получить данные токена ${tokenId}:`, e);
+                // Читаем данные из контракта
+                const cardData = await contract.cards(tokenId);
+                
+                // cardData - это массив/объект с полями:
+                // [0] owner (address)
+                // [1] username (string)
+                // [2] posts (uint256)
+                // [3] likes (uint256)
+                // [4] retweets (uint256)
+                // [5] comments (uint256)
+                // [6] views (uint256)
+                // [7] imageData (string)
+                // [8] mintedAt (uint256)
+                
+                const nft = {
+                    tokenId: tokenId,
+                    owner: event.args?.to,
+                    username: cardData[1] || cardData.username || "Unknown",
+                    posts: Number(cardData[2] || cardData.posts || 0),
+                    likes: Number(cardData[3] || cardData.likes || 0),
+                    retweets: Number(cardData[4] || cardData.retweets || 0),
+                    comments: Number(cardData[5] || cardData.comments || 0),
+                    views: Number(cardData[6] || cardData.views || 0),
+                    mintedAt: Number(cardData[8] || cardData.mintedAt || 0)
+                };
+
+                console.log(`📦 NFT #${tokenId}:`, nft);
+                nfts.push(nft);
+                
+            } catch (err) {
+                console.error(`❌ Ошибка чтения токена #${tokenId}:`, err);
             }
         }
 
         // Сортировка: новые сверху
-        nfts.sort((a, b) => Number(b.mintedAt) - Number(a.mintedAt));
+        nfts.sort((a, b) => b.mintedAt - a.mintedAt);
         
-        console.log(`🎨 Рендерим ${nfts.length} NFT в галерее`);
-        
+        console.log(`🎨 Всего NFT: ${nfts.length}`);
         renderNFTCards(nfts);
         
     } catch (err) {
-        console.error("❌ Gallery load error:", err);
-        
-        // 🔥 Специальная обработка ошибки "max block range"
-        if (err.message?.includes('max block range') || err.message?.includes('100000')) {
-            grid.innerHTML = `<p class="gallery-error">⚠️ Ограничение RPC: уменьшен диапазон поиска.<br><small>Попробуйте обновить страницу</small></p>`;
-        } else {
-            grid.innerHTML = `<p class="gallery-error">❌ Ошибка загрузки галереи.<br><small>${err.message || 'Проверьте консоль'}</small></p>`;
-        }
+        console.error("❌ Gallery error:", err);
+        grid.innerHTML = `<p class="gallery-error">❌ Ошибка: ${err.message}</p>`;
     }
 }
 
-// === NFT GALLERY: РЕНДЕР КАРТОЧЕК (с генерацией превью из ончейн-данных) ===
+// === NFT GALLERY: РЕНДЕР КАРТОЧЕК (как в модалке, но компактнее) ===
 function renderNFTCards(nfts) {
     const grid = document.getElementById('nft-gallery-grid');
     if (!grid) return;
@@ -607,65 +614,166 @@ function renderNFTCards(nfts) {
     nfts.forEach(nft => {
         const card = document.createElement('div');
         card.className = 'nft-gallery-card';
+        card.style.cssText = `
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 2px solid rgba(111, 227, 209, 0.3);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            max-width: 400px;
+            margin: 0 auto;
+        `;
+        card.onmouseenter = () => {
+            card.style.transform = 'translateY(-5px)';
+            card.style.boxShadow = '0 10px 30px rgba(111, 227, 209, 0.3)';
+        };
+        card.onmouseleave = () => {
+            card.style.transform = 'translateY(0)';
+            card.style.boxShadow = 'none';
+        };
 
-        // 🔥 ГЕНЕРИРУЕМ ПРЕВЬЮ ИЗ СТАТИСТИКИ (так как imageData в блокчейне пустая)
+        // 🔥 Генерируем canvas с превью (как в модалке, но меньше)
         const canvas = document.createElement('canvas');
-        canvas.width = 400;
-        canvas.height = 225;
+        canvas.width = 800;
+        canvas.height = 450;
         const ctx = canvas.getContext('2d');
 
-        // Фон
+        // Фон (градиент как в модалке)
         const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-        grad.addColorStop(0, "#0f172a");
-        grad.addColorStop(1, "#1e293b");
+        grad.addColorStop(0, '#0f1f1f');
+        grad.addColorStop(0.5, '#1a3333');
+        grad.addColorStop(1, '#0d1a1a');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Логотип
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 20px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText("RITUAL", canvas.width / 2, 40);
+        // Рамка
+        ctx.strokeStyle = 'rgba(111, 227, 209, 0.4)';
+        ctx.lineWidth = 3;
+        ctx.roundRect(10, 10, canvas.width - 20, canvas.height - 20, 15);
+        ctx.stroke();
+
+        // Логотип RITUAL
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 32px Segoe UI, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('RITUAL', canvas.width / 2, 50);
 
         // Username
-        ctx.fillStyle = "#6fe3d1";
-        ctx.font = "bold 18px Arial";
-        ctx.fillText("@" + nft.username, canvas.width / 2, 70);
+        ctx.fillStyle = '#6fe3d1';
+        ctx.font = 'bold 28px Segoe UI, sans-serif';
+        ctx.fillText('@' + nft.username, canvas.width / 2, 95);
 
-        // Метрики
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "16px Arial";
-        ctx.textAlign = "left";
-        ctx.fillText("📝 Posts: " + nft.posts, 50, 110);
-        ctx.fillText("❤️ Likes: " + nft.likes, 50, 140);
-        ctx.fillText("👁️ Views: " + nft.views, 50, 170);
+        // Разделитель
+        ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(30, 120);
+        ctx.lineTo(canvas.width - 30, 120);
+        ctx.stroke();
 
-        // Подпись
-        ctx.fillStyle = "#888";
-        ctx.font = "12px Arial";
-        ctx.fillText("On-Chain Preview", canvas.width / 2, 210);
+        // Метрики (5 колонок)
+        const metrics = [
+            { label: 'Posts', val: nft.posts, icon: '📝' },
+            { label: 'Likes', val: nft.likes, icon: '❤️' },
+            { label: 'Retweets', val: nft.retweets, icon: '🔁' },
+            { label: 'Comments', val: nft.comments, icon: '💬' },
+            { label: 'Views', val: nft.views, icon: '👁️' }
+        ];
 
-        // Преобразуем canvas в data URL
-        const previewImageSrc = canvas.toDataURL('image/png');
+        const cellW = (canvas.width - 60) / 5;
+        const startY = 160;
+        const cellH = 180;
 
+        metrics.forEach((m, i) => {
+            const x = 30 + i * cellW;
+            const y = startY;
+            
+            // Фон ячейки
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.roundRect(x, y, cellW - 12, cellH, 10);
+            ctx.fill();
+            
+            // Рамка
+            ctx.strokeStyle = 'rgba(111, 227, 209, 0.2)';
+            ctx.lineWidth = 1.5;
+            ctx.roundRect(x, y, cellW - 12, cellH, 10);
+            ctx.stroke();
+            
+            // Иконка + название
+            ctx.fillStyle = '#a9ddd3';
+            ctx.font = '20px Segoe UI, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${m.icon} ${m.label}`, x + (cellW - 12) / 2, y + 45);
+            
+            // Значение
+            ctx.fillStyle = '#6fe3d1';
+            ctx.font = 'bold 32px Segoe UI, sans-serif';
+            ctx.fillText(Number(m.val).toLocaleString(), x + (cellW - 12) / 2, y + 110);
+        });
+
+        ctx.textAlign = 'left';
+
+        // Футер
+        ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(30, canvas.height - 80);
+        ctx.lineTo(canvas.width - 30, canvas.height - 80);
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.font = '18px Segoe UI, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('MINTED ON RITUAL TESTNET', canvas.width / 2, canvas.height - 45);
+        
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.font = '14px Segoe UI, sans-serif';
+        ctx.fillText('Token #' + nft.tokenId, canvas.width / 2, canvas.height - 20);
+
+        // Конвертируем canvas в image
+        const imgSrc = canvas.toDataURL('image/png');
+
+        // HTML карточки
         card.innerHTML = `
-            <img src="${previewImageSrc}" alt="Card @${nft.username}" loading="lazy" style="width:100%;border-radius:8px;">
-            <div class="nft-info" style="padding:12px;">
-                <h4 style="margin:0 0 4px 0;color:#6fe3d1;">@${nft.username}</h4>
-                <p style="margin:0 0 8px 0;font-size:13px;color:#94a3b8;">Token #${nft.tokenId}</p>
-                <div class="nft-stats" style="display:flex;gap:12px;font-size:13px;color:#fff;">
-                    <span>📝 ${nft.posts}</span>
-                    <span>❤️ ${nft.likes}</span>
-                    <span>👁️ ${nft.views}</span>
+            <div style="position: relative;">
+                <img src="${imgSrc}" alt="NFT #${nft.tokenId}" 
+                     style="width: 100%; height: auto; display: block;" 
+                     loading="lazy">
+            </div>
+            <div style="padding: 16px;">
+                <h4 style="margin: 0 0 8px 0; color: #6fe3d1; font-size: 18px; font-weight: 600;">
+                    @${nft.username}
+                </h4>
+                <p style="margin: 0 0 12px 0; color: #94a3b8; font-size: 13px;">
+                    Token #${nft.tokenId}
+                </p>
+                
+                <div style="display: flex; gap: 12px; margin-bottom: 12px; font-size: 14px;">
+                    <span style="color: #fff; background: rgba(111, 227, 209, 0.1); padding: 4px 8px; border-radius: 6px;">
+                        📝 ${nft.posts}
+                    </span>
+                    <span style="color: #fff; background: rgba(111, 227, 209, 0.1); padding: 4px 8px; border-radius: 6px;">
+                        ❤️ ${nft.likes}
+                    </span>
+                    <span style="color: #fff; background: rgba(111, 227, 209, 0.1); padding: 4px 8px; border-radius: 6px;">
+                        👁️ ${nft.views}
+                    </span>
                 </div>
-                <a href="https://explorer.ritualfoundation.org/token/${CONTRACT_ADDRESS}/instance/${nft.tokenId}" 
+                
+                <a href="https://explorer.ritualfoundation.org/address/${CONTRACT_ADDRESS}/read-contract#F1" 
                    target="_blank" 
-                   class="nft-explorer-link"
-                   style="display:inline-block;margin-top:8px;font-size:12px;color:#6fe3d1;text-decoration:none;">
-                    🔍 View on Explorer
+                   style="display: inline-flex; align-items: center; gap: 6px; 
+                          padding: 8px 16px; background: linear-gradient(135deg, #6fe3d1, #4fd3c5); 
+                          color: #0f172a; text-decoration: none; border-radius: 8px; 
+                          font-size: 13px; font-weight: 600; transition: opacity 0.2s;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                    </svg>
+                    View on Explorer
                 </a>
             </div>
         `;
+        
         grid.appendChild(card);
     });
 }
