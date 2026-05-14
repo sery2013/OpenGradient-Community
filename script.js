@@ -520,11 +520,11 @@ function closeCardModal() {
 }
 
 // === NFT GALLERY: ИСПРАВЛЕННАЯ ВЕРСИЯ ===
+// === NFT GALLERY: ИСПРАВЛЕННАЯ ВЕРСИЯ (max block range = 50000) ===
 async function loadNFTGallery() {
     const grid = document.getElementById('nft-gallery-grid');
     if (!grid) return;
     
-    // 🔥 Показываем загрузку
     grid.innerHTML = '<p class="gallery-loading">⏳ Загрузка NFT из блокчейна...</p>';
 
     try {
@@ -536,11 +536,11 @@ async function loadNFTGallery() {
 
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 
-        // 🔥 Расширенный поиск: последние 200к блоков (чтобы точно поймать новый минт)
+        // 🔥 БЕЗОПАСНЫЙ ДИАПАЗОН: максимум 50 000 блоков (ограничение RPC Ritual)
         const latestBlock = await provider.getBlockNumber();
-        const fromBlock = Math.max(0, latestBlock - 200000);
+        const fromBlock = Math.max(0, latestBlock - 50000);
         
-        console.log(`🔍 Поиск событий с блока ${fromBlock} до ${latestBlock}`);
+        console.log(`🔍 Поиск событий: блоки ${fromBlock} → ${latestBlock} (диапазон: ${latestBlock - fromBlock})`);
 
         const filter = contract.filters.Transfer(null, null);
         const events = await contract.queryFilter(filter, fromBlock, latestBlock);
@@ -578,12 +578,17 @@ async function loadNFTGallery() {
         
         console.log(`🎨 Рендерим ${nfts.length} NFT в галерее`);
         
-        // 🔥 Не кэшируем, чтобы всегда показывать актуальные данные
         renderNFTCards(nfts);
         
     } catch (err) {
         console.error("❌ Gallery load error:", err);
-        grid.innerHTML = `<p class="gallery-error">❌ Ошибка загрузки галереи.<br><small>${err.message || 'Проверьте консоль'}</small></p>`;
+        
+        // 🔥 Специальная обработка ошибки "max block range"
+        if (err.message?.includes('max block range') || err.message?.includes('100000')) {
+            grid.innerHTML = `<p class="gallery-error">⚠️ Ограничение RPC: уменьшен диапазон поиска.<br><small>Попробуйте обновить страницу</small></p>`;
+        } else {
+            grid.innerHTML = `<p class="gallery-error">❌ Ошибка загрузки галереи.<br><small>${err.message || 'Проверьте консоль'}</small></p>`;
+        }
     }
 }
 
