@@ -519,7 +519,7 @@ function closeCardModal() {
     document.getElementById('card-modal').style.display = 'none';
 }
 
-// === NFT GALLERY: ЗАГРУЗКА ЧЕРЕЗ totalSupply (НАДЁЖНЫЙ МЕТОД) ===
+// === NFT GALLERY: ЗАГРУЗКА ЧЕРЕЗ СОБЫТИЯ TRANSFER ===
 async function loadNFTGallery() {
     const grid = document.getElementById('nft-gallery-grid');
     if (!grid) return;
@@ -529,42 +529,68 @@ async function loadNFTGallery() {
         const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 
-        console.log("🔍 Запрашиваем totalSupply...");
-        const totalSupply = await contract.totalSupply();
-        console.log(`✅ Всего NFT в контракте: ${totalSupply}`);
+        console.log("🔍 Ищем события Transfer...");
 
-        if (totalSupply === 0n) {
-            grid.innerHTML = '<p class="gallery-empty">🎨 Пока нет заминченных NFT. Будьте первым!</p>';
-            return;
-        }
+        // 🔥 Вместо totalSupply() используем события Transfer
+        // Запрашиваем последние 10000 блоков (безопасный диапазон для Ritual RPC)
+        const latestBlock = await provider.getBlockNumber();
+        const fromBlock = Math.max(0, latestBlock - 10000);
+        
+        console.log(`📊 Диапазон поиска: блоки ${fromBlock} → ${latestBlock}`);
+
+        const filter = {
+            address: CONTRACT_ADDRESS,
+            topics: [
+                ethers.id("Transfer(address,address,uint256)")
+            ],
+            fromBlock: fromBlock,
+            toBlock: latestBlock
+        };
+
+        const logs = await provider.getLogs(filter);
+        console.log(`✅ Найдено ${logs.length} событий Transfer`);
 
         const nfts = [];
-        // Загружаем последние 50 NFT (от новых к старым)
-        const limit = 50;
-        const startToken = totalSupply > limit ? totalSupply - limit + 1n : 1n;
+        const seenTokens = new Set();
 
-        for (let id = startToken; id <= totalSupply; id++) {
+        for (const log of logs) {
             try {
-                const cardData = await contract.cards(id);
-                
-                nfts.push({
-                    tokenId: id.toString(),
-                    username: cardData.username || cardData[1] || "Unknown",
-                    posts: Number(cardData.posts || cardData[2] || 0),
-                    likes: Number(cardData.likes || cardData[3] || 0),
-                    retweets: Number(cardData.retweets || cardData[4] || 0),
-                    comments: Number(cardData.comments || cardData[5] || 0),
-                    views: Number(cardData.views || cardData[6] || 0),
-                    mintedAt: Number(cardData.mintedAt || cardData[8] || 0)
-                });
-                console.log(`📦 NFT #${id} загружен`);
+                const parsed = contract.interface.parseLog(log);
+                if (!parsed || parsed.name !== 'Transfer') continue;
+
+                const tokenId = parsed.args[2].toString();
+                const to = parsed.args[1];
+
+                // Пропускаем burn (Transfer в нулевой адрес) и дубликаты
+                if (to === ethers.ZeroAddress || seenTokens.has(tokenId)) continue;
+                seenTokens.add(tokenId);
+
+                // Читаем данные токена из контракта
+                try {
+                    const cardData = await contract.cards(tokenId);
+                    
+                    nfts.push({
+                        tokenId: tokenId,
+                        owner: to,
+                        username: cardData.username || cardData[1] || "Unknown",
+                        posts: Number(cardData.posts || cardData[2] || 0),
+                        likes: Number(cardData.likes || cardData[3] || 0),
+                        retweets: Number(cardData.retweets || cardData[4] || 0),
+                        comments: Number(cardData.comments || cardData[5] || 0),
+                        views: Number(cardData.views || cardData[6] || 0),
+                        mintedAt: Number(cardData.mintedAt || cardData[8] || Date.now())
+                    });
+                    console.log(`📦 NFT #${tokenId}: @${nfts[nfts.length-1].username}`);
+                } catch (err) {
+                    console.warn(`⚠️ Не удалось прочитать данные токена #${tokenId}`);
+                }
             } catch (err) {
-                console.warn(`⚠️ Пропуск токена #${id}:`, err.message);
+                console.warn("⚠️ Ошибка парсинга лога:", err);
             }
         }
 
         // Сортировка: новые сверху
-        nfts.sort((a, b) => Number(b.mintedAt) - Number(a.mintedAt) || Number(b.tokenId) - Number(a.tokenId));
+        nfts.sort((a, b) => b.mintedAt - a.mintedAt || Number(b.tokenId) - Number(a.tokenId));
         
         console.log(`🎨 Рендерим ${nfts.length} NFT`);
         renderNFTCards(nfts);
