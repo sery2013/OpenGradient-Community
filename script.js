@@ -1,4 +1,4 @@
-// === 🔥 FIX: ОТКЛЮЧАЕМ ENS В ETHERS V6 ДЛЯ КАСТОМНЫХ СЕТЕЙ ===
+// === 🔥 FIX: DISABLE ENS IN ETHERS V6 FOR CUSTOM NETWORKS ===
 try {
     if (typeof ethers !== 'undefined' && ethers.Provider) {
         ethers.Provider.prototype.getResolver = async () => null;
@@ -7,7 +7,7 @@ try {
 } catch(e) { console.warn('ENS patch skipped', e); }
 // ============================================================
 
-// === ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ===
+// === GLOBAL VARIABLES ===
 let rawData = [];
 let data = [];
 let allTweets = [];
@@ -21,7 +21,7 @@ let analyticsPeriod = "all";
 let analyticsHourFilter = "all";
 let currentLang = 'en';
 
-// === NFT MINT: ГЛОБАЛЬНЫЕ НАСТРОЙКИ ===
+// === NFT MINT: GLOBAL SETTINGS ===
 const CONTRACT_ADDRESS = "0x30412DD5eAf58a8491b2f728140dEb3CDCF83C26";
 const CONTRACT_ABI = [
   {
@@ -375,34 +375,34 @@ const CONTRACT_ABI = [
   }
 ];
 
-// === МИНТ: EIP-1559 COMPLIANT (Ritual Testnet) ===
+// === MINT: EIP-1559 COMPLIANT (Ritual Testnet) ===
 async function mintCardNFT() {
     const status = document.getElementById('mint-status');
     const btn = document.getElementById('btn-mint');
     const cardData = window.currentCardData;
 
-    // Жёсткая проверка данных
+    // Strict data validation
     if (!cardData?.stats || !cardData.username) {
-        status.textContent = '❌ Данные карточки не загружены. Закройте и откройте заново.';
+        status.textContent = '❌ Card data not loaded. Close and reopen.';
         status.style.color = '#f87171';
         console.error("mintCardNFT: currentCardData invalid", cardData);
         return;
     }
 
     if (!window.ethereum) {
-        status.textContent = '❌ Кошелёк не подключён';
+        status.textContent = '❌ Wallet not connected';
         return;
     }
 
     btn.disabled = true;
     status.style.color = '#fbbf24';
-    status.textContent = '⏳ Подготовка транзакции...';
+    status.textContent = '⏳ Preparing transaction...';
 
     try {
-        // 1. Проверка/переключение сети
+        // 1. Network check/switch
         const chainId = await window.ethereum.request({ method: 'eth_chainId' });
         if (parseInt(chainId, 16) !== 1979) {
-            status.textContent = '🔄 Переключаю на Ritual Testnet...';
+            status.textContent = '🔄 Switching to Ritual Testnet...';
             await window.ethereum.request({
                 method: 'wallet_switchEthereumChain',
                 params: [{ chainId: '0x7BB' }]
@@ -412,7 +412,7 @@ async function mintCardNFT() {
 
         const [account] = await window.ethereum.request({ method: 'eth_requestAccounts' });
 
-        // 2. Кодирование вызова контракта
+        // 2. Contract call encoding
         const iface = new ethers.Interface(CONTRACT_ABI);
         const callData = iface.encodeFunctionData('mintCard', [
             account,
@@ -422,10 +422,10 @@ async function mintCardNFT() {
             BigInt(cardData.stats.retweets || 0),
             BigInt(cardData.stats.comments || 0),
             BigInt(cardData.stats.views || 0),
-            "" // imageData пустая
+            "" // imageData empty
         ]);
 
-        // 3. Формируем EIP-1559 транзакцию
+        // 3. Forming EIP-1559 transaction
         const txParams = {
             from: account,
             to: CONTRACT_ADDRESS,
@@ -440,29 +440,29 @@ async function mintCardNFT() {
 
         status.textContent = '🔐 Confirm in the wallet...';
 
-        // 4. Отправка
+        // 4. Sending
         const txHash = await window.ethereum.request({
             method: 'eth_sendTransaction',
             params: [txParams]
         });
 
-        status.textContent = `⛓️ Отправлено: ${txHash.slice(0, 10)}...`;
+        status.textContent = `⛓️ Sent: ${txHash.slice(0, 10)}...`;
         status.style.color = '#fbbf24';
 
-        // 5. Ожидание подтверждения
+        // 5. Waiting for confirmation
         const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
         const receipt = await provider.waitForTransaction(txHash, 1, 90000);
 
         if (receipt?.status === 1) {
             status.textContent = '✅ Successfully completed!';
             status.style.color = '#4ade80';
-            // 🔥 Принудительно обновляем галерею после минта
+            // 🔥 Force refresh gallery after mint
             if (typeof loadNFTGallery === 'function') {
                 localStorage.removeItem('ritual_nft_gallery');
                 loadNFTGallery();
             }
         } else {
-            throw new Error("Транзакция отклонена контрактом (reverted)");
+            throw new Error("Transaction reverted by contract");
         }
 
     } catch (err) {
@@ -472,9 +472,9 @@ async function mintCardNFT() {
         if (err.code === 4001) {
             status.textContent = '❌ Canceled by user';
         } else if (err.message?.includes('type not supported')) {
-            status.textContent = '❌ Сеть отвергла формат. Попробуйте Rabby Wallet или переключите сеть вручную.';
+            status.textContent = '❌ Network rejected format. Try Rabby Wallet or switch network manually.';
         } else {
-            const msg = err.message || 'Неизвестная ошибка';
+            const msg = err.message || 'Unknown error';
             status.textContent = `❌ ${msg.slice(0, 55)}${msg.length > 55 ? '...' : ''}`;
         }
     } finally {
@@ -482,31 +482,31 @@ async function mintCardNFT() {
     }
 }
 
-// === МОДАЛЬНОЕ ОКНО: СИНХРОННАЯ ПРИВЯЗКА ДАННЫХ ===
+// === MODAL WINDOW: SYNCHRONOUS DATA BINDING ===
 async function showCardModal(username) {
     const user = data.find(u => u.username?.toLowerCase() === username?.toLowerCase());
     if (!user) {
-        console.error("❌ Пользователь не найден:", username);
+        console.error("❌ User not found:", username);
         return;
     }
 
-    // 1. МГНОВЕННО сохраняем данные (синхронно)
+    // 1. INSTANTLY save data (synchronously)
     window.currentCardData = { username, stats: user };
-    console.log("✅ Данные карточки привязаны:", window.currentCardData);
+    console.log("✅ Card data bound:", window.currentCardData);
 
-    // 2. Блокируем кнопку минта пока грузится canvas
+    // 2. Block mint button while canvas loads
     const mintBtn = document.getElementById('btn-mint');
     const statusEl = document.getElementById('mint-status');
     if (mintBtn) mintBtn.disabled = true;
     if (statusEl) {
-        statusEl.textContent = '🎨 Генерация карточки...';
+        statusEl.textContent = '🎨 Generating card...';
         statusEl.style.color = '#fbbf24';
     }
 
-    // 3. Отрисовка (асинхронно)
+    // 3. Rendering (asynchronously)
     await generateCardCanvas(username, user);
 
-    // 4. Открываем модалку и разблокируем минт
+    // 4. Open modal and unlock mint
     const modal = document.getElementById('card-modal');
     if (modal) modal.style.display = 'flex';
     
@@ -519,11 +519,11 @@ function closeCardModal() {
     document.getElementById('card-modal').style.display = 'none';
 }
 
-// === NFT GALLERY: ПОСЛЕДНИЕ МИНТЫ (ПРОСТАЯ ТАБЛИЦА) ===
+// === NFT GALLERY: RECENT MINTS (SIMPLE TABLE) ===
 async function loadNFTGallery() {
     const grid = document.getElementById('nft-gallery-grid');
     if (!grid) return;
-    grid.innerHTML = '<p style="text-align:center;padding:40px;color:#6fe3d1;">⏳ Загрузка...</p>';
+    grid.innerHTML = '<p style="text-align:center;padding:40px;color:#6fe3d1;">⏳ Loading...</p>';
 
     try {
         const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
@@ -552,7 +552,7 @@ async function loadNFTGallery() {
                 const to = parsed.args[1];
                 const tokenId = parsed.args[2].toString();
 
-                // Минт = перевод с zero address
+                // Mint = transfer from zero address
                 if (from !== ethers.ZeroAddress || seenTokens.has(tokenId)) continue;
                 seenTokens.add(tokenId);
 
@@ -591,10 +591,10 @@ async function loadNFTGallery() {
     }
 }
 
-// === РЕНДЕР ТАБЛИЦЫ МИНТОВ ===
+// === RENDER MINTS TABLE ===
 function renderMintsTable(mints, container) {
     if (mints.length === 0) {
-        container.innerHTML = '<p style="text-align:center;padding:60px;color:#94a3b8;">🎨 Пока нет минтов. Будьте первым!</p>';
+        container.innerHTML = '<p style="text-align:center;padding:60px;color:#94a3b8;">🎨 No mints yet. Be the first!</p>';
         return;
     }
 
@@ -638,7 +638,7 @@ function renderMintsTable(mints, container) {
     container.innerHTML = html;
 }
 
-// === ВСПОМОГАТЕЛЬНАЯ: ВРЕМЯ НАЗАД ===
+// === HELPER: TIME AGO ===
 function getTimeAgo(timestamp) {
     const seconds = Math.floor((Date.now() - timestamp) / 1000);
     if (seconds < 60) return seconds + 's ago';
@@ -647,7 +647,7 @@ function getTimeAgo(timestamp) {
     return Math.floor(seconds / 86400) + 'd ago';
 }
 
-// === ОСТАЛЬНОЙ КОД (без изменений) ===
+// === REMAINING CODE (unchanged) ===
 
 // - Fetch leaderboard data -
 async function fetchData() {
@@ -787,7 +787,7 @@ function filterData() {
     return data.filter(item => (item.username || "").toLowerCase().includes(query));
 }
 
-// === NFT CARD: ГЕНЕРАЦИЯ CANVAS (1200x675 - Twitter Format) ===
+// === NFT CARD: CANVAS GENERATION (1200x675 - Twitter Format) ===
 async function generateCardCanvas(username, stats) {
     const canvas = document.getElementById('user-canvas');
     const ctx = canvas.getContext('2d');
@@ -795,7 +795,7 @@ async function generateCardCanvas(username, stats) {
     canvas.width = W;
     canvas.height = H;
 
-    // 1. Фон (градиент)
+    // 1. Background (gradient)
     const grad = ctx.createLinearGradient(0, 0, W, H);
     grad.addColorStop(0, '#0f1f1f');
     grad.addColorStop(0.5, '#1a3333');
@@ -803,19 +803,19 @@ async function generateCardCanvas(username, stats) {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
-    // 2. Внешняя рамка
+    // 2. Outer border
     ctx.strokeStyle = 'rgba(111, 227, 209, 0.4)';
     ctx.lineWidth = 4;
     ctx.roundRect(12, 12, W - 24, H - 24, 20);
     ctx.stroke();
 
-    // Внутренняя тонкая рамка
+    // Inner thin border
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
     ctx.lineWidth = 1;
     ctx.roundRect(20, 20, W - 40, H - 40, 16);
     ctx.stroke();
 
-    // 3. Аватар (круглый, с обводкой)
+    // 3. Avatar (circular, with stroke)
     const avatarUrl = await fetchAvatarUrl(username);
     if (avatarUrl) {
         const img = new Image();
@@ -839,7 +839,7 @@ async function generateCardCanvas(username, stats) {
         ctx.stroke();
     }
 
-    // 4. Никнейм и подзаголовок
+    // 4. Username and subtitle
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 48px Segoe UI, sans-serif';
     ctx.fillText(`@${username}`, 210, 120);
@@ -847,7 +847,7 @@ async function generateCardCanvas(username, stats) {
     ctx.font = '24px Segoe UI, sans-serif';
     ctx.fillText('USER TWEET STATISTICS', 210, 155);
 
-    // 5. Разделительная линия под шапкой
+    // 5. Separator line under header
     ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -855,7 +855,7 @@ async function generateCardCanvas(username, stats) {
     ctx.lineTo(W - 40, 185);
     ctx.stroke();
 
-    // 6. Метрики в рамках/ячейках
+    // 6. Metrics in frames/cells
     const metrics = [
         { label: 'Posts', val: stats.posts || 0, icon: '📝' },
         { label: 'Likes', val: stats.likes || 0, icon: '❤️' },
@@ -871,21 +871,21 @@ async function generateCardCanvas(username, stats) {
     metrics.forEach((m, i) => {
         const x = 60 + i * cellW;
         const y = startY;
-        // Фон ячейки
+        // Cell background
         ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
         ctx.roundRect(x, y, cellW - 12, cellH, 12);
         ctx.fill();
-        // Рамка ячейки
+        // Cell border
         ctx.strokeStyle = 'rgba(111, 227, 209, 0.2)';
         ctx.lineWidth = 1.5;
         ctx.roundRect(x, y, cellW - 12, cellH, 12);
         ctx.stroke();
-        // Иконка и название
+        // Icon and label
         ctx.fillStyle = '#a9ddd3';
         ctx.font = '22px Segoe UI, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(`${m.icon} ${m.label}`, x + (cellW - 12) / 2, y + 45);
-        // Значение
+        // Value
         ctx.fillStyle = '#6fe3d1';
         ctx.font = 'bold 36px Segoe UI, sans-serif';
         ctx.fillText(Number(m.val).toLocaleString(), x + (cellW - 12) / 2, y + 100);
@@ -893,52 +893,52 @@ async function generateCardCanvas(username, stats) {
 
     ctx.textAlign = 'left';
 
-    // === ЛОГОТИП И ТЕКСТ ===
+    // === LOGO AND TEXT ===
     try {
         const logoImg = new Image();
         logoImg.crossOrigin = 'anonymous';
         logoImg.src = 'https://i.postimg.cc/prn7dJ1c/Gemini-Generated-Image-nq0xe5nq0xe5nq0x-(1).png';
         
-        console.log('🔄 Загрузка логотипа...');
+        console.log('🔄 Loading logo...');
         
-        // Ждём загрузки
+        // Waiting for load
         await Promise.race([
             new Promise((resolve, reject) => {
                 logoImg.onload = () => {
-                    console.log('✅ Логотип загружен:', logoImg.width, 'x', logoImg.height);
+                    console.log('✅ Logo loaded:', logoImg.width, 'x', logoImg.height);
                     resolve();
                 };
                 logoImg.onerror = (e) => {
-                    console.error('❌ Ошибка загрузки логотипа:', e);
+                    console.error('❌ Logo load error:', e);
                     reject(new Error('Logo failed to load'));
                 };
             }),
             new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
         ]);
 
-        // Рисуем логотип если загрузился
+        // Draw logo if loaded
         if (logoImg.complete && logoImg.naturalWidth !== 0) {
             const logoSize = 55;
             const logoX = (W / 2) - 350;
             const logoY = H - 176;
             
             ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
-            console.log('🎨 Логотип нарисован на позиции:', logoX, logoY);
+            console.log('🎨 Logo drawn at position:', logoX, logoY);
         }
         
     } catch (e) {
-        console.error('❌ Ошибка при загрузке логотипа:', e.message);
+        console.error('❌ Error loading logo:', e.message);
     }
 
-    // Текст (рисуем ВСЕГДА)
+    // Text (draw ALWAYS)
     ctx.fillStyle = '#6fe3d1';
     ctx.font = 'bold 40px Segoe UI, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('TWITTER RITUAL COMMUNITY', W / 2, H - 135);
     ctx.textAlign = 'left';
-    // === КОНЕЦ ЛОГОТИПА ===
+    // === END OF LOGO ===
 
-    // 7. Нижняя разделительная линия
+    // 7. Bottom separator line
     ctx.strokeStyle = 'rgba(111, 227, 209, 0.3)';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -946,7 +946,7 @@ async function generateCardCanvas(username, stats) {
     ctx.lineTo(W - 40, H - 100);
     ctx.stroke();
 
-    // 8. Футер (рисуем ВСЕГДА)
+    // 8. Footer (draw ALWAYS)
     ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
     ctx.font = '20px Segoe UI, sans-serif';
     ctx.textAlign = 'center';
@@ -955,7 +955,7 @@ async function generateCardCanvas(username, stats) {
     ctx.font = '16px Segoe UI, sans-serif';
     ctx.fillText('Generated ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), W / 2, H - 35);
 
-    // Кнопка Download
+    // Download button
     document.getElementById('btn-download').onclick = () => {
         const link = document.createElement('a');
         link.download = `card_${username}.png`;
@@ -992,11 +992,11 @@ function renderTable() {
         const nameSpan = document.createElement("span");
         nameSpan.textContent = escapeHtml(name);
         
-        // Кнопка Generate Card
+        // Generate Card button
         const cardBtn = document.createElement("button");
         cardBtn.className = 'generate-card-btn';
         cardBtn.textContent = '🎴 Generate Card';
-        cardBtn.title = currentLang === 'en' ? `Generate NFT card for ${escapeHtml(name)}` : `Сгенерировать NFT карточку для ${escapeHtml(name)}`;
+        cardBtn.title = `Generate NFT card for ${escapeHtml(name)}`;
         cardBtn.onclick = function(e) {
             e.stopPropagation();
             showCardModal(name);
@@ -1073,7 +1073,7 @@ document.getElementById("time-select").addEventListener("change", e => {
     updateTotals();
 });
 
-// - Отображение твитов при клике на пользователя -
+// - Display tweets on user click -
 function showTweets(username) {
     const container = document.getElementById("tweets-list");
     const title = document.getElementById("tweets-title");
@@ -1082,9 +1082,9 @@ function showTweets(username) {
         const candidate = (tweet.user && (tweet.user.screen_name || tweet.user.name)) || "";
         return candidate.toLowerCase().replace(/^@/, "") === username.toLowerCase().replace(/^@/, "");
     });
-    title.textContent = `Посты пользователя: ${username}`;
+    title.textContent = `User posts: ${username}`;
     if(userTweets.length === 0) {
-        container.innerHTML = "<li>У пользователя нет постов</li>";
+        container.innerHTML = "<li>User has no posts</li>";
         return;
     }
     userTweets.forEach(tweet => {
@@ -1096,17 +1096,17 @@ function showTweets(username) {
     });
 }
 
-// - Добавляем обработчики клика на строки таблицы после рендера -
+// - Add click handlers to table rows after render -
 function addUserClickHandlers() {
     const tbody = document.getElementById("leaderboard-body");
     if (!tbody) return;
     
     tbody.querySelectorAll("tr").forEach(tr => {
         tr.addEventListener("click", (e) => {
-            // Игнорируем клик на кнопке генерации карточки
+            // Ignore click on card generation button
             if (e.target.closest('.generate-card-btn')) return;
             
-            // Получаем имя пользователя из первой ячейки
+            // Get username from first cell
             const nameCell = tr.children[0];
             const nameSpan = nameCell.querySelector('span');
             const username = nameSpan ? nameSpan.textContent.trim() : tr.children[0].textContent.trim();
@@ -1116,20 +1116,20 @@ function addUserClickHandlers() {
     });
 }
 
-// - Создание аккордеона твитов -
+// - Creating tweets accordion -
 function toggleTweetsRow(tr, username) {
     const nextRow = tr.nextElementSibling;
     const isAlreadyOpen = nextRow && nextRow.classList.contains("tweets-row") &&
         nextRow.dataset.username === username;
     
-    // Удаляем все предыдущие аккордеоны и подсветку
+    // Remove all previous accordions and highlighting
     document.querySelectorAll(".tweets-row").forEach(row => row.remove());
     document.querySelectorAll("tbody tr").forEach(row => row.classList.remove("active-row"));
     
-    // Если уже был открыт — просто закрываем
+    // If already open — just close
     if (isAlreadyOpen) return;
     
-    // Подсветить текущую строку
+    // Highlight current row
     tr.classList.add("active-row");
     
     const tweetsRow = document.createElement("tr");
@@ -1141,28 +1141,28 @@ function toggleTweetsRow(tr, username) {
     td.style.padding = "20px";
     td.style.background = "linear-gradient(135deg, #2F4F4F, #1a2a2a)";
     
-    // Очищаем имя пользователя от @ и приводим к нижнему регистру
+    // Clean username from @ and convert to lowercase
     const cleanUsername = username.toLowerCase().replace(/^@/, '');
     
-    // Фильтруем твиты пользователя из allTweets
+    // Filter user tweets from allTweets
     const userTweets = allTweets.filter(tweet => {
         const tweetUser = (tweet.user?.screen_name || tweet.user?.name || tweet.username || '').toLowerCase().replace(/^@/, '');
         return tweetUser === cleanUsername;
     });
     
     if (userTweets.length === 0) {
-        td.innerHTML = "<i style='color:#a9ddd3;'>У пользователя нет постов в сообществе</i>";
+        td.innerHTML = "<i style='color:#a9ddd3;'>User has no posts in community</i>";
     } else {
         const container = document.createElement("div");
         container.classList.add("tweet-container");
         container.style.cssText = "display:flex;flex-wrap:wrap;gap:15px;justify-content:flex-start;";
         
-        // Показываем максимум 10 последних твитов
+        // Show maximum 10 latest tweets
         userTweets.slice(0, 10).forEach(tweet => {
             const content = tweet.full_text || tweet.text || tweet.content || "";
             const url = tweet.url || (tweet.id_str ? `https://twitter.com/${username}/status/${tweet.id_str}` : "#");
             
-            // Формат даты
+            // Date format
             let dateRaw = tweet.created_at || tweet.tweet_created_at || "";
             let date = "";
             if (dateRaw) {
@@ -1172,18 +1172,18 @@ function toggleTweetsRow(tr, username) {
                     : dateRaw.split(" ")[0];
             }
             
-            // Медиа без дубликатов
+            // Media without duplicates
             const mediaList = tweet.extended_entities?.media || tweet.entities?.media || tweet.media || [];
             const uniqueMediaUrls = [...new Set(mediaList.map(m => m.media_url_https || m.media_url).filter(Boolean))];
             let imgTag = uniqueMediaUrls.map(u => `<img src="${u}" style="max-width:100%;border-radius:8px;margin-top:10px;">`).join("");
             
-            // Fallback на ссылки в тексте
+            // Fallback to links in text
             if (!imgTag) {
                 const match = content.match(/https?:\/\/\S+\.(jpg|jpeg|png|gif|webp)/i);
                 if (match) imgTag = `<img src="${match[0]}" style="max-width:100%;border-radius:8px;margin-top:10px;">`;
             }
             
-            // Создаём карточку твита
+            // Create tweet card
             const card = document.createElement("div");
             card.classList.add("tweet-card");
             card.style.cssText = `
@@ -1237,7 +1237,7 @@ function setupTabs() {
                 if (an) an.style.display = 'none';
                 if (gallery) {
                     gallery.style.display = 'block';
-                    // 🔥 Принудительно загружаем галерею при открытии вкладки
+                    // 🔥 Force load gallery when tab opens
                     loadNFTGallery();
                 }
             } else {
@@ -1249,7 +1249,7 @@ function setupTabs() {
     });
 }
 
-// - Функция для отрисовки тепловой гистограммы -
+// - Function for rendering heatmap histogram -
 function renderHeatmap(tweets) {
     const container = document.getElementById('heatmap-container');
     if (!container) return;
@@ -1287,7 +1287,7 @@ function renderHeatmap(tweets) {
     }
 }
 
-// - Функция для скачивания файла -
+// - Function for downloading file -
 function downloadFile(filename, content, mimeType = 'text/plain') {
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
@@ -1300,7 +1300,7 @@ function downloadFile(filename, content, mimeType = 'text/plain') {
     URL.revokeObjectURL(url);
 }
 
-// - Функция экспорта в CSV -
+// - CSV export function -
 function exportToCSV() {
     const users = window._analyticsFilteredData?.users || {};
     const rows = [];
@@ -1312,14 +1312,14 @@ function exportToCSV() {
     downloadFile('leaderboard-export.csv', csvContent, 'text/csv');
 }
 
-// - Функция экспорта в JSON -
+// - JSON export function -
 function exportToJSON() {
     const data = window._analyticsFilteredData || {};
     const jsonContent = JSON.stringify(data, null, 2);
     downloadFile('leaderboard-export.json', jsonContent, 'application/json');
 }
 
-// - Функция привязки кнопок экспорта -
+// - Function for binding export buttons -
 function bindExportButtons() {
     const csvBtn = document.getElementById('export-csv');
     const jsonBtn = document.getElementById('export-json');
@@ -1406,7 +1406,7 @@ function renderAnalytics() {
         arr.sort((a,b)=> b.value - a.value);
         const top = arr.slice(0,10);
         listEl.innerHTML = '';
-        if (top.length === 0) { listEl.innerHTML = '<li>Нет данных</li>'; return; }
+        if (top.length === 0) { listEl.innerHTML = '<li>No data</li>'; return; }
         top.forEach((it, idx) => {
             const li = document.createElement('li');
             li.className = 'top-author-item';
@@ -1445,7 +1445,7 @@ function renderAnalytics() {
         postsArr.sort((a,b) => (b[metric]||0) - (a[metric]||0));
         const top = postsArr.slice(0,10);
         listEl.innerHTML = '';
-        if (top.length === 0) { listEl.innerHTML = '<li>Нет данных</li>'; return; }
+        if (top.length === 0) { listEl.innerHTML = '<li>No data</li>'; return; }
         top.forEach((p, idx) => {
             const li = document.createElement('li');
             li.className = 'top-post-item';
@@ -1585,7 +1585,7 @@ function setupAnalyticsTabs() {
     });
 }
 
-// Инициализация табов
+// Tabs initialization
 try { setupTabs(); setupAnalyticsTabs(); } catch(e) { console.warn('Tabs init failed', e); }
 
 // === LANGUAGE SWITCHER ===
@@ -1597,10 +1597,10 @@ function setLanguage(lang) {
     if (langEn) { langEn.classList.toggle('active', lang === 'en'); langEn.classList.toggle('inactive', lang !== 'en'); }
     if (langRu) { langRu.classList.toggle('active', lang === 'ru'); langRu.classList.toggle('inactive', lang !== 'ru'); }
     const h1 = document.getElementById('welcome-title');
-    if (h1) h1.textContent = lang === 'en' ? 'WELCOME RITUALISTS!' : 'ДОБРО ПОЖАЛОВАТЬ, Ритуалисты!';
+    if (h1) h1.textContent = 'WELCOME RITUALISTS!';
 }
 
-// === DOMContentLoaded: ИНИЦИАЛИЗАЦИЯ ===
+// === DOMContentLoaded: INITIALIZATION ===
 document.addEventListener('DOMContentLoaded', () => {
     const langEn = document.getElementById('lang-en');
     const langRu = document.getElementById('lang-ru');
@@ -1613,7 +1613,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const refreshBtn = document.getElementById('refresh-nft-btn');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', () => {
-            // 🔥 Принудительно очищаем кэш при ручном обновлении
+            // 🔥 Force clear cache on manual refresh
             localStorage.removeItem('ritual_nft_gallery');
             loadNFTGallery();
         });
@@ -1640,7 +1640,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
-// Исправление синтаксиса (если есть)
+// Syntax fix (if any)
 if (typeof window.ethereum !== 'undefined') {
   window.ethereum.autoRefreshOnNetworkChange = false;
 }
