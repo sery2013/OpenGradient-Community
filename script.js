@@ -426,8 +426,6 @@ async function mintCardNFT() {
         ]);
 
         // 3. Формируем EIP-1559 транзакцию
-        // Важно: MetaMask/Rabby часто игнорируют type/gasLimit при eth_sendTransaction,
-        // но Ritual RPC требует явных полей EIP-1559.
         const txParams = {
             from: account,
             to: CONTRACT_ADDRESS,
@@ -436,8 +434,8 @@ async function mintCardNFT() {
             maxFeePerGas: ethers.toBeHex(ethers.parseUnits("2.5", "gwei")),
             maxPriorityFeePerGas: ethers.toBeHex(ethers.parseUnits("1.5", "gwei")),
             gasLimit: ethers.toBeHex(900000n),
-            type: '0x2',        // 🔥 EIP-1559 (требование сети)
-            chainId: 1979       // 🔥 Число, не hex
+            type: '0x2',
+            chainId: 1979
         };
 
         status.textContent = '🔐 Подтвердите в кошельке...';
@@ -458,7 +456,11 @@ async function mintCardNFT() {
         if (receipt?.status === 1) {
             status.textContent = '✅ Успешно заминчено!';
             status.style.color = '#4ade80';
-            if (typeof loadNFTGallery === 'function') loadNFTGallery();
+            // 🔥 Принудительно обновляем галерею после минта
+            if (typeof loadNFTGallery === 'function') {
+                localStorage.removeItem('ritual_nft_gallery');
+                loadNFTGallery();
+            }
         } else {
             throw new Error("Транзакция отклонена контрактом (reverted)");
         }
@@ -517,89 +519,93 @@ function closeCardModal() {
     document.getElementById('card-modal').style.display = 'none';
 }
 
-// === NFT GALLERY: ЗАГРУЗКА С ОГРАНИЧЕНИЕМ ДИАПАЗОНА БЛОКОВ ===
+// === NFT GALLERY: ИСПРАВЛЕННАЯ ВЕРСИЯ ===
 async function loadNFTGallery() {
     const grid = document.getElementById('nft-gallery-grid');
     if (!grid) return;
-    grid.innerHTML = '<p class="gallery-loading">⏳ Загрузка данных из Ritual Testnet...</p>';
-
-    const cached = localStorage.getItem('ritual_nft_gallery');
-    if (cached) {
-        const { data, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < 5 * 60 * 1000) {
-            renderNFTCards(data);
-            return;
-        }
-    }
+    
+    // 🔥 Показываем загрузку
+    grid.innerHTML = '<p class="gallery-loading">⏳ Загрузка NFT из блокчейна...</p>';
 
     try {
         const provider = new ethers.JsonRpcProvider("https://rpc.ritualfoundation.org");
-
-        if (!CONTRACT_ABI || CONTRACT_ABI.length === 0 || CONTRACT_ABI[0]?.inputs === undefined) {
-            throw new Error("❌ ABI контракта не найден или пуст. Проверь CONTRACT_ABI в script.js.");
+        
+        if (!CONTRACT_ABI || CONTRACT_ABI.length === 0) {
+            throw new Error("❌ ABI контракта не найден");
         }
 
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 
-        // --- ИСПРАВЛЕНИЕ: Ограничиваем диапазон поиска ---
+        // 🔥 Расширенный поиск: последние 200к блоков (чтобы точно поймать новый минт)
         const latestBlock = await provider.getBlockNumber();
-        const fromBlock = latestBlock > 95000 ? latestBlock - 95000 : 0; // Запрашиваем последние 100к блоков
+        const fromBlock = Math.max(0, latestBlock - 200000);
+        
+        console.log(`🔍 Поиск событий с блока ${fromBlock} до ${latestBlock}`);
 
         const filter = contract.filters.Transfer(null, null);
-        const events = await contract.queryFilter(filter, fromBlock, "latest");
-        // ---
+        const events = await contract.queryFilter(filter, fromBlock, latestBlock);
+        
+        console.log(`✅ Найдено ${events.length} событий Transfer`);
 
         const nfts = [];
         const seenIds = new Set();
 
         for (const event of events) {
-            const tokenId = event.args.tokenId.toString();
-            if (seenIds.has(tokenId)) continue;
+            const tokenId = event.args?.tokenId?.toString();
+            if (!tokenId || seenIds.has(tokenId)) continue;
             seenIds.add(tokenId);
+            
             try {
                 const card = await contract.cards(tokenId);
                 nfts.push({
                     tokenId,
-                    username: card.username,
-                    posts: card.posts.toString(),
-                    likes: card.likes.toString(),
-                    retweets: card.retweets.toString(),
-                    comments: card.comments.toString(),
-                    views: card.views.toString(),
-                    imageData: card.imageData, // Тут пока пусто (см. минт)
-                    mintedAt: card.mintedAt.toString(),
-                    owner: event.args.to
+                    username: card.username || "Unknown",
+                    posts: card.posts?.toString() || "0",
+                    likes: card.likes?.toString() || "0",
+                    retweets: card.retweets?.toString() || "0",
+                    comments: card.comments?.toString() || "0",
+                    views: card.views?.toString() || "0",
+                    mintedAt: card.mintedAt?.toString() || "0",
+                    owner: event.args?.to
                 });
             } catch (e) {
-                console.warn(`Failed to fetch token ${tokenId}`, e);
+                console.warn(`⚠️ Не удалось получить данные токена ${tokenId}:`, e);
             }
         }
 
+        // Сортировка: новые сверху
         nfts.sort((a, b) => Number(b.mintedAt) - Number(a.mintedAt));
-        localStorage.setItem('ritual_nft_gallery', JSON.stringify({ nfts, timestamp: Date.now() }));
+        
+        console.log(`🎨 Рендерим ${nfts.length} NFT в галерее`);
+        
+        // 🔥 Не кэшируем, чтобы всегда показывать актуальные данные
         renderNFTCards(nfts);
+        
     } catch (err) {
-        console.error("Gallery load error:", err);
-        grid.innerHTML = `<p class="gallery-error">❌ Ошибка загрузки. Проверьте консоль или попробуйте позже.<br><small>${err.message}</small></p>`;
+        console.error("❌ Gallery load error:", err);
+        grid.innerHTML = `<p class="gallery-error">❌ Ошибка загрузки галереи.<br><small>${err.message || 'Проверьте консоль'}</small></p>`;
     }
 }
 
-// === NFT GALLERY: РЕНДЕР КАРТОЧЕК (с генерацией превью) ===
+// === NFT GALLERY: РЕНДЕР КАРТОЧЕК (с генерацией превью из ончейн-данных) ===
 function renderNFTCards(nfts) {
     const grid = document.getElementById('nft-gallery-grid');
     if (!grid) return;
+    
     grid.innerHTML = '';
+    
     if (nfts.length === 0) {
         grid.innerHTML = '<p class="gallery-empty">🎨 Пока нет заминченных NFT. Будьте первым!</p>';
         return;
     }
+    
     nfts.forEach(nft => {
         const card = document.createElement('div');
         card.className = 'nft-gallery-card';
 
-        // 🔥 ГЕНЕРИРУЕМ КАРТИНКУ ИЗ СТАТИСТИКИ (т.к. imageData пустая)
+        // 🔥 ГЕНЕРИРУЕМ ПРЕВЬЮ ИЗ СТАТИСТИКИ (так как imageData в блокчейне пустая)
         const canvas = document.createElement('canvas');
-        canvas.width = 400; // Уменьшенный размер для галереи
+        canvas.width = 400;
         canvas.height = 225;
         const ctx = canvas.getContext('2d');
 
@@ -610,7 +616,7 @@ function renderNFTCards(nfts) {
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Логотип (условный прямоугольник)
+        // Логотип
         ctx.fillStyle = "#ffffff";
         ctx.font = "bold 20px Arial";
         ctx.textAlign = "center";
@@ -632,22 +638,25 @@ function renderNFTCards(nfts) {
         // Подпись
         ctx.fillStyle = "#888";
         ctx.font = "12px Arial";
-        ctx.fillText("Generated Preview", canvas.width / 2, 210);
+        ctx.fillText("On-Chain Preview", canvas.width / 2, 210);
 
-        // Преобразуем в data URL
+        // Преобразуем canvas в data URL
         const previewImageSrc = canvas.toDataURL('image/png');
 
         card.innerHTML = `
-            <img src="${previewImageSrc}" alt="Card ${nft.username}" loading="lazy">
-            <div class="nft-info">
-                <h4>@${nft.username}</h4>
-                <p>Token ID: #${nft.tokenId}</p>
-                <div class="nft-stats">
+            <img src="${previewImageSrc}" alt="Card @${nft.username}" loading="lazy" style="width:100%;border-radius:8px;">
+            <div class="nft-info" style="padding:12px;">
+                <h4 style="margin:0 0 4px 0;color:#6fe3d1;">@${nft.username}</h4>
+                <p style="margin:0 0 8px 0;font-size:13px;color:#94a3b8;">Token #${nft.tokenId}</p>
+                <div class="nft-stats" style="display:flex;gap:12px;font-size:13px;color:#fff;">
                     <span>📝 ${nft.posts}</span>
                     <span>❤️ ${nft.likes}</span>
                     <span>👁️ ${nft.views}</span>
                 </div>
-                <a href="https://explorer.ritualfoundation.org/token/${CONTRACT_ADDRESS}/instance/${nft.tokenId}" target="_blank" class="nft-explorer-link">
+                <a href="https://explorer.ritualfoundation.org/token/${CONTRACT_ADDRESS}/instance/${nft.tokenId}" 
+                   target="_blank" 
+                   class="nft-explorer-link"
+                   style="display:inline-block;margin-top:8px;font-size:12px;color:#6fe3d1;text-decoration:none;">
                     🔍 View on Explorer
                 </a>
             </div>
@@ -656,8 +665,7 @@ function renderNFTCards(nfts) {
     });
 }
 
-// === ОСТАЛЬНОЙ КОД (все остальные функции остаются без изменений) ===
-// ... (fetchData, fetchTweets, normalizeData, renderTable, generateCardCanvas, и т.д.) ...
+// === ОСТАЛЬНОЙ КОД (без изменений) ===
 
 // - Fetch leaderboard data -
 async function fetchData() {
@@ -928,9 +936,9 @@ async function generateCardCanvas(username, stats) {
 
         // Рисуем логотип если загрузился
         if (logoImg.complete && logoImg.naturalWidth !== 0) {
-            const logoSize = 55;  // Размер 45x45 пикселей
-            const logoX = (W / 2) - 350;  // СДВИНУЛ ЛЕВЕЕ (было -180, стало -220)
-            const logoY = H - 176;  // ПОДНЯЛ ВЫШЕ (было -175, стало -180)
+            const logoSize = 55;
+            const logoX = (W / 2) - 350;
+            const logoY = H - 176;
             
             ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
             console.log('🎨 Логотип нарисован на позиции:', logoX, logoY);
@@ -944,7 +952,7 @@ async function generateCardCanvas(username, stats) {
     ctx.fillStyle = '#6fe3d1';
     ctx.font = 'bold 40px Segoe UI, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('TWITTER RITUAL COMMUNITY', W / 2, H - 135);  // ОПУСТИЛ НИЖЕ (было -145, стало -135)
+    ctx.fillText('TWITTER RITUAL COMMUNITY', W / 2, H - 135);
     ctx.textAlign = 'left';
     // === КОНЕЦ ЛОГОТИПА ===
 
@@ -1178,7 +1186,7 @@ function toggleTweetsRow(tr, username) {
             if (dateRaw) {
                 const parsed = new Date(dateRaw);
                 date = !isNaN(parsed)
-                    ? parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+                    ? parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: 'numeric' })
                     : dateRaw.split(" ")[0];
             }
             
@@ -1247,7 +1255,8 @@ function setupTabs() {
                 if (an) an.style.display = 'none';
                 if (gallery) {
                     gallery.style.display = 'block';
-                    setTimeout(loadNFTGallery, 100);
+                    // 🔥 Принудительно загружаем галерею при открытии вкладки
+                    loadNFTGallery();
                 }
             } else {
                 if (lb) lb.style.display = 'block';
@@ -1622,6 +1631,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const refreshBtn = document.getElementById('refresh-nft-btn');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', () => {
+            // 🔥 Принудительно очищаем кэш при ручном обновлении
             localStorage.removeItem('ritual_nft_gallery');
             loadNFTGallery();
         });
