@@ -454,7 +454,7 @@ async function mintCardNFT() {
         const receipt = await provider.waitForTransaction(txHash, 1, 90000);
 
         if (receipt?.status === 1) {
-            status.textContent = '✅ Успешно заминчено!';
+            status.textContent = '✅ Successfully completed!';
             status.style.color = '#4ade80';
             // 🔥 Принудительно обновляем галерею после минта
             if (typeof loadNFTGallery === 'function') {
