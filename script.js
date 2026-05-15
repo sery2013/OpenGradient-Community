@@ -519,7 +519,7 @@ function closeCardModal() {
     document.getElementById('card-modal').style.display = 'none';
 }
 
-// === NFT GALLERY: RECENT MINTS (FULL WIDTH TABLE) ===
+// === NFT GALLERY: RECENT MINTS (WITH PERSISTENT CACHE) ===
 async function loadNFTGallery() {
     const grid = document.getElementById('nft-gallery-grid');
     if (!grid) return;
@@ -540,7 +540,7 @@ async function loadNFTGallery() {
         };
 
         const logs = await provider.getLogs(filter);
-        const mints = [];
+        const newMints = [];
         const seenTokens = new Set();
 
         for (const log of logs) {
@@ -552,15 +552,13 @@ async function loadNFTGallery() {
                 const to = parsed.args[1];
                 const tokenId = parsed.args[2].toString();
 
-                // Mint = transfer from zero address
                 if (from !== ethers.ZeroAddress || seenTokens.has(tokenId)) continue;
                 seenTokens.add(tokenId);
 
-                // Get transaction data for hash and timestamp
                 const tx = await provider.getTransaction(log.transactionHash);
                 const block = await provider.getBlock(log.blockNumber);
                 
-                mints.push({
+                newMints.push({
                     tokenId,
                     owner: to,
                     txHash: log.transactionHash,
@@ -572,12 +570,41 @@ async function loadNFTGallery() {
             }
         }
 
-        // Sort: newest first
-        mints.sort((a, b) => b.blockNumber - a.blockNumber);
-        renderMintsTable(mints, grid);
+        // 🔥 КЭШИРОВАНИЕ: объединяем новые минты с сохранёнными
+        const cacheKey = 'ritual_mints_cache';
+        const cached = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+        
+        // Создаём карту существующих токенов для быстрого поиска
+        const existingIds = new Set(cached.map(m => m.tokenId));
+        
+        // Добавляем только новые минты
+        const allMints = [...cached];
+        for (const mint of newMints) {
+            if (!existingIds.has(mint.tokenId)) {
+                allMints.push(mint);
+                existingIds.add(mint.tokenId);
+            }
+        }
+        
+        // Сортировка: новые сверху
+        allMints.sort((a, b) => b.blockNumber - a.blockNumber);
+        
+        // 🔥 Сохраняем в кэш (максимум 200 записей)
+        const limitedMints = allMints.slice(0, 200);
+        localStorage.setItem(cacheKey, JSON.stringify(limitedMints));
+        
+        renderMintsTable(limitedMints, grid);
 
     } catch (err) {
-        grid.innerHTML = `<p style="text-align:center;padding:40px;color:#f87171;">❌ ${err.message}</p>`;
+        // 🔥 Если ошибка — показываем кэш
+        const cacheKey = 'ritual_mints_cache';
+        const cached = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+        if (cached.length > 0) {
+            console.log('📦 Showing cached mints due to error');
+            renderMintsTable(cached, grid);
+        } else {
+            grid.innerHTML = `<p style="text-align:center;padding:40px;color:#f87171;">❌ ${err.message}</p>`;
+        }
     }
 }
 
@@ -604,7 +631,6 @@ function renderMintsTable(mints, container) {
 
     mints.forEach((mint, i) => {
         const timeAgo = getTimeAgo(mint.timestamp);
-        // Link to transaction in explorer
         const explorerUrl = `https://explorer.ritualfoundation.org/tx/${mint.txHash}`;
         const rowBg = i % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.06)';
         
@@ -643,7 +669,7 @@ function renderMintsTable(mints, container) {
 
     html += `</tbody></table>
             <p style="text-align:center;margin-top:24px;color:#64748b;font-size:12px;">
-                Last ${mints.length} mints (10k blocks)
+                Last ${mints.length} mints (cached)
             </p>
         </div>`;
 
@@ -657,7 +683,7 @@ function getTimeAgo(timestamp) {
     const now = Date.now();
     const diff = now - timestamp;
     
-    if (diff < 0 || diff > 31536000000) return 'Just now'; // more than a year - error
+    if (diff < 0 || diff > 31536000000) return 'Just now';
     
     const seconds = Math.floor(diff / 1000);
     const minutes = Math.floor(seconds / 60);
